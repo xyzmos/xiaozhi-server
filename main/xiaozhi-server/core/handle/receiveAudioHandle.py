@@ -1,6 +1,8 @@
 import time
 import json
 import asyncio
+
+from config.logger import setup_logging
 from core.utils.util import audio_to_data
 from core.handle.abortHandle import handleAbortMessage
 from core.handle.intentHandler import handle_user_intent
@@ -9,6 +11,7 @@ from core.handle.sendAudioHandle import send_stt_message, SentenceType
 
 TAG = __name__
 
+logger = setup_logging()
 
 async def handleAudioMessage(conn, audio):
     # 当前片段是否有人说话
@@ -46,7 +49,7 @@ async def startToChat(conn, text):
             if 'speaker' in data and 'content' in data:
                 speaker_name = data['speaker']
                 actual_text = data['content']
-                conn.logger.bind(tag=TAG).info(f"解析到说话人信息: {speaker_name}")
+                logger.bind(tag=TAG).info(f"解析到说话人信息: {speaker_name}")
 
                 # 直接使用JSON格式的文本，不解析
                 actual_text = text
@@ -104,7 +107,7 @@ async def no_voice_close_connect(conn, have_voice):
             conn.client_abort = False
             end_prompt = conn.config.get("end_prompt", {})
             if end_prompt and end_prompt.get("enable", True) is False:
-                conn.logger.bind(tag=TAG).info("结束对话，无需发送结束提示语")
+                logger.bind(tag=TAG).info("结束对话，无需发送结束提示语")
                 await conn.close()
                 return
             prompt = end_prompt.get("prompt")
@@ -128,7 +131,7 @@ async def check_bind_device(conn):
     if conn.bind_code:
         # 确保bind_code是6位数字
         if len(conn.bind_code) != 6:
-            conn.logger.bind(tag=TAG).error(f"无效的绑定码格式: {conn.bind_code}")
+            logger.bind(tag=TAG).error(f"无效的绑定码格式: {conn.bind_code}")
             text = "绑定码格式错误，请检查配置。"
             await send_stt_message(conn, text)
             return
@@ -149,7 +152,7 @@ async def check_bind_device(conn):
                 num_packets = audio_to_data(num_path)
                 conn.tts.tts_audio_queue.put((SentenceType.MIDDLE, num_packets, None))
             except Exception as e:
-                conn.logger.bind(tag=TAG).error(f"播放数字音频失败: {e}")
+                logger.bind(tag=TAG).error(f"播放数字音频失败: {e}")
                 continue
         conn.tts.tts_audio_queue.put((SentenceType.LAST, [], None))
     else:

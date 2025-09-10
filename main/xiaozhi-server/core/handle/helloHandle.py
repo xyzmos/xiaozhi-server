@@ -3,6 +3,7 @@ import json
 import random
 import asyncio
 
+from config.logger import setup_logging
 from config.system_config import SystemConfig
 from core.session.session_context import SessionContext
 from core.utils.dialogue import Message
@@ -32,6 +33,7 @@ _wakeup_response_lock = asyncio.Lock()
 
 config = SystemConfig()
 
+logger = setup_logging()
 
 async def handleHelloMessage(conn, msg_json, session_context: SessionContext):
     """处理hello消息"""
@@ -42,15 +44,15 @@ async def handleHelloMessage(conn, msg_json, session_context: SessionContext):
     session_context.audio_format = audio_params
     if audio_params:
         format = audio_params.get("format")
-        conn.logger.bind(tag=TAG).info(f"客户端音频格式: {format}")
+        logger.bind(tag=TAG).info(f"客户端音频格式: {format}")
         welcome_msg["audio_params"] = audio_params
     features = msg_json.get("features")
     if features:
-        conn.logger.bind(tag=TAG).info(f"客户端特性: {features}")
+        logger.bind(tag=TAG).info(f"客户端特性: {features}")
         conn.features = features
         session_context.features = features
         if features.get("mcp"):
-            conn.logger.bind(tag=TAG).info("客户端支持MCP")
+            logger.bind(tag=TAG).info("客户端支持MCP")
             conn.mcp_client = MCPClient()
             session_context.mcp_client = conn.mcp_client
             # 发送初始化
@@ -105,7 +107,7 @@ async def checkWakeupWords(conn, text):
     # 播放唤醒词回复
     conn.client_abort = False
 
-    conn.logger.bind(tag=TAG).info(f"播放唤醒词回复: {response.get('text')}")
+    logger.bind(tag=TAG).info(f"播放唤醒词回复: {response.get('text')}")
     await sendAudioMessage(conn, SentenceType.FIRST, opus_packets, response.get("text"))
     await sendAudioMessage(conn, SentenceType.LAST, [], None)
 

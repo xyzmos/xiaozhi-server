@@ -2,12 +2,15 @@ import asyncio
 import json
 from typing import Dict, Any
 
+from config.logger import setup_logging
 from core.handle.textMessageHandler import TextMessageHandler
 from core.handle.textMessageType import TextMessageType
 from core.providers.tools.device_mcp import handle_mcp_message
 from core.session.session_context import SessionContext
 
 TAG = __name__
+
+logger = setup_logging()
 
 class ServerTextMessageHandler(TextMessageHandler):
     """MCP消息处理器"""
@@ -77,7 +80,7 @@ class ServerTextMessageHandler(TextMessageHandler):
                     )
                 )
             except Exception as e:
-                conn.logger.bind(tag=TAG).error(f"更新配置失败: {str(e)}")
+                logger.bind(tag=TAG).error(f"更新配置失败: {str(e)}")
                 await conn.websocket.send(
                     json.dumps(
                         {
