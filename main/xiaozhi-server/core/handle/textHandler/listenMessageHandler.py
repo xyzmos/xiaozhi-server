@@ -1,14 +1,18 @@
 import time
 from typing import Dict, Any
 
+from config.logger import setup_logging
 from core.handle.receiveAudioHandle import handleAudioMessage, startToChat
 from core.handle.reportHandle import enqueue_asr_report
 from core.handle.sendAudioHandle import send_stt_message, send_tts_message
 from core.handle.textMessageHandler import TextMessageHandler
 from core.handle.textMessageType import TextMessageType
+from core.session.session_context import SessionContext
 from core.utils.util import remove_punctuation_and_length
 
 TAG = __name__
+
+logger = setup_logging()
 
 class ListenTextMessageHandler(TextMessageHandler):
     """Listen消息处理器"""
@@ -17,10 +21,10 @@ class ListenTextMessageHandler(TextMessageHandler):
     def message_type(self) -> TextMessageType:
         return TextMessageType.LISTEN
 
-    async def handle(self, conn, msg_json: Dict[str, Any]) -> None:
+    async def handle(self, conn, msg_json: Dict[str, Any], session_context: SessionContext) -> None:
         if "mode" in msg_json:
             conn.client_listen_mode = msg_json["mode"]
-            conn.logger.bind(tag=TAG).debug(
+            logger.bind(tag=TAG).debug(
                 f"客户端拾音模式：{conn.client_listen_mode}"
             )
         if msg_json["state"] == "start":

@@ -10,6 +10,8 @@ import threading
 import traceback
 import subprocess
 import websockets
+
+from core.session.session_context import SessionContext
 from core.utils.util import (
     extract_json_from_string,
     check_vad_update,
@@ -43,6 +45,8 @@ from core.utils import textUtils
 
 TAG = __name__
 
+logger = setup_logging()
+
 auto_import_modules("plugins_func.functions")
 
 
@@ -64,7 +68,6 @@ class ConnectionHandler:
         self.common_config = config
         self.config = copy.deepcopy(config)
         self.session_id = str(uuid.uuid4())
-        self.logger = setup_logging()
         self.server = server  # 保存server实例的引用
 
         self.auth = AuthMiddleware(config)
@@ -155,7 +158,9 @@ class ConnectionHandler:
         self.features = None
 
         # 初始化提示词管理器
-        self.prompt_manager = PromptManager(config, self.logger)
+        self.prompt_manager = PromptManager(config)
+
+        self.session_context = SessionContext(self.session_id)
 
     async def handle_connection(self, ws):
         try:
@@ -169,7 +174,7 @@ class ConnectionHandler:
                 # 从 WebSocket 请求中获取路径
                 request_path = ws.request.path
                 if not request_path:
-                    self.logger.bind(tag=TAG).error("无法获取请求路径")
+                    logger.bind(tag=TAG).error("无法获取请求路径")
                     return
                 parsed_url = urlparse(request_path)
                 query_params = parse_qs(parsed_url.query)
@@ -187,7 +192,7 @@ class ConnectionHandler:
                 self.client_ip = real_ip.split(",")[0].strip()
             else:
                 self.client_ip = ws.remote_address[0]
-            self.logger.bind(tag=TAG).info(
+            logger.bind(tag=TAG).info(
                 f"{self.client_ip} conn - Headers: {self.headers}"
             )
 
@@ -212,29 +217,33 @@ class ConnectionHandler:
             # 异步初始化
             self.executor.submit(self._initialize_components)
 
+            self.session_context.device_id = self.device_id
+            self.session_context.client_ip = self.client_ip
+            self.session_context.last_activity_time = self.last_activity_time
+
             try:
                 async for message in self.websocket:
-                    await self._route_message(message)
+                    await self._route_message(message, self.session_context)
             except websockets.exceptions.ConnectionClosed:
-                self.logger.bind(tag=TAG).info("客户端断开连接")
+                logger.bind(tag=TAG).info("客户端断开连接")
 
         except AuthenticationError as e:
-            self.logger.bind(tag=TAG).error(f"Authentication failed: {str(e)}")
+            logger.bind(tag=TAG).error(f"Authentication failed: {str(e)}")
             return
         except Exception as e:
             stack_trace = traceback.format_exc()
-            self.logger.bind(tag=TAG).error(f"Connection error: {str(e)}-{stack_trace}")
+            logger.bind(tag=TAG).error(f"Connection error: {str(e)}-{stack_trace}")
             return
         finally:
             try:
                 await self._save_and_close(ws)
             except Exception as final_error:
-                self.logger.bind(tag=TAG).error(f"最终清理时出错: {final_error}")
+                logger.bind(tag=TAG).error(f"最终清理时出错: {final_error}")
                 # 确保即使保存记忆失败，也要关闭连接
                 try:
                     await self.close(ws)
                 except Exception as close_error:
-                    self.logger.bind(tag=TAG).error(
+                    logger.bind(tag=TAG).error(
                         f"强制关闭连接时出错: {close_error}"
                     )
 
@@ -252,7 +261,7 @@ class ConnectionHandler:
                             self.memory.save_memory(self.dialogue.dialogue)
                         )
                     except Exception as e:
-                        self.logger.bind(tag=TAG).error(f"保存记忆失败: {e}")
+                        logger.bind(tag=TAG).error(f"保存记忆失败: {e}")
                     finally:
                         try:
                             loop.close()
@@ -262,20 +271,20 @@ class ConnectionHandler:
                 # 启动线程保存记忆，不等待完成
                 threading.Thread(target=save_memory_task, daemon=True).start()
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"保存记忆失败: {e}")
+            logger.bind(tag=TAG).error(f"保存记忆失败: {e}")
         finally:
             # 立即关闭连接，不等待记忆保存完成
             try:
                 await self.close(ws)
             except Exception as close_error:
-                self.logger.bind(tag=TAG).error(
+                logger.bind(tag=TAG).error(
                     f"保存记忆后关闭连接失败: {close_error}"
                 )
 
-    async def _route_message(self, message):
+    async def _route_message(self, message, session_context: SessionContext):
         """消息路由"""
         if isinstance(message, str):
-            await handleTextMessage(self, message)
+            await handleTextMessage(self, message, session_context)
         elif isinstance(message, bytes):
             if self.vad is None:
                 return
@@ -287,7 +296,7 @@ class ConnectionHandler:
         """处理服务器重启请求"""
         try:
 
-            self.logger.bind(tag=TAG).info("收到服务器重启指令，准备执行...")
+            logger.bind(tag=TAG).info("收到服务器重启指令，准备执行...")
 
             # 发送确认响应
             await self.websocket.send(
@@ -305,7 +314,7 @@ class ConnectionHandler:
             def restart_server():
                 """实际执行重启的方法"""
                 time.sleep(1)
-                self.logger.bind(tag=TAG).info("执行服务器重启...")
+                logger.bind(tag=TAG).info("执行服务器重启...")
                 subprocess.Popen(
                     [sys.executable, "app.py"],
                     stdin=sys.stdin,
@@ -319,7 +328,7 @@ class ConnectionHandler:
             threading.Thread(target=restart_server, daemon=True).start()
 
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"重启失败: {str(e)}")
+            logger.bind(tag=TAG).error(f"重启失败: {str(e)}")
             await self.websocket.send(
                 json.dumps(
                     {
@@ -336,7 +345,7 @@ class ConnectionHandler:
             self.selected_module_str = build_module_string(
                 self.config.get("selected_module", {})
             )
-            self.logger = create_connection_logger(self.selected_module_str)
+            logger = create_connection_logger(self.selected_module_str)
 
             """初始化组件"""
             if self.config.get("prompt") is not None:
@@ -344,7 +353,7 @@ class ConnectionHandler:
                 # 使用快速提示词进行初始化
                 prompt = self.prompt_manager.get_quick_prompt(user_prompt)
                 self.change_system_prompt(prompt)
-                self.logger.bind(tag=TAG).info(
+                logger.bind(tag=TAG).info(
                     f"快速初始化组件: prompt成功 {prompt[:50]}..."
                 )
 
@@ -378,7 +387,7 @@ class ConnectionHandler:
             self._init_prompt_enhancement()
 
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"实例化组件失败: {e}")
+            logger.bind(tag=TAG).error(f"实例化组件失败: {e}")
 
     def _init_prompt_enhancement(self):
         # 更新上下文信息
@@ -388,7 +397,7 @@ class ConnectionHandler:
         )
         if enhanced_prompt:
             self.change_system_prompt(enhanced_prompt)
-            self.logger.bind(tag=TAG).info("系统提示词已增强更新")
+            logger.bind(tag=TAG).info("系统提示词已增强更新")
 
     def _init_report_threads(self):
         """初始化ASR和TTS上报线程"""
@@ -401,7 +410,7 @@ class ConnectionHandler:
                 target=self._report_worker, daemon=True
             )
             self.report_thread.start()
-            self.logger.bind(tag=TAG).info("TTS上报线程已启动")
+            logger.bind(tag=TAG).info("TTS上报线程已启动")
 
     def _initialize_tts(self):
         """初始化TTS"""
@@ -435,13 +444,13 @@ class ConnectionHandler:
                 voiceprint_provider = VoiceprintProvider(voiceprint_config)
                 if voiceprint_provider is not None and voiceprint_provider.enabled:
                     self.voiceprint_provider = voiceprint_provider
-                    self.logger.bind(tag=TAG).info("声纹识别功能已在连接时动态启用")
+                    logger.bind(tag=TAG).info("声纹识别功能已在连接时动态启用")
                 else:
-                    self.logger.bind(tag=TAG).warning("声纹识别功能启用但配置不完整")
+                    logger.bind(tag=TAG).warning("声纹识别功能启用但配置不完整")
             else:
-                self.logger.bind(tag=TAG).info("声纹识别功能未启用")
+                logger.bind(tag=TAG).info("声纹识别功能未启用")
         except Exception as e:
-            self.logger.bind(tag=TAG).warning(f"声纹识别初始化失败: {str(e)}")
+            logger.bind(tag=TAG).warning(f"声纹识别初始化失败: {str(e)}")
 
     def _initialize_private_config(self):
         """如果是从配置文件获取，则进行二次实例化"""
@@ -456,7 +465,7 @@ class ConnectionHandler:
                 self.headers.get("client-id", self.headers.get("device-id")),
             )
             private_config["delete_audio"] = bool(self.config.get("delete_audio", True))
-            self.logger.bind(tag=TAG).info(
+            logger.bind(tag=TAG).info(
                 f"{time.time() - begin_time} 秒，获取差异化配置成功: {json.dumps(filter_sensitive_info(private_config), ensure_ascii=False)}"
             )
         except DeviceNotFoundException as e:
@@ -468,7 +477,7 @@ class ConnectionHandler:
             private_config = {}
         except Exception as e:
             self.need_bind = True
-            self.logger.bind(tag=TAG).error(f"获取差异化配置失败: {e}")
+            logger.bind(tag=TAG).error(f"获取差异化配置失败: {e}")
             private_config = {}
 
         init_llm, init_tts, init_memory, init_intent = (
@@ -543,7 +552,7 @@ class ConnectionHandler:
             self.config["mcp_endpoint"] = private_config["mcp_endpoint"]
         try:
             modules = initialize_modules(
-                self.logger,
+                logger,
                 private_config,
                 init_vad,
                 init_asr,
@@ -553,7 +562,7 @@ class ConnectionHandler:
                 init_intent,
             )
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"初始化组件失败: {e}")
+            logger.bind(tag=TAG).error(f"初始化组件失败: {e}")
             modules = {}
         if modules.get("tts", None) is not None:
             self.tts = modules["tts"]
@@ -601,14 +610,14 @@ class ConnectionHandler:
                 memory_llm = llm_utils.create_instance(
                     memory_llm_type, memory_llm_config
                 )
-                self.logger.bind(tag=TAG).info(
+                logger.bind(tag=TAG).info(
                     f"为记忆总结创建了专用LLM: {memory_llm_name}, 类型: {memory_llm_type}"
                 )
                 self.memory.set_llm(memory_llm)
             else:
                 # 否则使用主LLM
                 self.memory.set_llm(self.llm)
-                self.logger.bind(tag=TAG).info("使用主LLM作为意图识别模型")
+                logger.bind(tag=TAG).info("使用主LLM作为意图识别模型")
 
     def _initialize_intent(self):
         if self.intent is None:
@@ -643,14 +652,14 @@ class ConnectionHandler:
                 intent_llm = llm_utils.create_instance(
                     intent_llm_type, intent_llm_config
                 )
-                self.logger.bind(tag=TAG).info(
+                logger.bind(tag=TAG).info(
                     f"为意图识别创建了专用LLM: {intent_llm_name}, 类型: {intent_llm_type}"
                 )
                 self.intent.set_llm(intent_llm)
             else:
                 # 否则使用主LLM
                 self.intent.set_llm(self.llm)
-                self.logger.bind(tag=TAG).info("使用主LLM作为意图识别模型")
+                logger.bind(tag=TAG).info("使用主LLM作为意图识别模型")
 
         """加载统一工具处理器"""
         self.func_handler = UnifiedToolHandler(self)
@@ -665,7 +674,7 @@ class ConnectionHandler:
         self.dialogue.update_system_message(self.prompt)
 
     def chat(self, query, depth=0):
-        self.logger.bind(tag=TAG).info(f"大模型收到用户消息: {query}")
+        logger.bind(tag=TAG).info(f"大模型收到用户消息: {query}")
         self.llm_finish_task = False
 
         # 为最顶层时新建会话ID和发送FIRST请求
@@ -712,7 +721,7 @@ class ConnectionHandler:
                     ),
                 )
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"LLM 处理出错 {query}: {e}")
+            logger.bind(tag=TAG).error(f"LLM 处理出错 {query}: {e}")
             return None
 
         # 处理流式响应
@@ -788,7 +797,7 @@ class ConnectionHandler:
                     bHasError = True
                     response_message.append(content_arguments)
                 if bHasError:
-                    self.logger.bind(tag=TAG).error(
+                    logger.bind(tag=TAG).error(
                         f"function call error: {content_arguments}"
                     )
             if not bHasError:
@@ -798,7 +807,7 @@ class ConnectionHandler:
                     self.tts_MessageText = text_buff
                     self.dialogue.put(Message(role="assistant", content=text_buff))
                 response_message.clear()
-                self.logger.bind(tag=TAG).debug(
+                logger.bind(tag=TAG).debug(
                     f"function_name={function_name}, function_id={function_id}, function_arguments={function_arguments}"
                 )
                 function_call_data = {
@@ -831,7 +840,7 @@ class ConnectionHandler:
             )
         self.llm_finish_task = True
         # 使用lambda延迟计算，只有在DEBUG级别时才执行get_llm_dialogue()
-        self.logger.bind(tag=TAG).debug(
+        logger.bind(tag=TAG).debug(
             lambda: json.dumps(
                 self.dialogue.get_llm_dialogue(), indent=4, ensure_ascii=False
             )
@@ -899,13 +908,13 @@ class ConnectionHandler:
                     # 提交任务到线程池
                     self.executor.submit(self._process_report, *item)
                 except Exception as e:
-                    self.logger.bind(tag=TAG).error(f"聊天记录上报线程异常: {e}")
+                    logger.bind(tag=TAG).error(f"聊天记录上报线程异常: {e}")
             except queue.Empty:
                 continue
             except Exception as e:
-                self.logger.bind(tag=TAG).error(f"聊天记录上报工作线程异常: {e}")
+                logger.bind(tag=TAG).error(f"聊天记录上报工作线程异常: {e}")
 
-        self.logger.bind(tag=TAG).info("聊天记录上报线程已退出")
+        logger.bind(tag=TAG).info("聊天记录上报线程已退出")
 
     def _process_report(self, type, text, audio_data, report_time):
         """处理上报任务"""
@@ -913,14 +922,14 @@ class ConnectionHandler:
             # 执行上报（传入二进制数据）
             report(self, type, text, audio_data, report_time)
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"上报处理异常: {e}")
+            logger.bind(tag=TAG).error(f"上报处理异常: {e}")
         finally:
             # 标记任务完成
             self.report_queue.task_done()
 
     def clearSpeakStatus(self):
         self.client_is_speaking = False
-        self.logger.bind(tag=TAG).debug(f"清除服务端讲话状态")
+        logger.bind(tag=TAG).debug(f"清除服务端讲话状态")
 
     async def close(self, ws=None):
         """资源清理方法"""
@@ -939,7 +948,7 @@ class ConnectionHandler:
                 try:
                     await self.func_handler.cleanup()
                 except Exception as cleanup_error:
-                    self.logger.bind(tag=TAG).error(
+                    logger.bind(tag=TAG).error(
                         f"清理工具处理器时出错: {cleanup_error}"
                     )
 
@@ -984,7 +993,7 @@ class ConnectionHandler:
                         # 如果关闭失败，忽略错误
                         pass
             except Exception as ws_error:
-                self.logger.bind(tag=TAG).error(f"关闭WebSocket连接时出错: {ws_error}")
+                logger.bind(tag=TAG).error(f"关闭WebSocket连接时出错: {ws_error}")
 
             if self.tts:
                 await self.tts.close()
@@ -994,14 +1003,14 @@ class ConnectionHandler:
                 try:
                     self.executor.shutdown(wait=False)
                 except Exception as executor_error:
-                    self.logger.bind(tag=TAG).error(
+                    logger.bind(tag=TAG).error(
                         f"关闭线程池时出错: {executor_error}"
                     )
                 self.executor = None
 
-            self.logger.bind(tag=TAG).info("连接资源已释放")
+            logger.bind(tag=TAG).info("连接资源已释放")
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"关闭连接时出错: {e}")
+            logger.bind(tag=TAG).error(f"关闭连接时出错: {e}")
         finally:
             # 确保停止事件被设置
             if self.stop_event:
@@ -1010,7 +1019,7 @@ class ConnectionHandler:
     def clear_queues(self):
         """清空所有任务队列"""
         if self.tts:
-            self.logger.bind(tag=TAG).debug(
+            logger.bind(tag=TAG).debug(
                 f"开始清理: TTS队列大小={self.tts.tts_text_queue.qsize()}, 音频队列大小={self.tts.tts_audio_queue.qsize()}"
             )
 
@@ -1028,7 +1037,7 @@ class ConnectionHandler:
                     except queue.Empty:
                         break
 
-            self.logger.bind(tag=TAG).debug(
+            logger.bind(tag=TAG).debug(
                 f"清理结束: TTS队列大小={self.tts.tts_text_queue.qsize()}, 音频队列大小={self.tts.tts_audio_queue.qsize()}"
             )
 
@@ -1036,7 +1045,7 @@ class ConnectionHandler:
         self.client_audio_buffer = bytearray()
         self.client_have_voice = False
         self.client_voice_stop = False
-        self.logger.bind(tag=TAG).debug("VAD states reset.")
+        logger.bind(tag=TAG).debug("VAD states reset.")
 
     def chat_and_close(self, text):
         """Chat with the user and then close the connection"""
@@ -1047,7 +1056,7 @@ class ConnectionHandler:
             # After chat is complete, close the connection
             self.close_after_chat = True
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"Chat and close error: {str(e)}")
+            logger.bind(tag=TAG).error(f"Chat and close error: {str(e)}")
 
     async def _check_timeout(self):
         """检查连接超时"""
@@ -1061,20 +1070,20 @@ class ConnectionHandler:
                         > self.timeout_seconds * 1000
                     ):
                         if not self.stop_event.is_set():
-                            self.logger.bind(tag=TAG).info("连接超时，准备关闭")
+                            logger.bind(tag=TAG).info("连接超时，准备关闭")
                             # 设置停止事件，防止重复处理
                             self.stop_event.set()
                             # 使用 try-except 包装关闭操作，确保不会因为异常而阻塞
                             try:
                                 await self.close(self.websocket)
                             except Exception as close_error:
-                                self.logger.bind(tag=TAG).error(
+                                logger.bind(tag=TAG).error(
                                     f"超时关闭连接时出错: {close_error}"
                                 )
                         break
                 # 每10秒检查一次，避免过于频繁
                 await asyncio.sleep(10)
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"超时检查任务出错: {e}")
+            logger.bind(tag=TAG).error(f"超时检查任务出错: {e}")
         finally:
-            self.logger.bind(tag=TAG).info("超时检查任务已退出")
+            logger.bind(tag=TAG).info("超时检查任务已退出")

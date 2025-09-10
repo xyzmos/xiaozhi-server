@@ -1,6 +1,11 @@
 import json
 
+from config.logger import setup_logging
+
 TAG = __name__
+
+logger = setup_logging()
+
 EMOJI_MAP = {
     "😂": "laughing",
     "😭": "crying",
@@ -98,7 +103,7 @@ async def get_emotion(conn, text):
             )
         )
     except Exception as e:
-        conn.logger.bind(tag=TAG).warning(f"发送情绪表情失败，错误:{e}")
+        logger.bind(tag=TAG).warning(f"发送情绪表情失败，错误:{e}")
     return
 
 
