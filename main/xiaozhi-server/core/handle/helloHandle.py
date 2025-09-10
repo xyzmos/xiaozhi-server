@@ -3,6 +3,7 @@ import json
 import random
 import asyncio
 
+from config.system_config import SystemConfig
 from core.session.session_context import SessionContext
 from core.utils.dialogue import Message
 from core.utils.util import audio_to_data
@@ -29,20 +30,25 @@ wakeup_words_config = WakeupWordsConfig()
 # 用于防止并发调用wakeupWordsResponse的锁
 _wakeup_response_lock = asyncio.Lock()
 
+config = SystemConfig()
+
 
 async def handleHelloMessage(conn, msg_json, session_context: SessionContext):
     """处理hello消息"""
+    welcome_msg = config.get("xiaozhi")
+    welcome_msg["session_id"] = session_context.session_id
+
     audio_params = msg_json.get("audio_params")
+    session_context.audio_format = audio_params
     if audio_params:
         format = audio_params.get("format")
         conn.logger.bind(tag=TAG).info(f"客户端音频格式: {format}")
-        conn.audio_format = format
-        session_context.audio_format = conn.audio_format
-        conn.welcome_msg["audio_params"] = audio_params
+        welcome_msg["audio_params"] = audio_params
     features = msg_json.get("features")
     if features:
         conn.logger.bind(tag=TAG).info(f"客户端特性: {features}")
         conn.features = features
+        session_context.features = features
         if features.get("mcp"):
             conn.logger.bind(tag=TAG).info("客户端支持MCP")
             conn.mcp_client = MCPClient()
@@ -52,7 +58,7 @@ async def handleHelloMessage(conn, msg_json, session_context: SessionContext):
             # 发送mcp消息，获取tools列表
             asyncio.create_task(send_mcp_tools_list_request(conn))
 
-    await conn.websocket.send(json.dumps(conn.welcome_msg))
+    await conn.websocket.send(json.dumps(welcome_msg))
 
 
 async def checkWakeupWords(conn, text):

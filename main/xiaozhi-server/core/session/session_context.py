@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Any
 
 
 @dataclass
@@ -10,8 +10,14 @@ class SessionContext:
     session_id: str
 
     # 设备基本信息
-    device_id: Optional[str] = None
-    client_ip: Optional[str] = None
+    device_id: Optional[str]
+    client_ip: Optional[str]
+
+    # 设备端音频相关参数信息,可用作后续编解码参数注入
+    audio_format: dict[str, Any]
+
+    # 设备端功能特性，是否支持MCP等
+    features: dict[str, Any]
 
     # 客户端状态相关
     client_abort: Optional[bool] = False

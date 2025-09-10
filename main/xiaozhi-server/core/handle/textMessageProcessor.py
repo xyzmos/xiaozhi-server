@@ -18,8 +18,6 @@ class TextMessageProcessor:
             # 解析JSON消息
             msg_json = json.loads(message)
 
-            conn.logger.bind(tag=TAG).info(session_context.as_dict())
-
             # 处理JSON消息
             if isinstance(msg_json, dict):
                 message_type = msg_json.get("type")
@@ -30,7 +28,7 @@ class TextMessageProcessor:
                 # 获取并执行处理器
                 handler = self.registry.get_handler(message_type)
                 if handler:
-                    await handler.handle(conn, msg_json)
+                    await handler.handle(conn, msg_json, session_context)
                 else:
                     conn.logger.bind(tag=TAG).error(f"收到未知类型消息：{message}")
             # 处理纯数字消息
