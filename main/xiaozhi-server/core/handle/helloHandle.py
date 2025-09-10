@@ -2,6 +2,8 @@ import time
 import json
 import random
 import asyncio
+
+from core.session.session_context import SessionContext
 from core.utils.dialogue import Message
 from core.utils.util import audio_to_data
 from core.providers.tts.dto.dto import SentenceType
@@ -28,13 +30,14 @@ wakeup_words_config = WakeupWordsConfig()
 _wakeup_response_lock = asyncio.Lock()
 
 
-async def handleHelloMessage(conn, msg_json):
+async def handleHelloMessage(conn, msg_json, session_context: SessionContext):
     """处理hello消息"""
     audio_params = msg_json.get("audio_params")
     if audio_params:
         format = audio_params.get("format")
         conn.logger.bind(tag=TAG).info(f"客户端音频格式: {format}")
         conn.audio_format = format
+        session_context.audio_format = conn.audio_format
         conn.welcome_msg["audio_params"] = audio_params
     features = msg_json.get("features")
     if features:
@@ -43,6 +46,7 @@ async def handleHelloMessage(conn, msg_json):
         if features.get("mcp"):
             conn.logger.bind(tag=TAG).info("客户端支持MCP")
             conn.mcp_client = MCPClient()
+            session_context.mcp_client = conn.mcp_client
             # 发送初始化
             asyncio.create_task(send_mcp_initialize_message(conn))
             # 发送mcp消息，获取tools列表

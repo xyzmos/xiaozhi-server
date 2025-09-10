@@ -10,6 +10,8 @@ import threading
 import traceback
 import subprocess
 import websockets
+
+from core.session.session_context import SessionContext
 from core.utils.util import (
     extract_json_from_string,
     check_vad_update,
@@ -157,6 +159,8 @@ class ConnectionHandler:
         # 初始化提示词管理器
         self.prompt_manager = PromptManager(config, self.logger)
 
+        self.session_context = SessionContext(self.session_id)
+
     async def handle_connection(self, ws):
         try:
             # 获取并验证headers
@@ -212,9 +216,13 @@ class ConnectionHandler:
             # 异步初始化
             self.executor.submit(self._initialize_components)
 
+            self.session_context.device_id = self.device_id
+            self.session_context.client_ip = self.client_ip
+            self.session_context.last_activity_time = self.last_activity_time
+
             try:
                 async for message in self.websocket:
-                    await self._route_message(message)
+                    await self._route_message(message, self.session_context)
             except websockets.exceptions.ConnectionClosed:
                 self.logger.bind(tag=TAG).info("客户端断开连接")
 
@@ -272,10 +280,10 @@ class ConnectionHandler:
                     f"保存记忆后关闭连接失败: {close_error}"
                 )
 
-    async def _route_message(self, message):
+    async def _route_message(self, message, session_context: SessionContext):
         """消息路由"""
         if isinstance(message, str):
-            await handleTextMessage(self, message)
+            await handleTextMessage(self, message, session_context)
         elif isinstance(message, bytes):
             if self.vad is None:
                 return

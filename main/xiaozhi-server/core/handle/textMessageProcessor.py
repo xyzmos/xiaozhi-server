@@ -1,6 +1,7 @@
 import json
 
 from core.handle.textMessageHandlerRegistry import TextMessageHandlerRegistry
+from core.session.session_context import SessionContext
 
 TAG = __name__
 
@@ -11,11 +12,13 @@ class TextMessageProcessor:
     def __init__(self, registry: TextMessageHandlerRegistry):
         self.registry = registry
 
-    async def process_message(self, conn, message: str) -> None:
+    async def process_message(self, conn, message: str, session_context: SessionContext) -> None:
         """处理消息的主入口"""
         try:
             # 解析JSON消息
             msg_json = json.loads(message)
+
+            conn.logger.bind(tag=TAG).info(session_context.as_dict())
 
             # 处理JSON消息
             if isinstance(msg_json, dict):
