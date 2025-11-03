@@ -21,7 +21,7 @@ cozepy==0.19.0
 mem0ai==1.0.0
 bs4==0.0.2
 modelscope==1.23.2
-sherpa_onnx==1.12.11
+sherpa_onnx==1.12.15
 mcp==1.13.1
 cnlunar==0.2.0
 PySocks==1.7.1
