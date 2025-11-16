@@ -10,6 +10,18 @@ from core.http_server import SimpleHttpServer
 from core.websocket_server import WebSocketServer
 from core.utils.util import check_ffmpeg_installed
 
+# 尝试使用uvloop加速异步IO性能（仅Unix/macOS支持）
+# uvloop是asyncio的高性能替代品，性能提升2-4倍
+if sys.platform != "win32":
+    try:
+        import uvloop
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        _UVLOOP_ENABLED = True
+    except ImportError:
+        _UVLOOP_ENABLED = False
+else:
+    _UVLOOP_ENABLED = False
+
 TAG = __name__
 logger = setup_logging()
 
@@ -45,6 +57,15 @@ async def monitor_stdin():
 async def main():
     check_ffmpeg_installed()
     config = load_config()
+
+    # 输出uvloop状态信息
+    if _UVLOOP_ENABLED:
+        logger.bind(tag=TAG).info("✓ uvloop已启用，异步IO性能已优化")
+    else:
+        if sys.platform == "win32":
+            logger.bind(tag=TAG).warning("× uvloop不支持Windows平台，使用默认asyncio")
+        else:
+            logger.bind(tag=TAG).warning("× uvloop未安装，建议安装以提升性能：pip install uvloop")
 
     # auth_key优先级：配置文件server.auth_key > manager-api.secret > 自动生成
     # auth_key用于jwt认证，比如视觉分析接口的jwt认证、ota接口的token生成与websocket认证
