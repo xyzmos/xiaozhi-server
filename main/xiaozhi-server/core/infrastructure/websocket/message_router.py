@@ -28,15 +28,15 @@ class WebSocketMessageRouter:
             message: 收到的消息（文本或二进制）
         """
         try:
-            # 获取会话上下文并更新活动时间
+            # 获取会话上下文
             context = self.container.resolve('session_context', session_id=session_id)
-            context.update_activity_time()
 
             if isinstance(message, str):
-                # 文本消息
+                # 文本消息 - 更新活动时间
+                context.update_activity_time()
                 await self._route_text_message(session_id, message)
             elif isinstance(message, bytes):
-                # 音频消息
+                # 音频消息 - 不在这里更新活动时间，由VAD检测到声音时才更新
                 await self._route_audio_message(session_id, message, context)
             else:
                 self.logger.warning(f"未知的消息类型: {type(message)}")

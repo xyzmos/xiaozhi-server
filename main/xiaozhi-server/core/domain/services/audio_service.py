@@ -73,7 +73,7 @@ class AudioProcessingService:
         await self._no_voice_close_connect(context, have_voice)
 
         # 传递给 ASR 服务
-        await asr.receive_audio(context, audio_data, have_voice)
+        await asr.receive_audio(audio_data, have_voice)
 
     async def _resume_vad_detection(self, context: 'SessionContext'):
         """恢复 VAD 检测"""
@@ -82,9 +82,7 @@ class AudioProcessingService:
 
     async def _no_voice_close_connect(self, context: 'SessionContext', have_voice: bool):
         """设备长时间空闲检测，用于 say goodbye"""
-        if have_voice:
-            context.last_activity_time = time.time() * 1000
-            return
+        # 注意: last_activity_time 由 VAD 负责更新，这里只检查超时
 
         # 只有在已经初始化过时间戳的情况下才进行超时检查
         if context.last_activity_time > 0.0:
