@@ -13,9 +13,12 @@ import time
 
 import opuslib_next
 
+from config.logger import setup_logging
 from config.manage_api_client import report as manage_report
 
 TAG = __name__
+
+logger = setup_logging()
 
 
 def report(conn, type, text, opus_data, report_time):
@@ -43,7 +46,7 @@ def report(conn, type, text, opus_data, report_time):
             report_time=report_time,
         )
     except Exception as e:
-        conn.logger.bind(tag=TAG).error(f"聊天记录上报失败: {e}")
+        logger.bind(tag=TAG).error(f"聊天记录上报失败: {e}")
 
 
 def opus_to_wav(conn, opus_data):
@@ -64,7 +67,7 @@ def opus_to_wav(conn, opus_data):
             pcm_frame = decoder.decode(opus_packet, 960)  # 960 samples = 60ms
             pcm_data.append(pcm_frame)
         except opuslib_next.OpusError as e:
-            conn.logger.bind(tag=TAG).error(f"Opus解码错误: {e}", exc_info=True)
+            logger.bind(tag=TAG).error(f"Opus解码错误: {e}", exc_info=True)
 
     if not pcm_data:
         raise ValueError("没有有效的PCM数据")
@@ -109,16 +112,16 @@ def enqueue_tts_report(conn, text, opus_data):
         # 使用连接对象的队列，传入文本和二进制数据而非文件路径
         if conn.chat_history_conf == 2:
             conn.report_queue.put((2, text, opus_data, int(time.time())))
-            conn.logger.bind(tag=TAG).debug(
+            logger.bind(tag=TAG).debug(
                 f"TTS数据已加入上报队列: {conn.device_id}, 音频大小: {len(opus_data)} "
             )
         else:
             conn.report_queue.put((2, text, None, int(time.time())))
-            conn.logger.bind(tag=TAG).debug(
+            logger.bind(tag=TAG).debug(
                 f"TTS数据已加入上报队列: {conn.device_id}, 不上报音频"
             )
     except Exception as e:
-        conn.logger.bind(tag=TAG).error(f"加入TTS上报队列失败: {text}, {e}")
+        logger.bind(tag=TAG).error(f"加入TTS上报队列失败: {text}, {e}")
 
 
 def enqueue_asr_report(conn, text, opus_data):
@@ -137,13 +140,13 @@ def enqueue_asr_report(conn, text, opus_data):
         # 使用连接对象的队列，传入文本和二进制数据而非文件路径
         if conn.chat_history_conf == 2:
             conn.report_queue.put((1, text, opus_data, int(time.time())))
-            conn.logger.bind(tag=TAG).debug(
+            logger.bind(tag=TAG).debug(
                 f"ASR数据已加入上报队列: {conn.device_id}, 音频大小: {len(opus_data)} "
             )
         else:
             conn.report_queue.put((1, text, None, int(time.time())))
-            conn.logger.bind(tag=TAG).debug(
+            logger.bind(tag=TAG).debug(
                 f"ASR数据已加入上报队列: {conn.device_id}, 不上报音频"
             )
     except Exception as e:
-        conn.logger.bind(tag=TAG).debug(f"加入ASR上报队列失败: {text}, {e}")
+        logger.bind(tag=TAG).debug(f"加入ASR上报队列失败: {text}, {e}")

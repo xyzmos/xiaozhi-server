@@ -11,6 +11,8 @@ from jinja2 import Template
 
 TAG = __name__
 
+logger = setup_logging()
+
 WEEKDAY_MAP = {
     "Monday": "星期一",
     "Tuesday": "星期二",
@@ -49,9 +51,8 @@ EMOJI_List = [
 class PromptManager:
     """系统提示词管理器，负责管理和更新系统提示词"""
 
-    def __init__(self, config: Dict[str, Any], logger=None):
+    def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.logger = logger or setup_logging()
         self.base_prompt_template = None
         self.last_update_time = 0
 
@@ -75,7 +76,7 @@ class PromptManager:
             cached_template = self.cache_manager.get(self.CacheType.CONFIG, cache_key)
             if cached_template is not None:
                 self.base_prompt_template = cached_template
-                self.logger.bind(tag=TAG).debug("从缓存加载基础提示词模板")
+                logger.bind(tag=TAG).debug("从缓存加载基础提示词模板")
                 return
 
             # 缓存未命中，从文件读取
@@ -88,11 +89,11 @@ class PromptManager:
                     self.CacheType.CONFIG, cache_key, template_content
                 )
                 self.base_prompt_template = template_content
-                self.logger.bind(tag=TAG).debug("成功加载基础提示词模板并缓存")
+                logger.bind(tag=TAG).debug("成功加载基础提示词模板并缓存")
             else:
-                self.logger.bind(tag=TAG).warning(f"未找到{template_path}文件")
+                logger.bind(tag=TAG).warning("未找到agent-base-prompt.txt文件")
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"加载提示词模板失败: {e}")
+            logger.bind(tag=TAG).error(f"加载提示词模板失败: {e}")
 
     def get_quick_prompt(self, user_prompt: str, device_id: str = None) -> str:
         """快速获取系统提示词（使用用户配置）"""
@@ -101,10 +102,10 @@ class PromptManager:
             self.CacheType.DEVICE_PROMPT, device_cache_key
         )
         if cached_device_prompt is not None:
-            self.logger.bind(tag=TAG).debug(f"使用设备 {device_id} 的缓存提示词")
+            logger.bind(tag=TAG).debug(f"使用设备 {device_id} 的缓存提示词")
             return cached_device_prompt
         else:
-            self.logger.bind(tag=TAG).debug(
+            logger.bind(tag=TAG).debug(
                 f"设备 {device_id} 无缓存提示词，使用传入的提示词"
             )
 
@@ -112,9 +113,9 @@ class PromptManager:
         if device_id:
             device_cache_key = f"device_prompt:{device_id}"
             self.cache_manager.set(self.CacheType.CONFIG, device_cache_key, user_prompt)
-            self.logger.bind(tag=TAG).debug(f"设备 {device_id} 的提示词已缓存")
+            logger.bind(tag=TAG).debug(f"设备 {device_id} 的提示词已缓存")
 
-        self.logger.bind(tag=TAG).info(f"使用快速提示词: {user_prompt[:50]}...")
+        logger.bind(tag=TAG).info(f"使用快速提示词: {user_prompt[:50]}...")
         return user_prompt
 
     def _get_current_time_info(self) -> tuple:
@@ -142,7 +143,7 @@ class PromptManager:
             # 缓存未命中，调用API获取
             from core.utils.util import get_ip_info
 
-            ip_info = get_ip_info(client_ip, self.logger)
+            ip_info = get_ip_info(client_ip, logger)
             city = ip_info.get("city", "未知位置")
             location = f"{city}"
 
@@ -150,7 +151,7 @@ class PromptManager:
             self.cache_manager.set(self.CacheType.LOCATION, client_ip, location)
             return location
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"获取位置信息失败: {e}")
+            logger.bind(tag=TAG).error(f"获取位置信息失败: {e}")
             return "未知位置"
 
     def _get_weather_info(self, conn, location: str) -> str:
@@ -174,7 +175,7 @@ class PromptManager:
             return "天气信息获取失败"
 
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"获取天气信息失败: {e}")
+            logger.bind(tag=TAG).error(f"获取天气信息失败: {e}")
             return "天气信息获取失败"
 
     def update_context_info(self, conn, client_ip: str):
@@ -184,10 +185,10 @@ class PromptManager:
             local_address = self._get_location_info(client_ip)
             # 获取天气信息（使用全局缓存）
             self._get_weather_info(conn, local_address)
-            self.logger.bind(tag=TAG).debug(f"上下文信息更新完成")
+            logger.bind(tag=TAG).info(f"上下文信息更新完成")
 
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"更新上下文信息失败: {e}")
+            logger.bind(tag=TAG).error(f"更新上下文信息失败: {e}")
 
     def build_enhanced_prompt(
         self, user_prompt: str, device_id: str, client_ip: str = None, *args, **kwargs
@@ -237,11 +238,11 @@ class PromptManager:
             self.cache_manager.set(
                 self.CacheType.DEVICE_PROMPT, device_cache_key, enhanced_prompt
             )
-            self.logger.bind(tag=TAG).info(
+            logger.bind(tag=TAG).info(
                 f"构建增强提示词成功，长度: {len(enhanced_prompt)}"
             )
             return enhanced_prompt
 
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"构建增强提示词失败: {e}")
+            logger.bind(tag=TAG).error(f"构建增强提示词失败: {e}")
             return user_prompt
