@@ -72,7 +72,6 @@ class ConnectionHandler:
         self.session_id = str(uuid.uuid4())
         self.server = server  # 保存server实例的引用
 
-        self.auth = AuthMiddleware(config)
         self.need_bind = False
         self.bind_code = None
         self.read_config_from_api = self.config.get("read_config_from_api", False)
@@ -120,9 +119,9 @@ class ConnectionHandler:
         # vad相关变量
         self.client_audio_buffer = bytearray()
         self.client_have_voice = False
+        self.client_voice_window = deque(maxlen=5)
         self.last_activity_time = 0.0  # 统一的活动时间戳（毫秒）
         self.client_voice_stop = False
-        self.client_voice_window = deque(maxlen=5)
         self.last_is_voice = False
 
         # asr相关变量
@@ -158,6 +157,9 @@ class ConnectionHandler:
 
         # {"mcp":true} 表示启用MCP功能
         self.features = None
+
+        # 标记连接是否来自MQTT
+        self.conn_from_mqtt_gateway = False
 
         # 初始化提示词管理器
         self.prompt_manager = PromptManager(config, self.logger)
@@ -201,8 +203,7 @@ class ConnectionHandler:
                 f"{self.client_ip} conn - Headers: {self.headers}"
             )
 
-            # 进行认证
-            await self.auth.authenticate(self.headers)
+            self.device_id = self.headers.get("device-id", None)
 
             # 认证通过,继续处理
             self.websocket = ws
@@ -308,11 +309,81 @@ class ConnectionHandler:
         if isinstance(message, str):
             await handleTextMessage(self, message, session_context)
         elif isinstance(message, bytes):
-            if self.vad is None:
+            if self.vad is None or self.asr is None:
                 return
-            if self.asr is None:
-                return
+
+            # 处理来自MQTT网关的音频包
+            if self.conn_from_mqtt_gateway and len(message) >= 16:
+                handled = await self._process_mqtt_audio_message(message)
+                if handled:
+                    return
+
+            # 不需要头部处理或没有头部时，直接处理原始消息
             self.asr_audio_queue.put(message)
+
+    async def _process_mqtt_audio_message(self, message):
+        """
+        处理来自MQTT网关的音频消息，解析16字节头部并提取音频数据
+
+        Args:
+            message: 包含头部的音频消息
+
+        Returns:
+            bool: 是否成功处理了消息
+        """
+        try:
+            # 提取头部信息
+            timestamp = int.from_bytes(message[8:12], "big")
+            audio_length = int.from_bytes(message[12:16], "big")
+
+            # 提取音频数据
+            if audio_length > 0 and len(message) >= 16 + audio_length:
+                # 有指定长度，提取精确的音频数据
+                audio_data = message[16 : 16 + audio_length]
+                # 基于时间戳进行排序处理
+                self._process_websocket_audio(audio_data, timestamp)
+                return True
+            elif len(message) > 16:
+                # 没有指定长度或长度无效，去掉头部后处理剩余数据
+                audio_data = message[16:]
+                self.asr_audio_queue.put(audio_data)
+                return True
+        except Exception as e:
+            self.logger.bind(tag=TAG).error(f"解析WebSocket音频包失败: {e}")
+
+        # 处理失败，返回False表示需要继续处理
+        return False
+
+    def _process_websocket_audio(self, audio_data, timestamp):
+        """处理WebSocket格式的音频包"""
+        # 初始化时间戳序列管理
+        if not hasattr(self, "audio_timestamp_buffer"):
+            self.audio_timestamp_buffer = {}
+            self.last_processed_timestamp = 0
+            self.max_timestamp_buffer_size = 20
+
+        # 如果时间戳是递增的，直接处理
+        if timestamp >= self.last_processed_timestamp:
+            self.asr_audio_queue.put(audio_data)
+            self.last_processed_timestamp = timestamp
+
+            # 处理缓冲区中的后续包
+            processed_any = True
+            while processed_any:
+                processed_any = False
+                for ts in sorted(self.audio_timestamp_buffer.keys()):
+                    if ts > self.last_processed_timestamp:
+                        buffered_audio = self.audio_timestamp_buffer.pop(ts)
+                        self.asr_audio_queue.put(buffered_audio)
+                        self.last_processed_timestamp = ts
+                        processed_any = True
+                        break
+        else:
+            # 乱序包，暂存
+            if len(self.audio_timestamp_buffer) < self.max_timestamp_buffer_size:
+                self.audio_timestamp_buffer[timestamp] = audio_data
+            else:
+                self.asr_audio_queue.put(audio_data)
 
     async def handle_restart(self, message):
         """处理服务器重启请求"""
@@ -701,6 +772,7 @@ class ConnectionHandler:
 
         # 为最顶层时新建会话ID和发送FIRST请求
         if depth == 0:
+            self.llm_finish_task = False
             self.sentence_id = str(uuid.uuid4().hex)
             self.dialogue.put(Message(role="user", content=query))
             self.tts.tts_text_queue.put(
@@ -711,9 +783,23 @@ class ConnectionHandler:
                 )
             )
 
+        # 设置最大递归深度，避免无限循环，可根据实际需求调整
+        MAX_DEPTH = 5
+        force_final_answer = False  # 标记是否强制最终回答
+
+        if depth >= MAX_DEPTH:
+            self.logger.bind(tag=TAG).debug(f"已达到最大工具调用深度 {MAX_DEPTH}，将强制基于现有信息回答")
+            force_final_answer = True
+            # 添加系统指令，要求 LLM 基于现有信息回答
+            self.dialogue.put(Message(
+                role="user",
+                content="[系统提示] 已达到最大工具调用次数限制，请你基于目前已经获取的所有信息，直接给出最终答案。不要再尝试调用任何工具。"
+            ))
+
         # Define intent functions
         functions = None
-        if self.intent_type == "function_call" and hasattr(self, "func_handler"):
+        # 达到最大深度时，禁用工具调用，强制 LLM 直接回答
+        if self.intent_type == "function_call" and hasattr(self, "func_handler") and not force_final_answer:
             functions = self.func_handler.get_functions()
         response_message = []
 
@@ -748,9 +834,8 @@ class ConnectionHandler:
 
         # 处理流式响应
         tool_call_flag = False
-        function_name = None
-        function_id = None
-        function_arguments = ""
+        # 支持多个并行工具调用 - 使用列表存储
+        tool_calls_list = []  # 格式: [{"id": "", "name": "", "arguments": ""}]
         content_arguments = ""
         self.client_abort = False
         emotion_flag = True
@@ -771,12 +856,7 @@ class ConnectionHandler:
 
                 if tools_call is not None and len(tools_call) > 0:
                     tool_call_flag = True
-                    if tools_call[0].id is not None:
-                        function_id = tools_call[0].id
-                    if tools_call[0].function.name is not None:
-                        function_name = tools_call[0].function.name
-                    if tools_call[0].function.arguments is not None:
-                        function_arguments += tools_call[0].function.arguments
+                    self._merge_tool_calls(tool_calls_list, tools_call)
             else:
                 content = response
 
@@ -802,16 +882,17 @@ class ConnectionHandler:
         # 处理function call
         if tool_call_flag:
             bHasError = False
-            if function_id is None:
+            # 处理基于文本的工具调用格式
+            if len(tool_calls_list) == 0 and content_arguments:
                 a = extract_json_from_string(content_arguments)
                 if a is not None:
                     try:
                         content_arguments_json = json.loads(a)
-                        function_name = content_arguments_json["name"]
-                        function_arguments = json.dumps(
-                            content_arguments_json["arguments"], ensure_ascii=False
-                        )
-                        function_id = str(uuid.uuid4().hex)
+                        tool_calls_list.append({
+                            "id": str(uuid.uuid4().hex),
+                            "name": content_arguments_json["name"],
+                            "arguments": json.dumps(content_arguments_json["arguments"], ensure_ascii=False)
+                        })
                     except Exception as e:
                         bHasError = True
                         response_message.append(a)
@@ -822,7 +903,8 @@ class ConnectionHandler:
                     logger.bind(tag=TAG).error(
                         f"function call error: {content_arguments}"
                     )
-            if not bHasError:
+
+            if not bHasError and len(tool_calls_list) > 0:
                 # 如需要大模型先处理一轮，添加相关处理后的日志情况
                 if len(response_message) > 0:
                     text_buff = "".join(response_message)
@@ -832,20 +914,29 @@ class ConnectionHandler:
                 logger.bind(tag=TAG).debug(
                     f"function_name={function_name}, function_id={function_id}, function_arguments={function_arguments}"
                 )
-                function_call_data = {
-                    "name": function_name,
-                    "id": function_id,
-                    "arguments": function_arguments,
-                }
 
-                # 使用统一工具处理器处理所有工具调用
-                result = asyncio.run_coroutine_threadsafe(
-                    self.func_handler.handle_llm_function_call(
-                        self, function_call_data
-                    ),
-                    self.loop,
-                ).result()
-                self._handle_function_result(result, function_call_data, depth=depth)
+                # 收集所有工具调用的 Future
+                futures_with_data = []
+                for tool_call_data in tool_calls_list:
+                    self.logger.bind(tag=TAG).debug(
+                        f"function_name={tool_call_data['name']}, function_id={tool_call_data['id']}, function_arguments={tool_call_data['arguments']}"
+                    )
+
+                    future = asyncio.run_coroutine_threadsafe(
+                        self.func_handler.handle_llm_function_call(self, tool_call_data),
+                        self.loop,
+                    )
+                    futures_with_data.append((future, tool_call_data))
+
+                # 等待协程结束（实际等待时长为最慢的那个）
+                tool_results = []
+                for future, tool_call_data in futures_with_data:
+                    result = future.result()  
+                    tool_results.append((result, tool_call_data))
+
+                # 统一处理所有工具调用结果
+                if tool_results:
+                    self._handle_function_result(tool_results, depth=depth)
 
         # 存储对话内容
         if len(response_message) > 0:
@@ -866,54 +957,54 @@ class ConnectionHandler:
             lambda: json.dumps(
                 self.dialogue.get_llm_dialogue(), indent=4, ensure_ascii=False
             )
-        )
 
         return True
 
-    def _handle_function_result(self, result, function_call_data, depth):
-        if result.action == Action.RESPONSE:  # 直接回复前端
-            text = result.response
-            self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
-            self.dialogue.put(Message(role="assistant", content=text))
-        elif result.action == Action.REQLLM:  # 调用函数后再请求llm生成回复
-            text = result.result
-            if text is not None and len(text) > 0:
-                function_id = function_call_data["id"]
-                function_name = function_call_data["name"]
-                function_arguments = function_call_data["arguments"]
-                self.dialogue.put(
-                    Message(
-                        role="assistant",
-                        tool_calls=[
-                            {
-                                "id": function_id,
-                                "function": {
-                                    "arguments": "{}" if function_arguments == "" else function_arguments,
-                                    "name": function_name,
-                                },
-                                "type": "function",
-                                "index": 0,
-                            }
-                        ],
-                    )
-                )
+    def _handle_function_result(self, tool_results, depth):
+        need_llm_tools = []
 
-                self.dialogue.put(
-                    Message(
-                        role="tool",
-                        tool_call_id=(
-                            str(uuid.uuid4()) if function_id is None else function_id
+        for result, tool_call_data in tool_results:
+            if result.action in [Action.RESPONSE, Action.NOTFOUND, Action.ERROR]:  # 直接回复前端
+                text = result.response if result.response else result.result
+                self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
+                self.dialogue.put(Message(role="assistant", content=text))
+            elif result.action == Action.REQLLM:
+                # 收集需要 LLM 处理的工具
+                need_llm_tools.append((result, tool_call_data))
+            else:
+                pass
+
+        if need_llm_tools:
+            all_tool_calls = [
+                {
+                    "id": tool_call_data["id"],
+                    "function": {
+                        "arguments": (
+                            "{}"
+                            if tool_call_data["arguments"] == ""
+                            else tool_call_data["arguments"]
                         ),
-                        content=text,
+                        "name": tool_call_data["name"],
+                    },
+                    "type": "function",
+                    "index": idx,
+                }
+                for idx, (_, tool_call_data) in enumerate(need_llm_tools)
+            ]
+            self.dialogue.put(Message(role="assistant", tool_calls=all_tool_calls))
+
+            for result, tool_call_data in need_llm_tools:
+                text = result.result
+                if text is not None and len(text) > 0:
+                    self.dialogue.put(
+                        Message(
+                            role="tool",
+                            tool_call_id=str(uuid.uuid4()) if tool_call_data["id"] is None else tool_call_data["id"],
+                            content=text,
+                        )
                     )
-                )
-                self.chat(text, depth=depth + 1)
-        elif result.action == Action.NOTFOUND or result.action == Action.ERROR:
-            text = result.response if result.response else result.result
-            self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
-            self.dialogue.put(Message(role="assistant", content=text))
-        else:
-            pass
+
+            self.chat(None, depth=depth + 1)
 
     def _report_worker(self):
         """聊天记录上报工作线程"""
@@ -957,6 +1048,10 @@ class ConnectionHandler:
     async def close(self, ws=None):
         """资源清理方法"""
         try:
+            # 清理音频缓冲区
+            if hasattr(self, "audio_buffer"):
+                self.audio_buffer.clear()
+
             # 取消超时任务
             if self.timeout_task and not self.timeout_task.done():
                 self.timeout_task.cancel()

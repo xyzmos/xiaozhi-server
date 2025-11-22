@@ -19,9 +19,12 @@ public class DeviceReportRespDTO {
 
     @Schema(description = "固件版本信息")
     private Firmware firmware;
-    
+
     @Schema(description = "WebSocket配置")
     private Websocket websocket;
+
+    @Schema(description = "MQTT Gateway配置")
+    private MQTT mqtt;
 
     @Getter
     @Setter
@@ -63,11 +66,30 @@ public class DeviceReportRespDTO {
         @Schema(description = "时区偏移量，单位为分钟")
         private Integer timezone_offset;
     }
-    
+
     @Getter
     @Setter
     public static class Websocket {
         @Schema(description = "WebSocket服务器地址")
         private String url;
+        @Schema(description = "WebSocket 认证 token")
+        private String token;
+    }
+
+    @Getter
+    @Setter
+    public static class MQTT {
+        @Schema(description = "MQTT 配置网址")
+        private String endpoint;
+        @Schema(description = "MQTT 客户端唯一标识符")
+        private String client_id;
+        @Schema(description = "MQTT 认证用户名")
+        private String username;
+        @Schema(description = "MQTT 认证密码")
+        private String password;
+        @Schema(description = "ESP32 发布消息的主题")
+        private String publish_topic;
+        @Schema(description = "ESP32 订阅的主题")
+        private String subscribe_topic;
     }
 }

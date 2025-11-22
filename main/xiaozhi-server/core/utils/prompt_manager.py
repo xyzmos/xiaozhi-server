@@ -67,7 +67,9 @@ class PromptManager:
     def _load_base_template(self):
         """加载基础提示词模板"""
         try:
-            template_path = "agent-base-prompt.txt"
+            template_path = self.config.get("prompt_template", None)
+            if not template_path:
+                template_path = "agent-base-prompt.txt"
             cache_key = f"prompt_template:{template_path}"
 
             # 先从缓存获取
@@ -118,17 +120,15 @@ class PromptManager:
 
     def _get_current_time_info(self) -> tuple:
         """获取当前时间信息"""
-        from datetime import datetime
-
-        now = datetime.now()
-        today_date = now.strftime("%Y-%m-%d")
-        today_weekday = WEEKDAY_MAP[now.strftime("%A")]
-        today_lunar = cnlunar.Lunar(now, godType="8char")
-        lunar_date = "%s年%s%s\n" % (
-            today_lunar.lunarYearCn,
-            today_lunar.lunarMonthCn[:-1],
-            today_lunar.lunarDayCn,
+        from .current_time import (
+            get_current_date,
+            get_current_weekday,
+            get_current_lunar_date,
         )
+
+        today_date = get_current_date()
+        today_weekday = get_current_weekday()
+        lunar_date = get_current_lunar_date() + "\n"
 
         return today_date, today_weekday, lunar_date
 
@@ -191,7 +191,7 @@ class PromptManager:
             logger.bind(tag=TAG).error(f"更新上下文信息失败: {e}")
 
     def build_enhanced_prompt(
-        self, user_prompt: str, device_id: str, client_ip: str = None
+        self, user_prompt: str, device_id: str, client_ip: str = None, *args, **kwargs
     ) -> str:
         """构建增强的系统提示词"""
         if not self.base_prompt_template:
@@ -199,9 +199,7 @@ class PromptManager:
 
         try:
             # 获取最新的时间信息（不缓存）
-            today_date, today_weekday, lunar_date = (
-                self._get_current_time_info()
-            )
+            today_date, today_weekday, lunar_date = self._get_current_time_info()
 
             # 获取缓存的上下文信息
             local_address = ""
@@ -231,6 +229,10 @@ class PromptManager:
                 local_address=local_address,
                 weather_info=weather_info,
                 emojiList=EMOJI_List,
+                device_id=device_id,
+                client_ip=client_ip,
+                *args,
+                **kwargs,
             )
             device_cache_key = f"device_prompt:{device_id}"
             self.cache_manager.set(
