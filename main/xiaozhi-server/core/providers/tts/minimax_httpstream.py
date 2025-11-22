@@ -73,7 +73,7 @@ class TTSProvider(TTSProviderBase):
 
     def tts_text_priority_thread(self):
         """流式文本处理线程"""
-        while not self.conn.stop_event.is_set():
+        while not self.context.stop_event.is_set():
             try:
                 message = self.tts_text_queue.get(timeout=1)
                 if message.sentence_type == SentenceType.FIRST:

@@ -8,13 +8,13 @@ TAG = __name__
 logger = setup_logging()
 
 
-async def handleIotDescriptors(conn, descriptors):
+async def handleIotDescriptors(context, descriptors):
     """处理物联网描述"""
     wait_max_time = 5
     while (
-        not hasattr(conn, "func_handler")
-        or conn.func_handler is None
-        or not conn.func_handler.finish_init
+        not hasattr(context, "func_handler")
+        or context.func_handler is None
+        or not context.func_handler.finish_init
     ):
         await asyncio.sleep(1)
         wait_max_time -= 1
@@ -50,21 +50,21 @@ async def handleIotDescriptors(conn, descriptors):
             descriptor["properties"],
             descriptor["methods"],
         )
-        conn.iot_descriptors[descriptor["name"]] = iot_descriptor
+        context.iot_descriptors[descriptor["name"]] = iot_descriptor
         functions_changed = True
 
     # 如果注册了新函数，更新function描述列表
-    if functions_changed and hasattr(conn, "func_handler"):
+    if functions_changed and hasattr(context, "func_handler"):
         # 注册IoT工具到统一工具处理器
-        await conn.func_handler.register_iot_tools(descriptors)
+        await context.func_handler.register_iot_tools(descriptors)
 
-        conn.func_handler.current_support_functions()
+        context.func_handler.current_support_functions()
 
 
-async def handleIotStatus(conn, states):
+async def handleIotStatus(context, states):
     """处理物联网状态"""
     for state in states:
-        for key, value in conn.iot_descriptors.items():
+        for key, value in context.iot_descriptors.items():
             if key == state["name"]:
                 for property_item in value.properties:
                     for k, v in state["state"].items():

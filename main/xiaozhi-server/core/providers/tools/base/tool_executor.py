@@ -11,7 +11,7 @@ class ToolExecutor(ABC):
 
     @abstractmethod
     async def execute(
-        self, conn, tool_name: str, arguments: Dict[str, Any]
+        self, tool_name: str, arguments: Dict[str, Any]
     ) -> ActionResponse:
         """执行工具调用"""
         pass

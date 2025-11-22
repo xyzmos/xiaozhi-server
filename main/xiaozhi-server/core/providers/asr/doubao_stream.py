@@ -50,22 +50,22 @@ class ASRProvider(ASRProviderBase):
         self.auth_method = config.get("auth_method", "token")
         self.secret = config.get("secret", "access_secret")
 
-    async def open_audio_channels(self, conn):
-        await super().open_audio_channels(conn)
+    async def open_audio_channels(self, context):
+        await super().open_audio_channels(context)
 
-    async def receive_audio(self, conn, audio, audio_have_voice):
-        conn.asr_audio.append(audio)
-        conn.asr_audio = conn.asr_audio[-10:]
-        
+    async def receive_audio(self, context, audio, audio_have_voice):
+        context.asr_audio.append(audio)
+        context.asr_audio = context.asr_audio[-10:]
+
         # 存储音频数据
-        if not hasattr(conn, 'asr_audio_for_voiceprint'):
-            conn.asr_audio_for_voiceprint = []
-        conn.asr_audio_for_voiceprint.append(audio)
-        
+        if not hasattr(context, 'asr_audio_for_voiceprint'):
+            context.asr_audio_for_voiceprint = []
+        context.asr_audio_for_voiceprint.append(audio)
+
         # 当没有音频数据时处理完整语音片段
-        if not audio and len(conn.asr_audio_for_voiceprint) > 0:
-            await self.handle_voice_stop(conn, conn.asr_audio_for_voiceprint)
-            conn.asr_audio_for_voiceprint = []
+        if not audio and len(context.asr_audio_for_voiceprint) > 0:
+            await self.handle_voice_stop(context, context.asr_audio_for_voiceprint)
+            context.asr_audio_for_voiceprint = []
 
         # 如果本次有声音，且之前没有建立连接
         if audio_have_voice and self.asr_ws is None and not self.is_processing:
@@ -114,11 +114,11 @@ class ASRProvider(ASRProviderBase):
                     raise e
 
                 # 启动接收ASR结果的异步任务
-                self.forward_task = asyncio.create_task(self._forward_asr_results(conn))
+                self.forward_task = asyncio.create_task(self._forward_asr_results(context))
 
                 # 发送缓存的音频数据
-                if conn.asr_audio and len(conn.asr_audio) > 0:
-                    for cached_audio in conn.asr_audio[-10:]:
+                if context.asr_audio and len(context.asr_audio) > 0:
+                    for cached_audio in context.asr_audio[-10:]:
                         try:
                             pcm_frame = self.decoder.decode(cached_audio, 960)
                             payload = gzip.compress(pcm_frame)
@@ -155,11 +155,11 @@ class ASRProvider(ASRProviderBase):
             except Exception as e:
                 logger.bind(tag=TAG).info(f"发送音频数据时发生错误: {e}")
 
-    async def _forward_asr_results(self, conn):
+    async def _forward_asr_results(self, context):
         try:
-            while self.asr_ws and not conn.stop_event.is_set():
+            while self.asr_ws and not context.stop_event.is_set():
                 # 获取当前连接的音频数据
-                audio_data = getattr(conn, 'asr_audio_for_voiceprint', [])
+                audio_data = getattr(context, 'asr_audio_for_voiceprint', [])
                 try:
                     response = await self.asr_ws.recv()
                     result = self.parse_response(response)
@@ -182,9 +182,9 @@ class ASRProvider(ASRProviderBase):
                             ):
                                 logger.bind(tag=TAG).error(f"识别文本：空")
                                 self.text = ""
-                                conn.reset_vad_states()
+                                context.reset_vad_states()
                                 if len(audio_data) > 15:  # 确保有足够音频数据
-                                    await self.handle_voice_stop(conn, audio_data)
+                                    await self.handle_voice_stop(context, audio_data)
                                 break
 
                             for utterance in utterances:
@@ -193,9 +193,9 @@ class ASRProvider(ASRProviderBase):
                                     logger.bind(tag=TAG).info(
                                         f"识别到文本: {self.text}"
                                     )
-                                    conn.reset_vad_states()
+                                    context.reset_vad_states()
                                     if len(audio_data) > 15:  # 确保有足够音频数据
-                                        await self.handle_voice_stop(conn, audio_data)
+                                        await self.handle_voice_stop(context, audio_data)
                                     break
                         elif "error" in payload:
                             error_msg = payload.get("error", "未知错误")
@@ -222,13 +222,13 @@ class ASRProvider(ASRProviderBase):
                 await self.asr_ws.close()
                 self.asr_ws = None
             self.is_processing = False
-            if conn:
-                if hasattr(conn, 'asr_audio_for_voiceprint'):
-                    conn.asr_audio_for_voiceprint = []
-                if hasattr(conn, 'asr_audio'):
-                    conn.asr_audio = []
-                if hasattr(conn, 'has_valid_voice'):
-                    conn.has_valid_voice = False
+            if context:
+                if hasattr(context, 'asr_audio_for_voiceprint'):
+                    context.asr_audio_for_voiceprint = []
+                if hasattr(context, 'asr_audio'):
+                    context.asr_audio = []
+                if hasattr(context, 'has_valid_voice'):
+                    context.has_valid_voice = False
 
     def stop_ws_connection(self):
         if self.asr_ws:
@@ -372,10 +372,10 @@ class ASRProvider(ASRProviderBase):
         self.is_processing = False
         # 清理所有连接的音频缓冲区
         if hasattr(self, '_connections'):
-            for conn in self._connections.values():
-                if hasattr(conn, 'asr_audio_for_voiceprint'):
-                    conn.asr_audio_for_voiceprint = []
-                if hasattr(conn, 'asr_audio'):
-                    conn.asr_audio = []
-                if hasattr(conn, 'has_valid_voice'):
-                    conn.has_valid_voice = False
+            for ctx in self._connections.values():
+                if hasattr(ctx, 'asr_audio_for_voiceprint'):
+                    ctx.asr_audio_for_voiceprint = []
+                if hasattr(ctx, 'asr_audio'):
+                    ctx.asr_audio = []
+                if hasattr(ctx, 'has_valid_voice'):
+                    ctx.has_valid_voice = False

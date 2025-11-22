@@ -1,12 +1,6 @@
 import json
-from config.logger import setup_logging
-
-from config.logger import setup_logging
 
 TAG = __name__
-
-logger = setup_logging()
-
 EMOJI_MAP = {
     "😂": "laughing",
     "😭": "crying",
@@ -83,8 +77,16 @@ def is_punctuation_or_emoji(char):
     return is_emoji(char)
 
 
-async def get_emotion(conn, text):
-    """获取文本内的情绪消息"""
+async def get_emotion(context, text):
+    """获取文本内的情绪消息
+
+    Args:
+        context: SessionContext 会话上下文
+        text: 要分析的文本
+    """
+    from config.logger import setup_logging
+    logger = setup_logging()
+
     emoji = "🙂"
     emotion = "happy"
     for char in text:
@@ -93,27 +95,19 @@ async def get_emotion(conn, text):
             emotion = EMOJI_MAP[char]
             break
     try:
-        message = json.dumps(
+        # 通过传输层发送
+        ws_transport = context.container.resolve('websocket_transport')
+        await ws_transport.send_json(
+            context.session_id,
             {
                 "type": "llm",
                 "text": emoji,
                 "emotion": emotion,
-                "session_id": conn.session_id,
+                "session_id": context.session_id,
             }
         )
-        
-        # 使用transport接口发送消息
-        if hasattr(conn, 'transport') and conn.transport:
-            await conn.transport.send(message)
-        elif hasattr(conn, 'websocket') and conn.websocket:
-            # 兼容旧版本
-            await conn.websocket.send(message)
-        else:
-            raise AttributeError("无法找到可用的传输层接口")
-            
     except Exception as e:
-        logger = setup_logging()
-        logger.warning(f"发送情绪表情失败，错误:{e}")
+        logger.bind(tag=TAG).warning(f"发送情绪表情失败，错误:{e}")
     return
 
 

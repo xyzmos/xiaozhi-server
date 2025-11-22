@@ -12,7 +12,7 @@ logger = setup_logging()
 class MCPEndpointClient:
     """MCP接入点客户端，用于管理MCP接入点状态和工具"""
 
-    def __init__(self, conn=None):
+    def __init__(self, context=None):
         self.conn = conn
         self.tools = {}  # sanitized_name -> tool_data
         self.name_mapping = {}

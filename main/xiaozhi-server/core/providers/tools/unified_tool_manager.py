@@ -1,16 +1,20 @@
 """统一工具管理器"""
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
 from config.logger import setup_logging
 from plugins_func.register import Action, ActionResponse
 from .base import ToolType, ToolDefinition, ToolExecutor
+
+if TYPE_CHECKING:
+    from core.infrastructure.di.container import DIContainer
 
 
 class ToolManager:
     """统一工具管理器，管理所有类型的工具"""
 
-    def __init__(self, conn):
-        self.conn = conn
+    def __init__(self, container: 'DIContainer', session_id: str):
+        self.container = container
+        self.session_id = session_id
         self.logger = setup_logging()
         self.executors: Dict[ToolType, ToolExecutor] = {}
         self._cached_tools: Optional[Dict[str, ToolDefinition]] = None
@@ -93,7 +97,7 @@ class ToolManager:
 
             # 执行工具
             self.logger.info(f"执行工具: {tool_name}，参数: {arguments}")
-            result = await executor.execute(self.conn, tool_name, arguments)
+            result = await executor.execute(tool_name, arguments)
             self.logger.debug(f"工具执行结果: {result}")
             return result
 

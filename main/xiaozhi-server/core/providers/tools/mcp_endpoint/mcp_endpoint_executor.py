@@ -1,28 +1,33 @@
 """MCP接入点工具执行器"""
 
-from typing import Dict, Any
+from typing import Dict, Any, TYPE_CHECKING
 from ..base import ToolType, ToolDefinition, ToolExecutor
 from plugins_func.register import Action, ActionResponse
 from .mcp_endpoint_handler import call_mcp_endpoint_tool
+
+if TYPE_CHECKING:
+    from core.infrastructure.di.container import DIContainer
 
 
 class MCPEndpointExecutor(ToolExecutor):
     """MCP接入点工具执行器"""
 
-    def __init__(self, conn):
-        self.conn = conn
+    def __init__(self, container: 'DIContainer', session_id: str):
+        self.container = container
+        self.session_id = session_id
+        self.context = container.resolve('session_context', session_id=session_id)
 
     async def execute(
-        self, conn, tool_name: str, arguments: Dict[str, Any]
+        self, tool_name: str, arguments: Dict[str, Any]
     ) -> ActionResponse:
         """执行MCP接入点工具"""
-        if not hasattr(conn, "mcp_endpoint_client") or not conn.mcp_endpoint_client:
+        if not hasattr(self.context, "mcp_endpoint_client") or not self.context.mcp_endpoint_client:
             return ActionResponse(
                 action=Action.ERROR,
                 response="MCP接入点客户端未初始化",
             )
 
-        if not await conn.mcp_endpoint_client.is_ready():
+        if not await self.context.mcp_endpoint_client.is_ready():
             return ActionResponse(
                 action=Action.ERROR,
                 response="MCP接入点客户端未准备就绪",
@@ -36,7 +41,7 @@ class MCPEndpointExecutor(ToolExecutor):
 
             # 调用MCP接入点工具
             result = await call_mcp_endpoint_tool(
-                conn.mcp_endpoint_client, tool_name, args_str
+                self.context.mcp_endpoint_client, tool_name, args_str
             )
 
             resultJson = None
@@ -67,13 +72,13 @@ class MCPEndpointExecutor(ToolExecutor):
     def get_tools(self) -> Dict[str, ToolDefinition]:
         """获取所有MCP接入点工具"""
         if (
-            not hasattr(self.conn, "mcp_endpoint_client")
-            or not self.conn.mcp_endpoint_client
+            not hasattr(self.context, "mcp_endpoint_client")
+            or not self.context.mcp_endpoint_client
         ):
             return {}
 
         tools = {}
-        mcp_tools = self.conn.mcp_endpoint_client.get_available_tools()
+        mcp_tools = self.context.mcp_endpoint_client.get_available_tools()
 
         for tool in mcp_tools:
             func_def = tool.get("function", {})
@@ -89,9 +94,9 @@ class MCPEndpointExecutor(ToolExecutor):
     def has_tool(self, tool_name: str) -> bool:
         """检查是否有指定的MCP接入点工具"""
         if (
-            not hasattr(self.conn, "mcp_endpoint_client")
-            or not self.conn.mcp_endpoint_client
+            not hasattr(self.context, "mcp_endpoint_client")
+            or not self.context.mcp_endpoint_client
         ):
             return False
 
-        return self.conn.mcp_endpoint_client.has_tool(tool_name)
+        return self.context.mcp_endpoint_client.has_tool(tool_name)

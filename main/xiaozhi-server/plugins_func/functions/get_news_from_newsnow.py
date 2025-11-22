@@ -2,7 +2,7 @@ import random
 import requests
 import json
 from config.logger import setup_logging
-from plugins_func.register import register_function, ToolType, ActionResponse, Action
+from plugins_func.register import register_function, ToolType, ActionResponse, Action, PluginContext
 from markitdown import MarkItDown
 
 TAG = __name__
@@ -51,19 +51,13 @@ CHANNEL_MAP = {
 DEFAULT_NEWS_SOURCES = "澎湃新闻;百度热搜;财联社"
 
 
-def get_news_sources_from_config(conn):
-    """从配置中获取新闻源字符串"""
+def get_news_sources_from_config(context: PluginContext):
+    """从配置中获取新闻源字符串 - 重构版"""
     try:
         # 尝试从插件配置中获取新闻源
-        if (
-            conn.config.get("plugins")
-            and conn.config["plugins"].get("get_news_from_newsnow")
-            and conn.config["plugins"]["get_news_from_newsnow"].get("news_sources")
-        ):
-            # 获取配置的新闻源字符串
-            news_sources_config = conn.config["plugins"]["get_news_from_newsnow"][
-                "news_sources"
-            ]
+        news_sources_config = context.get_config("plugins.get_news_from_newsnow.news_sources")
+
+        if news_sources_config:
 
             if isinstance(news_sources_config, str) and news_sources_config.strip():
                 logger.bind(tag=TAG).debug(f"使用配置的新闻源: {news_sources_config}")
@@ -116,14 +110,13 @@ GET_NEWS_FROM_NEWSNOW_FUNCTION_DESC = {
 }
 
 
-def fetch_news_from_api(conn, source="thepaper"):
-    """从API获取新闻列表"""
+def fetch_news_from_api(context: PluginContext, source="thepaper"):
+    """从API获取新闻列表 - 重构版"""
     try:
         api_url = f"https://newsnow.busiyi.world/api/s?id={source}"
-        if conn.config["plugins"].get("get_news_from_newsnow") and conn.config[
-            "plugins"
-        ]["get_news_from_newsnow"].get("url"):
-            api_url = conn.config["plugins"]["get_news_from_newsnow"]["url"] + source
+        custom_url = context.get_config("plugins.get_news_from_newsnow.url")
+        if custom_url:
+            api_url = custom_url + source
 
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(api_url, headers=headers, timeout=10)
@@ -173,30 +166,29 @@ def fetch_news_detail(url):
     ToolType.SYSTEM_CTL,
 )
 def get_news_from_newsnow(
-    conn, source: str = "澎湃新闻", detail: bool = False, lang: str = "zh_CN"
+    context: PluginContext, source: str = "澎湃新闻", detail: bool = False, lang: str = "zh_CN"
 ):
-    """获取新闻并随机选择一条进行播报，或获取上一条新闻的详细内容"""
+    """获取新闻并随机选择一条进行播报，或获取上一条新闻的详细内容 - 重构版"""
     try:
+        session_context = context.get_context()
+
         # 获取当前配置的新闻源
-        news_sources = get_news_sources_from_config(conn)
+        news_sources = get_news_sources_from_config(context)
 
         # 如果detail为True，获取上一条新闻的详细内容
         detail = str(detail).lower() == "true"
         if detail:
-            if (
-                not hasattr(conn, "last_newsnow_link")
-                or not conn.last_newsnow_link
-                or "url" not in conn.last_newsnow_link
-            ):
+            last_newsnow_link = getattr(session_context, 'last_newsnow_link', None)
+            if not last_newsnow_link or "url" not in last_newsnow_link:
                 return ActionResponse(
                     Action.REQLLM,
                     "抱歉，没有找到最近查询的新闻，请先获取一条新闻。",
                     None,
                 )
 
-            url = conn.last_newsnow_link.get("url")
-            title = conn.last_newsnow_link.get("title", "未知标题")
-            source_id = conn.last_newsnow_link.get("source_id", "thepaper")
+            url = last_newsnow_link.get("url")
+            title = last_newsnow_link.get("title", "未知标题")
+            source_id = last_newsnow_link.get("source_id", "thepaper")
             source_name = CHANNEL_MAP.get(source_id, "未知来源")
 
             if not url or url == "#":
@@ -251,7 +243,7 @@ def get_news_from_newsnow(
         logger.bind(tag=TAG).info(f"获取新闻: 新闻源={source}({english_source_id})")
 
         # 获取新闻列表
-        news_items = fetch_news_from_api(conn, english_source_id)
+        news_items = fetch_news_from_api(context, english_source_id)
 
         if not news_items:
             return ActionResponse(
@@ -263,10 +255,8 @@ def get_news_from_newsnow(
         # 随机选择一条新闻
         selected_news = random.choice(news_items)
 
-        # 保存当前新闻链接到连接对象，以便后续查询详情
-        if not hasattr(conn, "last_newsnow_link"):
-            conn.last_newsnow_link = {}
-        conn.last_newsnow_link = {
+        # 保存当前新闻链接到session_context，以便后续查询详情
+        session_context.last_newsnow_link = {
             "url": selected_news.get("url", "#"),
             "title": selected_news.get("title", "未知标题"),
             "source_id": english_source_id,

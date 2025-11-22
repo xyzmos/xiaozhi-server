@@ -11,7 +11,7 @@ TAG = __name__
 logger = setup_logging()
 
 
-async def connect_mcp_endpoint(mcp_endpoint_url: str, conn=None) -> MCPEndpointClient:
+async def connect_mcp_endpoint(mcp_endpoint_url: str, context=None) -> MCPEndpointClient:
     """连接到MCP接入点"""
     if not mcp_endpoint_url or "你的" in mcp_endpoint_url or mcp_endpoint_url == "null":
         return None
@@ -19,7 +19,7 @@ async def connect_mcp_endpoint(mcp_endpoint_url: str, conn=None) -> MCPEndpointC
     try:
         websocket = await websockets.connect(mcp_endpoint_url)
 
-        mcp_client = MCPEndpointClient(conn)
+        mcp_client = MCPEndpointClient(context)
         mcp_client.set_websocket(websocket)
 
         # 启动消息监听器
@@ -176,13 +176,13 @@ async def handle_mcp_endpoint_message(mcp_client: MCPEndpointClient, message: st
 
                         # 刷新工具缓存，确保MCP接入点工具被包含在函数列表中
                         if (
-                            hasattr(mcp_client, "conn")
-                            and mcp_client.conn
-                            and hasattr(mcp_client.conn, "func_handler")
-                            and mcp_client.conn.func_handler
+                            hasattr(mcp_client, "context")
+                            and mcp_client.context
+                            and hasattr(mcp_client.context, "func_handler")
+                            and mcp_client.context.func_handler
                         ):
-                            mcp_client.conn.func_handler.tool_manager.refresh_tools()
-                            mcp_client.conn.func_handler.current_support_functions()
+                            mcp_client.context.func_handler.tool_manager.refresh_tools()
+                            mcp_client.context.func_handler.current_support_functions()
 
                         logger.bind(tag=TAG).info(
                             f"MCP接入点工具获取完成，共 {len(mcp_client.tools)} 个工具"

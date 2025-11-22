@@ -18,7 +18,7 @@ class IntentProviderBase(ABC):
         logger.bind(tag=TAG).info(f"意图识别设置LLM: {model_name}")
 
     @abstractmethod
-    async def detect_intent(self, conn, dialogue_history: List[Dict], text: str) -> str:
+    async def detect_intent(self, context, dialogue_history: List[Dict], text: str) -> str:
         """
         检测用户最后一句话的意图
         Args:

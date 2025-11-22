@@ -1,4 +1,4 @@
-from plugins_func.register import register_function, ToolType, ActionResponse, Action
+from plugins_func.register import register_function, ToolType, ActionResponse, Action, PluginContext
 from plugins_func.functions.hass_init import initialize_hass_handler
 from config.logger import setup_logging
 import asyncio
@@ -33,22 +33,24 @@ hass_play_music_function_desc = {
 @register_function(
     "hass_play_music", hass_play_music_function_desc, ToolType.SYSTEM_CTL
 )
-def hass_play_music(conn, entity_id="", media_content_id="random"):
+async def hass_play_music(context: PluginContext, entity_id="", media_content_id="random"):
+    """Home Assistant播放音乐 - 重构版"""
     try:
-        # 执行音乐播放命令
-        future = asyncio.run_coroutine_threadsafe(
-            handle_hass_play_music(conn, entity_id, media_content_id), conn.loop
-        )
-        ha_response = future.result()
+        # 直接异步执行
+        ha_response = await handle_hass_play_music(context, entity_id, media_content_id)
         return ActionResponse(
-            action=Action.RESPONSE, result="退出意图已处理", response=ha_response
+            action=Action.RESPONSE, result="音乐播放已处理", response=ha_response
         )
     except Exception as e:
         logger.bind(tag=TAG).error(f"处理音乐意图错误: {e}")
+        return ActionResponse(
+            action=Action.ERROR, result="播放失败", response=str(e)
+        )
 
 
-async def handle_hass_play_music(conn, entity_id, media_content_id):
-    ha_config = initialize_hass_handler(conn)
+async def handle_hass_play_music(context: PluginContext, entity_id, media_content_id):
+    """处理播放音乐逻辑"""
+    ha_config = initialize_hass_handler(context)
     api_key = ha_config.get("api_key")
     base_url = ha_config.get("base_url")
     url = f"{base_url}/api/services/music_assistant/play_media"

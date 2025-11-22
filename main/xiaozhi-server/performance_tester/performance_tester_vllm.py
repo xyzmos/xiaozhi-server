@@ -40,7 +40,6 @@ class AsyncVisionPerformanceTester:
                 print(f"⏭️  VLLM {vllm_name} 未配置api_key，已跳过")
                 return {"name": vllm_name, "type": "vllm", "errors": 1}
 
-            # 获取实际类型（兼容旧配置）
             module_type = config.get("type", vllm_name)
             vllm = create_instance(module_type, config)
 

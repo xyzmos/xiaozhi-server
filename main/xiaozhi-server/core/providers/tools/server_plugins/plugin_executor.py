@@ -1,19 +1,25 @@
 """服务端插件工具执行器"""
 
-from typing import Dict, Any
+import inspect
+from typing import Dict, Any, TYPE_CHECKING
 from ..base import ToolType, ToolDefinition, ToolExecutor
-from plugins_func.register import all_function_registry, Action, ActionResponse
+from plugins_func.register import all_function_registry, Action, ActionResponse, PluginContext
+
+if TYPE_CHECKING:
+    from core.infrastructure.di.container import DIContainer
 
 
 class ServerPluginExecutor(ToolExecutor):
     """服务端插件工具执行器"""
 
-    def __init__(self, conn):
-        self.conn = conn
-        self.config = conn.config
+    def __init__(self, container: 'DIContainer', session_id: str):
+        self.container = container
+        self.session_id = session_id
+        self.context = container.resolve('session_context', session_id=session_id)
+        self.config = self.context._config
 
     async def execute(
-        self, conn, tool_name: str, arguments: Dict[str, Any]
+        self, tool_name: str, arguments: Dict[str, Any]
     ) -> ActionResponse:
         """执行服务端插件工具"""
         func_item = all_function_registry.get(tool_name)
@@ -23,20 +29,32 @@ class ServerPluginExecutor(ToolExecutor):
             )
 
         try:
+            # 创建PluginContext
+            event_bus = self.container.resolve('event_bus')
+            plugin_context = PluginContext(
+                session_id=self.session_id,
+                container=self.container,
+                event_bus=event_bus
+            )
+
             # 根据工具类型决定如何调用
             if hasattr(func_item, "type"):
                 func_type = func_item.type
-                if func_type.code in [4, 5]:  # SYSTEM_CTL, IOT_CTL (需要conn参数)
-                    result = func_item.func(conn, **arguments)
+                if func_type.code in [4, 5]:  # SYSTEM_CTL, IOT_CTL (需要PluginContext参数)
+                    result = func_item.func(plugin_context, **arguments)
                 elif func_type.code == 2:  # WAIT
                     result = func_item.func(**arguments)
                 elif func_type.code == 3:  # CHANGE_SYS_PROMPT
-                    result = func_item.func(conn, **arguments)
+                    result = func_item.func(plugin_context, **arguments)
                 else:
                     result = func_item.func(**arguments)
             else:
-                # 默认不传conn参数
+                # 默认不传context参数
                 result = func_item.func(**arguments)
+
+            # 如果结果是协程，await它
+            if inspect.iscoroutine(result):
+                result = await result
 
             return result
 

@@ -1,4 +1,4 @@
-from plugins_func.register import register_function,ToolType, ActionResponse, Action
+from plugins_func.register import register_function, ToolType, ActionResponse, Action, PluginContext
 from config.logger import setup_logging
 
 TAG = __name__
@@ -23,35 +23,41 @@ prompts = {
 我希望能与你一同踏上探索这个神奇世界的旅程，分享发现的乐趣，解决遇到的难题，一起用好奇心和智慧去揭开那些未知的面纱。
 无论是去了解远古的文明，还是去探讨未来的科技，我相信我们能一起找到答案，甚至提出更多有趣的问题。"""
 }
+
 change_role_function_desc = {
-                "type": "function",
-                "function": {
-                    "name": "change_role",
-                    "description": "当用户想切换角色/模型性格/助手名字时调用,可选的角色有：[机车女友,英语老师,好奇小男孩]",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "role_name": {
-                                "type": "string",
-                                "description": "要切换的角色名字"
-                            },
-                            "role":{
-                                "type": "string",
-                                "description": "要切换的角色的职业"
-                            }
-                        },
-                        "required": ["role","role_name"]
-                    }
+    "type": "function",
+    "function": {
+        "name": "change_role",
+        "description": "当用户想切换角色/模型性格/助手名字时调用,可选的角色有：[机车女友,英语老师,好奇小男孩]",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "role_name": {
+                    "type": "string",
+                    "description": "要切换的角色名字"
+                },
+                "role":{
+                    "type": "string",
+                    "description": "要切换的角色的职业"
                 }
-            }
+            },
+            "required": ["role","role_name"]
+        }
+    }
+}
 
 @register_function('change_role', change_role_function_desc, ToolType.CHANGE_SYS_PROMPT)
-def change_role(conn, role: str, role_name: str):
-    """切换角色"""
+def change_role(context: PluginContext, role: str, role_name: str):
+    """切换角色 - 重构版"""
     if role not in prompts:
         return ActionResponse(action=Action.RESPONSE, result="切换角色失败", response="不支持的角色")
+
     new_prompt = prompts[role].replace("{{assistant_name}}", role_name)
-    conn.change_system_prompt(new_prompt)
+
+    # 通过context获取dialogue并更新系统提示词
+    session_context = context.get_context()
+    session_context.dialogue.change_system_prompt(new_prompt)
+
     logger.bind(tag=TAG).info(f"准备切换角色:{role},角色名字:{role_name}")
     res = f"切换角色成功,我是{role}{role_name}"
     return ActionResponse(action=Action.RESPONSE, result="切换角色已处理", response=res)

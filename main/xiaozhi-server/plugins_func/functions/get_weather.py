@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from config.logger import setup_logging
-from plugins_func.register import register_function, ToolType, ActionResponse, Action
+from plugins_func.register import register_function, ToolType, ActionResponse, Action, PluginContext
 from core.utils.util import get_ip_info
 
 TAG = __name__
@@ -155,17 +155,19 @@ def parse_weather_info(soup):
 
 
 @register_function("get_weather", GET_WEATHER_FUNCTION_DESC, ToolType.SYSTEM_CTL)
-def get_weather(conn, location: str = None, lang: str = "zh_CN"):
+def get_weather(context: PluginContext, location: str = None, lang: str = "zh_CN"):
+    """获取天气信息 - 重构版"""
     from core.utils.cache.manager import cache_manager, CacheType
 
-    api_host = conn.config["plugins"]["get_weather"].get(
-        "api_host", "mj7p3y7naa.re.qweatherapi.com"
-    )
-    api_key = conn.config["plugins"]["get_weather"].get(
-        "api_key", "a861d0d5e7bf4ee1a83d9a9e4f96d4da"
-    )
-    default_location = conn.config["plugins"]["get_weather"]["default_location"]
-    client_ip = conn.client_ip
+    # 从配置获取API参数
+    weather_config = context.get_config("plugins.get_weather", {})
+    api_host = weather_config.get("api_host", "mj7p3y7naa.re.qweatherapi.com")
+    api_key = weather_config.get("api_key", "a861d0d5e7bf4ee1a83d9a9e4f96d4da")
+    default_location = weather_config.get("default_location", "杭州")
+
+    # 获取客户端IP
+    session_context = context.get_context()
+    client_ip = session_context.client_ip
 
     # 优先使用用户提供的location参数
     if not location:

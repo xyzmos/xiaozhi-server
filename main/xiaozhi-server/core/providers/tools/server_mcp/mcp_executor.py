@@ -1,28 +1,33 @@
 """服务端MCP工具执行器"""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TYPE_CHECKING
 from ..base import ToolType, ToolDefinition, ToolExecutor
 from plugins_func.register import Action, ActionResponse
 from .mcp_manager import ServerMCPManager
+
+if TYPE_CHECKING:
+    from core.infrastructure.di.container import DIContainer
 
 
 class ServerMCPExecutor(ToolExecutor):
     """服务端MCP工具执行器"""
 
-    def __init__(self, conn):
-        self.conn = conn
+    def __init__(self, container: 'DIContainer', session_id: str):
+        self.container = container
+        self.session_id = session_id
+        self.context = container.resolve('session_context', session_id=session_id)
         self.mcp_manager: Optional[ServerMCPManager] = None
         self._initialized = False
 
     async def initialize(self):
         """初始化MCP管理器"""
         if not self._initialized:
-            self.mcp_manager = ServerMCPManager(self.conn)
+            self.mcp_manager = ServerMCPManager(self.container, self.session_id)
             self._initialized = True
             await self.mcp_manager.initialize_servers()
 
     async def execute(
-        self, conn, tool_name: str, arguments: Dict[str, Any]
+        self, tool_name: str, arguments: Dict[str, Any]
     ) -> ActionResponse:
         """执行服务端MCP工具"""
         if not self._initialized or not self.mcp_manager:

@@ -1,4 +1,4 @@
-from plugins_func.register import register_function, ToolType, ActionResponse, Action
+from plugins_func.register import register_function, ToolType, ActionResponse, Action, PluginContext
 from config.logger import setup_logging
 
 TAG = __name__
@@ -26,12 +26,16 @@ handle_exit_intent_function_desc = {
 @register_function(
     "handle_exit_intent", handle_exit_intent_function_desc, ToolType.SYSTEM_CTL
 )
-def handle_exit_intent(conn, say_goodbye: str | None = None):
-    # 处理退出意图
+def handle_exit_intent(context: PluginContext, say_goodbye: str | None = None):
+    """处理退出意图 - 重构版"""
     try:
         if say_goodbye is None:
             say_goodbye = "再见，祝您生活愉快！"
-        conn.close_after_chat = True
+
+        # 通过context设置关闭标志
+        session_context = context.get_context()
+        session_context.close_after_chat = True
+
         logger.bind(tag=TAG).info(f"退出意图已处理:{say_goodbye}")
         return ActionResponse(
             action=Action.RESPONSE, result="退出意图已处理", response=say_goodbye

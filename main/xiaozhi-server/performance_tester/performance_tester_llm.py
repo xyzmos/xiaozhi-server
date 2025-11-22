@@ -261,7 +261,6 @@ class LLMPerformanceTester:
                         "error_type": "配置错误",
                     }
 
-            # 获取实际类型（兼容旧配置）
             module_type = config.get("type", llm_name)
             llm = create_llm_instance(module_type, config)
 

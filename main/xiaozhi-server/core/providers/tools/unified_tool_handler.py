@@ -1,7 +1,7 @@
 """统一工具处理器"""
 
 import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, TYPE_CHECKING
 from config.logger import setup_logging
 from plugins_func.loadplugins import auto_import_modules
 
@@ -14,24 +14,36 @@ from .device_iot import DeviceIoTExecutor
 from .device_mcp import DeviceMCPExecutor
 from .mcp_endpoint import MCPEndpointExecutor
 
+if TYPE_CHECKING:
+    from core.infrastructure.di.container import DIContainer
+    from core.application.context import SessionContext
+
 
 class UnifiedToolHandler:
-    """统一工具处理器"""
+    """统一工具处理器 - 重构为使用DI容器"""
 
-    def __init__(self, conn):
-        self.conn = conn
-        self.config = conn.config
+    def __init__(self, container: 'DIContainer', session_id: str):
+        """初始化工具处理器
+
+        Args:
+            container: 依赖注入容器
+            session_id: 会话ID
+        """
+        self.container = container
+        self.session_id = session_id
+        self.context = container.resolve('session_context', session_id=session_id)
+        self.config = self.context._config
         self.logger = setup_logging()
 
         # 创建工具管理器
-        self.tool_manager = ToolManager(conn)
+        self.tool_manager = ToolManager(container, session_id)
 
         # 创建各类执行器
-        self.server_plugin_executor = ServerPluginExecutor(conn)
-        self.server_mcp_executor = ServerMCPExecutor(conn)
-        self.device_iot_executor = DeviceIoTExecutor(conn)
-        self.device_mcp_executor = DeviceMCPExecutor(conn)
-        self.mcp_endpoint_executor = MCPEndpointExecutor(conn)
+        self.server_plugin_executor = ServerPluginExecutor(container, session_id)
+        self.server_mcp_executor = ServerMCPExecutor(container, session_id)
+        self.device_iot_executor = DeviceIoTExecutor(container, session_id)
+        self.device_mcp_executor = DeviceMCPExecutor(container, session_id)
+        self.mcp_endpoint_executor = MCPEndpointExecutor(container, session_id)
 
         # 注册执行器
         self.tool_manager.register_executor(
@@ -78,7 +90,7 @@ class UnifiedToolHandler:
             self.logger.error(f"统一工具处理器初始化失败: {e}")
 
     async def _initialize_mcp_endpoint(self):
-        """初始化MCP接入点"""
+        """初始化MCP接入点 - 使用context而非conn"""
         try:
             from .mcp_endpoint import connect_mcp_endpoint
 
@@ -92,12 +104,12 @@ class UnifiedToolHandler:
             ):
                 self.logger.info(f"正在初始化MCP接入点: {mcp_endpoint_url}")
                 mcp_endpoint_client = await connect_mcp_endpoint(
-                    mcp_endpoint_url, self.conn
+                    mcp_endpoint_url, self.context
                 )
 
                 if mcp_endpoint_client:
-                    # 将MCP接入点客户端保存到连接对象中
-                    self.conn.mcp_endpoint_client = mcp_endpoint_client
+                    # 将MCP接入点客户端保存到上下文中
+                    self.context.mcp_endpoint_client = mcp_endpoint_client
                     self.logger.info("MCP接入点初始化成功")
                 else:
                     self.logger.warning("MCP接入点初始化失败")
@@ -106,11 +118,19 @@ class UnifiedToolHandler:
             self.logger.error(f"初始化MCP接入点失败: {e}")
 
     def _initialize_home_assistant(self):
-        """初始化Home Assistant提示词"""
+        """初始化Home Assistant提示词 - 使用PluginContext"""
         try:
             from plugins_func.functions.hass_init import append_devices_to_prompt
+            from plugins_func.register import PluginContext
 
-            append_devices_to_prompt(self.conn)
+            # 创建PluginContext
+            event_bus = self.container.resolve('event_bus')
+            plugin_context = PluginContext(
+                session_id=self.session_id,
+                container=self.container,
+                event_bus=event_bus
+            )
+            append_devices_to_prompt(plugin_context)
         except ImportError:
             pass  # 忽略导入错误
         except Exception as e:
@@ -136,9 +156,9 @@ class UnifiedToolHandler:
         return self.tool_manager.has_tool(tool_name)
 
     async def handle_llm_function_call(
-        self, conn, function_call_data: Dict[str, Any]
+        self, function_call_data: Dict[str, Any]
     ) -> Optional[ActionResponse]:
-        """处理LLM函数调用"""
+        """处理LLM函数调用 - 移除conn参数"""
         try:
             # 处理多函数调用
             if "function_calls" in function_call_data:
@@ -219,16 +239,16 @@ class UnifiedToolHandler:
         return self.tool_manager.get_tool_statistics()
 
     async def cleanup(self):
-        """清理资源"""
+        """清理资源 - 使用context而非conn"""
         try:
             await self.server_mcp_executor.cleanup()
 
             # 清理MCP接入点连接
             if (
-                hasattr(self.conn, "mcp_endpoint_client")
-                and self.conn.mcp_endpoint_client
+                hasattr(self.context, "mcp_endpoint_client")
+                and self.context.mcp_endpoint_client
             ):
-                await self.conn.mcp_endpoint_client.close()
+                await self.context.mcp_endpoint_client.close()
 
             self.logger.info("工具处理器清理完成")
         except Exception as e:

@@ -3,12 +3,14 @@ import uuid
 import signal
 import asyncio
 from aioconsole import ainput
-from config.config_loader import load_config
+from config.settings import load_config
 from config.logger import setup_logging
 from core.utils.util import get_local_ip, validate_mcp_endpoint
 from core.http_server import SimpleHttpServer
-from core.xiaozhi_server_facade import XiaozhiServerFacade
+from core.websocket_server import WebSocketServer
 from core.utils.util import check_ffmpeg_installed
+from core.infrastructure.di.container import DIContainer
+from core.infrastructure.event.event_bus import EventBus
 
 # 尝试使用uvloop加速异步IO性能（仅Unix/macOS支持）
 # uvloop是asyncio的高性能替代品，性能提升2-4倍
@@ -84,10 +86,18 @@ async def main():
     # 添加 stdin 监控任务
     stdin_task = asyncio.create_task(monitor_stdin())
 
-    # 启动小智服务器门面（支持WebSocket和MQTT）
-    xiaozhi_server = XiaozhiServerFacade(config)
-    xiaozhi_task = asyncio.create_task(xiaozhi_server.start())
-    
+    # 初始化依赖注入容器和事件总线
+    logger.bind(tag=TAG).info("初始化依赖注入容器和事件总线...")
+    container = DIContainer()
+    event_bus = EventBus()
+
+    # 启动事件总线
+    event_bus.start()
+    logger.bind(tag=TAG).info("事件总线已启动")
+
+    # 启动 WebSocket 服务器
+    ws_server = WebSocketServer(config, container, event_bus)
+    ws_task = asyncio.create_task(ws_server.start())
     # 启动 Simple http 服务器
     ota_server = SimpleHttpServer(config)
     ota_task = asyncio.create_task(ota_server.start())
@@ -117,52 +127,24 @@ async def main():
             logger.bind(tag=TAG).error("mcp接入点不符合规范")
             config["mcp_endpoint"] = "你的接入点 websocket地址"
 
-    # 显示协议连接信息
-    connection_info = xiaozhi_server.get_connection_info()
-    
-    # WebSocket信息
-    websocket_info = connection_info.get('websocket', {})
-    if websocket_info.get('enabled', False):
-        websocket_port = websocket_info.get('port', 8000)
-        logger.bind(tag=TAG).info(
-            "WebSocket地址是\tws://{}:{}/xiaozhi/v1/",
-            get_local_ip(),
-            websocket_port,
-        )
-    
-    # MQTT信息
-    mqtt_info = connection_info.get('mqtt', {})
-    if mqtt_info.get('enabled', False):
-        mqtt_port = mqtt_info.get('port', 1883)
-        udp_port = mqtt_info.get('udp_port', 1883)
-        logger.bind(tag=TAG).info(
-            "MQTT地址是\t\tmqtt://{}:{}",
-            get_local_ip(),
-            mqtt_port,
-        )
-        logger.bind(tag=TAG).info(
-            "UDP音频端口是\t{}:{}",
-            get_local_ip(),
-            udp_port,
-        )
-    
-    # 显示启用的协议
-    enabled_protocols = xiaozhi_server.config.get('enabled_protocols', [])
-    logger.bind(tag=TAG).info(f"启用的协议: {', '.join(enabled_protocols)}")
-    
-    if 'websocket' in enabled_protocols:
-        logger.bind(tag=TAG).info(
-            "=======上面的WebSocket地址请勿用浏览器访问======="
-        )
-        logger.bind(tag=TAG).info(
-            "如想测试WebSocket请用谷歌浏览器打开test目录下的test_page.html"
-        )
-    
-    if 'mqtt' in enabled_protocols:
-        logger.bind(tag=TAG).info(
-            "=======MQTT客户端ID格式: GID_test@@@mac_address@@@uuid======="
-        )
-    
+    # 获取WebSocket配置，使用安全的默认值
+    websocket_port = 8000
+    server_config = config.get("server", {})
+    if isinstance(server_config, dict):
+        websocket_port = int(server_config.get("port", 8000))
+
+    logger.bind(tag=TAG).info(
+        "Websocket地址是\tws://{}:{}/xiaozhi/v1/",
+        get_local_ip(),
+        websocket_port,
+    )
+
+    logger.bind(tag=TAG).info(
+        "=======上面的地址是websocket协议地址，请勿用浏览器访问======="
+    )
+    logger.bind(tag=TAG).info(
+        "如想测试websocket请用谷歌浏览器打开test目录下的test_page.html"
+    )
     logger.bind(tag=TAG).info(
         "=============================================================\n"
     )
@@ -172,25 +154,15 @@ async def main():
     except asyncio.CancelledError:
         print("任务被取消，清理资源中...")
     finally:
-        # 停止小智服务器
-        try:
-            await xiaozhi_server.stop()
-        except Exception as e:
-            logger.error(f"停止小智服务器失败: {e}")
-        
         # 取消所有任务（关键修复点）
         stdin_task.cancel()
-        xiaozhi_task.cancel()
+        ws_task.cancel()
         if ota_task:
             ota_task.cancel()
 
         # 等待任务终止（必须加超时）
-        tasks_to_wait = [stdin_task, xiaozhi_task]
-        if ota_task:
-            tasks_to_wait.append(ota_task)
-            
         await asyncio.wait(
-            tasks_to_wait,
+            [stdin_task, ws_task, ota_task] if ota_task else [stdin_task, ws_task],
             timeout=3.0,
             return_when=asyncio.ALL_COMPLETED,
         )

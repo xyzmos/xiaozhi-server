@@ -1,4 +1,4 @@
-from plugins_func.register import register_function, ToolType, ActionResponse, Action
+from plugins_func.register import register_function, ToolType, ActionResponse, Action, PluginContext
 from plugins_func.functions.hass_init import initialize_hass_handler
 from config.logger import setup_logging
 import asyncio
@@ -27,21 +27,23 @@ hass_get_state_function_desc = {
 
 
 @register_function("hass_get_state", hass_get_state_function_desc, ToolType.SYSTEM_CTL)
-def hass_get_state(conn, entity_id=""):
+def hass_get_state(context: PluginContext, entity_id=""):
+    """获取Home Assistant设备状态 - 重构版"""
     try:
-        ha_response = handle_hass_get_state(conn, entity_id)
+        ha_response = handle_hass_get_state(context, entity_id)
         return ActionResponse(Action.REQLLM, ha_response, None)
     except asyncio.TimeoutError:
         logger.bind(tag=TAG).error("获取Home Assistant状态超时")
         return ActionResponse(Action.ERROR, "请求超时", None)
     except Exception as e:
-        error_msg = f"执行Home Assistant操作失败"
+        error_msg = f"执行Home Assistant操作失败: {e}"
         logger.bind(tag=TAG).error(error_msg)
         return ActionResponse(Action.ERROR, error_msg, None)
 
 
-def handle_hass_get_state(conn, entity_id):
-    ha_config = initialize_hass_handler(conn)
+def handle_hass_get_state(context: PluginContext, entity_id):
+    """处理获取状态逻辑"""
+    ha_config = initialize_hass_handler(context)
     api_key = ha_config.get("api_key")
     base_url = ha_config.get("base_url")
     url = f"{base_url}/api/states/{entity_id}"
@@ -88,8 +90,6 @@ def handle_hass_get_state(conn, entity_id):
             )
         logger.bind(tag=TAG).info(f"查询返回内容: {responsetext}")
         return responsetext
-        # return response.json()['attributes']
-        # response.attributes
 
     else:
         return f"切换失败，错误码: {response.status_code}"

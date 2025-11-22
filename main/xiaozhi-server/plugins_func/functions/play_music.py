@@ -3,16 +3,14 @@ import re
 import time
 import random
 import difflib
+import asyncio
 import traceback
 from pathlib import Path
-# from core.handle.sendAudioHandle import send_stt_message  # 未使用，已移除
-from plugins_func.register import register_function, ToolType, ActionResponse, Action
+from plugins_func.register import register_function, ToolType, ActionResponse, Action, PluginContext
 from core.utils.dialogue import Message
-from core.providers.tts.dto.dto import TTSMessageDTO, SentenceType, ContentType
+from core.providers.tts.dto.dto import SentenceType, ContentType
 
 TAG = __name__
-
-logger = setup_logging()
 
 MUSIC_CACHE = {}
 
@@ -36,38 +34,30 @@ play_music_function_desc = {
 
 
 @register_function("play_music", play_music_function_desc, ToolType.SYSTEM_CTL)
-def play_music(conn, song_name: str):
+async def play_music(context: PluginContext, song_name: str):
+    """播放音乐 - 重构版"""
     try:
         music_intent = (
             f"播放音乐 {song_name}" if song_name != "random" else "随机播放音乐"
         )
 
-        # 检查事件循环状态
-        if not conn.loop.is_running():
-            logger.bind(tag=TAG).error("事件循环未运行，无法提交任务")
+        session_context = context.get_context()
+
+        # 检查生命周期状态
+        if session_context.lifecycle.is_stopped():
             return ActionResponse(
                 action=Action.RESPONSE, result="系统繁忙", response="请稍后再试"
             )
 
-        # 提交异步任务
-        task = conn.loop.create_task(
-            handle_music_command(conn, music_intent)  # 封装异步逻辑
-        )
-
-        # 非阻塞回调处理
-        def handle_done(f):
-            try:
-                f.result()  # 可在此处理成功逻辑
-                logger.bind(tag=TAG).info("播放完成")
-            except Exception as e:
-                logger.bind(tag=TAG).error(f"播放失败: {e}")
-
-        task.add_done_callback(handle_done)
+        # 异步处理音乐播放
+        asyncio.create_task(handle_music_command(context, music_intent))
 
         return ActionResponse(
             action=Action.NONE, result="指令已接收", response="正在为您播放音乐"
         )
     except Exception as e:
+        from config.logger import setup_logging
+        logger = setup_logging()
         logger.bind(tag=TAG).error(f"处理音乐意图错误: {e}")
         return ActionResponse(
             action=Action.RESPONSE, result=str(e), response="播放音乐时出错了"
@@ -103,13 +93,9 @@ def get_music_files(music_dir, music_ext):
     music_files = []
     music_file_names = []
     for file in music_dir.rglob("*"):
-        # 判断是否是文件
         if file.is_file():
-            # 获取文件扩展名
             ext = file.suffix.lower()
-            # 判断扩展名是否在列表中
             if ext in music_ext:
-                # 添加相对路径
                 music_files.append(str(file.relative_to(music_dir)))
                 music_file_names.append(
                     os.path.splitext(str(file.relative_to(music_dir)))[0]
@@ -117,13 +103,14 @@ def get_music_files(music_dir, music_ext):
     return music_files, music_file_names
 
 
-def initialize_music_handler(conn):
+def initialize_music_handler(context: PluginContext):
     global MUSIC_CACHE
     if MUSIC_CACHE == {}:
-        if "play_music" in conn.config["plugins"]:
-            MUSIC_CACHE["music_config"] = conn.config["plugins"]["play_music"]
+        plugins_config = context.get_config("plugins", {})
+        if "play_music" in plugins_config:
+            MUSIC_CACHE["music_config"] = plugins_config["play_music"]
             MUSIC_CACHE["music_dir"] = os.path.abspath(
-                MUSIC_CACHE["music_config"].get("music_dir", "./music")  # 默认路径修改
+                MUSIC_CACHE["music_config"].get("music_dir", "./music")
             )
             MUSIC_CACHE["music_ext"] = MUSIC_CACHE["music_config"].get(
                 "music_ext", (".mp3", ".wav", ".p3")
@@ -143,11 +130,14 @@ def initialize_music_handler(conn):
     return MUSIC_CACHE
 
 
-async def handle_music_command(conn, text):
-    initialize_music_handler(conn)
+async def handle_music_command(context: PluginContext, text):
+    """处理音乐播放指令"""
+    from config.logger import setup_logging
+    logger = setup_logging()
+
+    initialize_music_handler(context)
     global MUSIC_CACHE
 
-    """处理音乐播放指令"""
     clean_text = re.sub(r"[^\w\s]", "", text).strip()
     logger.bind(tag=TAG).debug(f"检查是否是音乐命令: {clean_text}")
 
@@ -165,10 +155,10 @@ async def handle_music_command(conn, text):
             best_match = _find_best_match(potential_song, MUSIC_CACHE["music_files"])
             if best_match:
                 logger.bind(tag=TAG).info(f"找到最匹配的歌曲: {best_match}")
-                await play_local_music(conn, specific_file=best_match)
+                await play_local_music(context, specific_file=best_match)
                 return True
     # 检查是否是通用播放音乐命令
-    await play_local_music(conn)
+    await play_local_music(context)
     return True
 
 
@@ -185,13 +175,15 @@ def _get_random_play_prompt(song_name):
         f"接下来请欣赏，《{clean_name}》",
         f"此刻为您献上，《{clean_name}》",
     ]
-    # 直接使用random.choice，不设置seed
     return random.choice(prompts)
 
 
-async def play_local_music(conn, specific_file=None):
+async def play_local_music(context: PluginContext, specific_file=None):
+    """播放本地音乐文件 - 重构版"""
+    from config.logger import setup_logging
+    logger = setup_logging()
+
     global MUSIC_CACHE
-    """播放本地音乐文件"""
     try:
         if not os.path.exists(MUSIC_CACHE["music_dir"]):
             logger.bind(tag=TAG).error(
@@ -213,41 +205,52 @@ async def play_local_music(conn, specific_file=None):
         if not os.path.exists(music_path):
             logger.bind(tag=TAG).error(f"选定的音乐文件不存在: {music_path}")
             return
-        text = _get_random_play_prompt(selected_music)
-        await send_stt_message(conn, text)
-        conn.dialogue.put(Message(role="assistant", content=text))
 
-        if conn.intent_type == "intent_llm":
-            conn.tts.tts_text_queue.put(
-                TTSMessageDTO(
-                    sentence_id=conn.sentence_id,
-                    sentence_type=SentenceType.FIRST,
-                    content_type=ContentType.ACTION,
-                )
+        text = _get_random_play_prompt(selected_music)
+
+        # 获取服务
+        session_context = context.get_context()
+        tts_orchestrator = context.get_service('tts_orchestrator')
+        ws_transport = context.get_service('websocket_transport')
+
+        # 发送STT消息
+        await ws_transport.send_json(session_context.session_id, {
+            "type": "stt",
+            "text": text
+        })
+
+        # 保存对话
+        session_context.dialogue.put(Message(role="assistant", content=text))
+
+        intent_type = session_context.get_config('Intent.type')
+
+        # 根据intent类型添加消息
+        if intent_type == "intent_llm":
+            await tts_orchestrator.add_message(
+                session_id=context.session_id,
+                sentence_type=SentenceType.FIRST,
+                content_type=ContentType.ACTION,
             )
-        conn.tts.tts_text_queue.put(
-            TTSMessageDTO(
-                sentence_id=conn.sentence_id,
-                sentence_type=SentenceType.MIDDLE,
-                content_type=ContentType.TEXT,
-                content_detail=text,
-            )
+
+        await tts_orchestrator.add_message(
+            session_id=context.session_id,
+            sentence_type=SentenceType.MIDDLE,
+            content_type=ContentType.TEXT,
+            content_detail=text,
         )
-        conn.tts.tts_text_queue.put(
-            TTSMessageDTO(
-                sentence_id=conn.sentence_id,
-                sentence_type=SentenceType.MIDDLE,
-                content_type=ContentType.FILE,
-                content_file=music_path,
-            )
+
+        await tts_orchestrator.add_message(
+            session_id=context.session_id,
+            sentence_type=SentenceType.MIDDLE,
+            content_type=ContentType.FILE,
+            content_file=music_path,
         )
-        if conn.intent_type == "intent_llm":
-            conn.tts.tts_text_queue.put(
-                TTSMessageDTO(
-                    sentence_id=conn.sentence_id,
-                    sentence_type=SentenceType.LAST,
-                    content_type=ContentType.ACTION,
-                )
+
+        if intent_type == "intent_llm":
+            await tts_orchestrator.add_message(
+                session_id=context.session_id,
+                sentence_type=SentenceType.LAST,
+                content_type=ContentType.ACTION,
             )
 
     except Exception as e:

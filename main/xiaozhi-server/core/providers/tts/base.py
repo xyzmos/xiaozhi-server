@@ -9,7 +9,7 @@ import traceback
 from core.utils import p3
 from datetime import datetime
 from core.utils import textUtils
-from typing import Callable, Any
+from typing import Callable, Any, Optional, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from config.logger import setup_logging
 from core.utils.tts import MarkdownCleaner
@@ -22,80 +22,20 @@ from core.providers.tts.dto.dto import (
     InterfaceType,
 )
 
+if TYPE_CHECKING:
+    from core.application.context import SessionContext
+    from core.infrastructure.di.container import DIContainer
+    from core.infrastructure.event.event_bus import EventBus
+
 TAG = __name__
 logger = setup_logging()
 
 
-async def sendAudioMessage(conn, sentenceType, audios, text):
-    """兼容函数：使用新的processor发送音频消息"""
-    try:
-        # 获取transport接口
-        transport = getattr(conn, 'transport', None)
-        if not transport:
-            logger.error("SessionContext中没有transport接口")
-            return
-            
-        # 使用AudioSendProcessor发送音频
-        from core.processors.audio_send_processor import AudioSendProcessor
-        processor = AudioSendProcessor()
-        
-        # 处理TTS开始消息
-        if conn.tts.tts_audio_first_sentence:
-            logger.info(f"发送第一段语音: {text}")
-            conn.tts.tts_audio_first_sentence = False
-            await processor.send_tts_message(conn, transport, "start", None)
-
-        if sentenceType == SentenceType.FIRST:
-            await processor.send_tts_message(conn, transport, "sentence_start", text)
-
-        await processor.send_audio(conn, transport, audios)
-        
-        # 发送句子开始消息
-        if sentenceType is not SentenceType.MIDDLE:
-            logger.info(f"发送音频消息: {sentenceType}, {text}")
-
-        # 发送结束消息（如果是最后一个文本）
-        if conn.llm_finish_task and sentenceType == SentenceType.LAST:
-            await processor.send_tts_message(conn, transport, "stop", None)
-            conn.client_is_speaking = False
-            if conn.close_after_chat:
-                if hasattr(transport, 'close'):
-                    await transport.close()
-                    
-    except Exception as e:
-        logger.error(f"发送音频消息失败: {e}")
-        import traceback
-        traceback.print_exc()
-
-
-def enqueue_tts_report(conn, audio_data, text):
-    """兼容函数：使用新的processor处理TTS报告"""
-    try:
-        # 获取transport接口
-        transport = getattr(conn, 'transport', None)
-        if not transport:
-            logger.error("SessionContext中没有transport接口")
-            return
-            
-        # 使用ReportProcessor处理报告
-        from core.processors.report_processor import ReportProcessor
-        processor = ReportProcessor()
-        
-        # 异步执行报告
-        if hasattr(conn, 'loop') and conn.loop:
-            # 直接调用同步方法
-            processor.enqueue_tts_report(conn, text, audio_data)
-        else:
-            logger.warning("SessionContext中没有事件循环，跳过TTS报告")
-            
-    except Exception as e:
-        logger.error(f"TTS报告处理失败: {e}")
-
-
 class TTSProviderBase(ABC):
-    def __init__(self, config, delete_audio_file):
+    def __init__(self, config, session_context: Optional['SessionContext'] = None, delete_audio_file=True):
         self.interface_type = InterfaceType.NON_STREAM
-        self.conn = None
+        self.config = config
+        self.context = session_context
         self.delete_audio_file = delete_audio_file
         self.audio_file_type = "wav"
         self.output_file = config.get("output_dir", "tmp/")
@@ -288,19 +228,18 @@ class TTSProviderBase(ABC):
 
     def tts_one_sentence(
         self,
-        conn,
         content_type,
         content_detail=None,
         content_file=None,
         sentence_id=None,
     ):
-        """发送一句话"""
+        """发送一句话 - 使用context而非conn"""
         if not sentence_id:
-            if conn.sentence_id:
-                sentence_id = conn.sentence_id
+            if self.context.sentence_id:
+                sentence_id = self.context.sentence_id
             else:
                 sentence_id = str(uuid.uuid4().hex)
-                conn.sentence_id = sentence_id
+                self.context.sentence_id = sentence_id
         # 对于单句的文本，进行分段处理
         segments = re.split(r"([。！？!?；;\n])", content_detail)
         for seg in segments:
@@ -314,8 +253,12 @@ class TTSProviderBase(ABC):
                 )
             )
 
-    async def open_audio_channels(self, conn):
-        self.conn = conn
+    async def open_audio_channels(self, context: 'SessionContext', container: 'DIContainer', event_bus: 'EventBus'):
+        """打开音频通道 - 接收 context 而非 conn"""
+        self.context = context
+        self.container = container
+        self.event_bus = event_bus
+
         # tts 消化线程
         self.tts_priority_thread = threading.Thread(
             target=self.tts_text_priority_thread, daemon=True
@@ -331,12 +274,13 @@ class TTSProviderBase(ABC):
     # 这里默认是非流式的处理方式
     # 流式处理方式请在子类中重写
     def tts_text_priority_thread(self):
-        while not self.conn.stop_event.is_set():
+        """TTS文本处理线程 - 使用context而非conn"""
+        while not self.context.lifecycle.is_stopped():
             try:
                 message = self.tts_text_queue.get(timeout=1)
                 if message.sentence_type == SentenceType.FIRST:
-                    self.conn.client_abort = False
-                if self.conn.client_abort:
+                    self.context.client_abort = False
+                if self.context.client_abort:
                     logger.bind(tag=TAG).info("收到打断信息，终止TTS文本处理线程")
                     continue
                 if message.sentence_type == SentenceType.FIRST:
@@ -373,10 +317,11 @@ class TTSProviderBase(ABC):
                 continue
 
     def _audio_play_priority_thread(self):
+        """音频播放线程 - 使用context而非conn"""
         # 需要上报的文本和音频列表
         enqueue_text = None
         enqueue_audio = None
-        while not self.conn.stop_event.is_set():
+        while not self.context.lifecycle.is_stopped():
             text = None
             try:
                 try:
@@ -384,11 +329,11 @@ class TTSProviderBase(ABC):
                         timeout=0.1
                     )
                 except queue.Empty:
-                    if self.conn.stop_event.is_set():
+                    if self.context.lifecycle.is_stopped():
                         break
                     continue
 
-                if self.conn.client_abort:
+                if self.context.client_abort:
                     logger.bind(tag=TAG).debug("收到打断信号，跳过当前音频数据")
                     enqueue_text, enqueue_audio = None, []
                     continue
@@ -397,7 +342,8 @@ class TTSProviderBase(ABC):
                 if sentence_type is not SentenceType.MIDDLE:
                     # 上报TTS数据
                     if enqueue_text is not None and enqueue_audio is not None:
-                        enqueue_tts_report(self.conn, enqueue_text, enqueue_audio)
+                        from core.handle.reportHandle import enqueue_tts_report
+                        enqueue_tts_report(self.context, enqueue_text, enqueue_audio)
                     enqueue_audio = []
                     enqueue_text = text
 
@@ -405,16 +351,29 @@ class TTSProviderBase(ABC):
                 if isinstance(audio_datas, bytes) and enqueue_audio is not None:
                     enqueue_audio.append(audio_datas)
 
-                # 发送音频
-                future = asyncio.run_coroutine_threadsafe(
-                    sendAudioMessage(self.conn, sentence_type, audio_datas, text),
-                    self.conn.loop,
-                )
-                future.result()
+                # 发送音频 - 通过事件总线
+                from core.infrastructure.event.event_types import TTSAudioReadyEvent
+                if self.context.loop:
+                    future = asyncio.run_coroutine_threadsafe(
+                        self.event_bus.publish(TTSAudioReadyEvent(
+                            session_id=self.context.session_id,
+                            timestamp=time.time(),
+                            audio_data=audio_datas,
+                            text=text,
+                            sentence_type=sentence_type.value if hasattr(sentence_type, 'value') else str(sentence_type)
+                        )),
+                        self.context.loop,
+                    )
+                    future.result()
+                else:
+                    logger.bind(tag=TAG).warning(f"事件循环未设置，无法发布音频事件")
 
                 # 记录输出和报告
-                if self.conn.max_output_size > 0 and text:
-                    add_device_output(self.conn.headers.get("device-id"), len(text))
+                max_output_size = self.context.get_config('max_output_size', 0)
+                if max_output_size > 0 and text:
+                    device_id = self.context.device_id
+                    if device_id:
+                        add_device_output(device_id, len(text))
 
             except Exception as e:
                 logger.bind(tag=TAG).error(f"audio_play_priority_thread: {text} {e}")
@@ -472,7 +431,7 @@ class TTSProviderBase(ABC):
     def _process_audio_file_stream(
         self, tts_file, callback: Callable[[Any], Any]
     ) -> None:
-        """处理音频文件并转换为指定格式
+        """处理音频文件并转换为指定格式 - 使用context而非conn
 
         Args:
             tts_file: 音频文件路径
@@ -480,7 +439,7 @@ class TTSProviderBase(ABC):
         """
         if tts_file.endswith(".p3"):
             p3.decode_opus_from_file_stream(tts_file, callback=callback)
-        elif self.conn.audio_format == "pcm":
+        elif self.context.audio_format == "pcm":
             self.audio_to_pcm_data_stream(tts_file, callback=callback)
         else:
             self.audio_to_opus_data_stream(tts_file, callback=callback)

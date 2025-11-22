@@ -122,10 +122,10 @@ class IntentProvider(IntentProviderBase):
         )
         return llm_result
 
-    async def detect_intent(self, conn, dialogue_history: List[Dict], text: str) -> str:
+    async def detect_intent(self, context, dialogue_history: List[Dict], text: str) -> str:
         if not self.llm:
             raise ValueError("LLM provider not set")
-        if conn.func_handler is None:
+        if context.func_handler is None:
             return '{"function_call": {"name": "continue_chat"}}'
 
         # 记录整体开始时间
@@ -136,7 +136,7 @@ class IntentProvider(IntentProviderBase):
         logger.bind(tag=TAG).debug(f"使用意图识别模型: {model_info}")
 
         # 计算缓存键
-        cache_key = hashlib.md5((conn.device_id + text).encode()).hexdigest()
+        cache_key = hashlib.md5((context.device_id + text).encode()).hexdigest()
 
         # 检查缓存
         cached_intent = self.cache_manager.get(self.CacheType.INTENT, cache_key)
@@ -148,9 +148,9 @@ class IntentProvider(IntentProviderBase):
             return cached_intent
 
         if self.promot == "":
-            functions = conn.func_handler.get_functions()
-            if hasattr(conn, "mcp_client"):
-                mcp_tools = conn.mcp_client.get_available_tools()
+            functions = context.func_handler.get_functions()
+            if hasattr(context, "mcp_client"):
+                mcp_tools = context.mcp_client.get_available_tools()
                 if mcp_tools is not None and len(mcp_tools) > 0:
                     if functions is None:
                         functions = []
@@ -158,11 +158,11 @@ class IntentProvider(IntentProviderBase):
 
             self.promot = self.get_intent_system_prompt(functions)
 
-        music_config = initialize_music_handler(conn)
+        music_config = initialize_music_handler(context)
         music_file_names = music_config["music_file_names"]
         prompt_music = f"{self.promot}\n<musicNames>{music_file_names}\n</musicNames>"
 
-        home_assistant_cfg = conn.config["plugins"].get("home_assistant")
+        home_assistant_cfg = context.config["plugins"].get("home_assistant")
         if home_assistant_cfg:
             devices = home_assistant_cfg.get("devices", [])
         else:
@@ -246,10 +246,10 @@ class IntentProvider(IntentProviderBase):
                     # 保留非工具相关的消息
                     clean_history = [
                         msg
-                        for msg in conn.dialogue.dialogue
+                        for msg in context.dialogue.dialogue
                         if msg.role not in ["tool", "function"]
                     ]
-                    conn.dialogue.dialogue = clean_history
+                    context.dialogue.dialogue = clean_history
 
                 else:
                     # 处理函数调用

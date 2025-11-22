@@ -2,20 +2,25 @@
 
 import json
 import asyncio
-from typing import Dict, Any
+from typing import Dict, Any, TYPE_CHECKING
 from ..base import ToolType, ToolDefinition, ToolExecutor
 from plugins_func.register import Action, ActionResponse
+
+if TYPE_CHECKING:
+    from core.infrastructure.di.container import DIContainer
 
 
 class DeviceIoTExecutor(ToolExecutor):
     """设备端IoT工具执行器"""
 
-    def __init__(self, conn):
-        self.conn = conn
+    def __init__(self, container: 'DIContainer', session_id: str):
+        self.container = container
+        self.session_id = session_id
+        self.context = container.resolve('session_context', session_id=session_id)
         self.iot_tools: Dict[str, ToolDefinition] = {}
 
     async def execute(
-        self, conn, tool_name: str, arguments: Dict[str, Any]
+        self, tool_name: str, arguments: Dict[str, Any]
     ) -> ActionResponse:
         """执行设备端IoT工具"""
         if not self.has_tool(tool_name):
@@ -101,7 +106,8 @@ class DeviceIoTExecutor(ToolExecutor):
 
     async def _get_iot_status(self, device_name: str, property_name: str):
         """获取IoT设备状态"""
-        for key, value in self.conn.iot_descriptors.items():
+        iot_descriptors = getattr(self.context, 'iot_descriptors', {})
+        for key, value in iot_descriptors.items():
             if key.lower() == device_name.lower():
                 for property_item in value.properties:
                     if property_item["name"].lower() == property_name.lower():
@@ -112,7 +118,8 @@ class DeviceIoTExecutor(ToolExecutor):
         self, device_name: str, method_name: str, parameters: Dict[str, Any]
     ):
         """发送IoT控制命令"""
-        for key, value in self.conn.iot_descriptors.items():
+        iot_descriptors = getattr(self.context, 'iot_descriptors', {})
+        for key, value in iot_descriptors.items():
             if key.lower() == device_name.lower():
                 for method in value.methods:
                     if method["name"].lower() == method_name.lower():
@@ -127,16 +134,9 @@ class DeviceIoTExecutor(ToolExecutor):
                         send_message = json.dumps(
                             {"type": "iot", "commands": [command]}
                         )
-                        
-                        # 使用transport接口发送消息
-                        if hasattr(self.conn, 'transport') and self.conn.transport:
-                            await self.conn.transport.send(send_message)
-                        elif hasattr(self.conn, 'websocket') and self.conn.websocket:
-                            # 兼容旧版本
-                            logger.warning("未找到SessionContext的传输层接口, 回退使用旧版conn.websocket发送消息")
-                            await self.conn.websocket.send(send_message)
-                        else:
-                            raise AttributeError("无法找到可用的传输层接口")
+                        # 使用WebSocket传输层发送消息
+                        ws_transport = self.container.resolve('websocket_transport')
+                        await ws_transport.send_json(self.session_id, json.loads(send_message))
                         return
 
         raise Exception(f"未找到设备{device_name}的方法{method_name}")

@@ -3,7 +3,7 @@ import requests
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 from config.logger import setup_logging
-from plugins_func.register import register_function, ToolType, ActionResponse, Action
+from plugins_func.register import register_function, ToolType, ActionResponse, Action, PluginContext
 
 TAG = __name__
 logger = setup_logging()
@@ -145,25 +145,24 @@ def map_category(category_text):
     ToolType.SYSTEM_CTL,
 )
 def get_news_from_chinanews(
-    conn, category: str = None, detail: bool = False, lang: str = "zh_CN"
+    context: PluginContext, category: str = None, detail: bool = False, lang: str = "zh_CN"
 ):
-    """获取新闻并随机选择一条进行播报，或获取上一条新闻的详细内容"""
+    """获取新闻并随机选择一条进行播报，或获取上一条新闻的详细内容 - 重构版"""
     try:
+        session_context = context.get_context()
+
         # 如果detail为True，获取上一条新闻的详细内容
         if detail:
-            if (
-                not hasattr(conn, "last_news_link")
-                or not conn.last_news_link
-                or "link" not in conn.last_news_link
-            ):
+            last_news_link = getattr(session_context, 'last_news_link', None)
+            if not last_news_link or "link" not in last_news_link:
                 return ActionResponse(
                     Action.REQLLM,
                     "抱歉，没有找到最近查询的新闻，请先获取一条新闻。",
                     None,
                 )
 
-            link = conn.last_news_link.get("link")
-            title = conn.last_news_link.get("title", "未知标题")
+            link = last_news_link.get("link")
+            title = last_news_link.get("title", "未知标题")
 
             if link == "#":
                 return ActionResponse(
@@ -195,7 +194,7 @@ def get_news_from_chinanews(
 
         # 否则，获取新闻列表并随机选择一条
         # 从配置中获取RSS URL
-        rss_config = conn.config["plugins"]["get_news_from_chinanews"]
+        rss_config = context.get_config("plugins.get_news_from_chinanews", {})
         default_rss_url = rss_config.get(
             "default_rss_url", "https://www.chinanews.com.cn/rss/society.xml"
         )
@@ -223,10 +222,8 @@ def get_news_from_chinanews(
         # 随机选择一条新闻
         selected_news = random.choice(news_items)
 
-        # 保存当前新闻链接到连接对象，以便后续查询详情
-        if not hasattr(conn, "last_news_link"):
-            conn.last_news_link = {}
-        conn.last_news_link = {
+        # 保存当前新闻链接到session_context，以便后续查询详情
+        session_context.last_news_link = {
             "link": selected_news.get("link", "#"),
             "title": selected_news.get("title", "未知标题"),
         }

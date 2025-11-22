@@ -1,9 +1,42 @@
 from config.logger import setup_logging
 from enum import Enum
+from dataclasses import dataclass
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.infrastructure.di.container import DIContainer
+    from core.infrastructure.event.event_bus import EventBus
+    from core.application.context import SessionContext
+    from core.infrastructure.event.event_types import Event
 
 TAG = __name__
 
 logger = setup_logging()
+
+
+@dataclass
+class PluginContext:
+    """插件执行上下文 - 替代 conn 参数"""
+    session_id: str
+    container: 'DIContainer'
+    event_bus: 'EventBus'
+
+    def get_service(self, service_type: str) -> Any:
+        """获取服务"""
+        return self.container.resolve(service_type, session_id=self.session_id)
+
+    async def publish_event(self, event: 'Event'):
+        """发布事件"""
+        await self.event_bus.publish(event)
+
+    def get_context(self) -> 'SessionContext':
+        """获取会话上下文"""
+        return self.container.resolve('session_context', session_id=self.session_id)
+
+    def get_config(self, key: str, default=None) -> Any:
+        """获取配置"""
+        context = self.get_context()
+        return context.get_config(key, default)
 
 
 class ToolType(Enum):
@@ -12,9 +45,9 @@ class ToolType(Enum):
     CHANGE_SYS_PROMPT = (3, "修改系统提示词，切换角色性格或职责")
     SYSTEM_CTL = (
         4,
-        "系统控制，影响正常的对话流程，如退出、播放音乐等，需要传递conn参数",
+        "系统控制，影响正常的对话流程，如退出、播放音乐等，需要传递PluginContext参数",
     )
-    IOT_CTL = (5, "IOT设备控制，需要传递conn参数")
+    IOT_CTL = (5, "IOT设备控制，需要传递PluginContext参数")
     MCP_CLIENT = (6, "MCP客户端")
 
     def __init__(self, code, message):

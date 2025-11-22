@@ -3,10 +3,13 @@
 import asyncio
 import os
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, TYPE_CHECKING
 from config.config_loader import get_project_dir
 from config.logger import setup_logging
 from .mcp_client import ServerMCPClient
+
+if TYPE_CHECKING:
+    from core.infrastructure.di.container import DIContainer
 
 TAG = __name__
 logger = setup_logging()
@@ -15,9 +18,10 @@ logger = setup_logging()
 class ServerMCPManager:
     """管理多个服务端MCP服务的集中管理器"""
 
-    def __init__(self, conn) -> None:
+    def __init__(self, container: 'DIContainer', session_id: str) -> None:
         """初始化MCP管理器"""
-        self.conn = conn
+        self.container = container
+        self.session_id = session_id
         self.config_path = get_project_dir() + "data/.mcp_server_settings.json"
         if not os.path.exists(self.config_path):
             self.config_path = ""
@@ -66,12 +70,8 @@ class ServerMCPManager:
                     f"Failed to initialize MCP server {name}: {e}"
                 )
 
-        # 输出当前支持的服务端MCP工具列表
-        if hasattr(self.conn, "func_handler") and self.conn.func_handler:
-            # 刷新工具缓存以确保服务端MCP工具被正确加载
-            if hasattr(self.conn.func_handler, "tool_manager"):
-                self.conn.func_handler.tool_manager.refresh_tools()
-            self.conn.func_handler.current_support_functions()
+        # 刷新工具缓存 - 注释掉，因为现在通过unified_tool_handler管理
+        # 工具会在UnifiedToolHandler初始化完成后自动刷新
 
     def get_all_tools(self) -> List[Dict[str, Any]]:
         """获取所有服务的工具function定义"""

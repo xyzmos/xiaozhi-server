@@ -22,24 +22,11 @@ def get_module_abbreviation(module_name, module_dict):
     return module_value[:2]
 
 
-def build_module_string(selected_module):
-    """构建模块字符串"""
-    return (
-        get_module_abbreviation("VAD", selected_module)
-        + get_module_abbreviation("ASR", selected_module)
-        + get_module_abbreviation("LLM", selected_module)
-        + get_module_abbreviation("TTS", selected_module)
-        + get_module_abbreviation("Memory", selected_module)
-        + get_module_abbreviation("Intent", selected_module)
-        + get_module_abbreviation("VLLM", selected_module)
-    )
-
-
 def formatter(record):
     """为没有 tag 的日志添加默认值，并处理动态模块字符串"""
     record["extra"].setdefault("tag", record["name"])
     # 如果没有设置 selected_module，使用默认值
-    record["extra"].setdefault("selected_module", "00000000000000")
+    record["extra"].setdefault("selected_module", "")
     # 将 selected_module 从 extra 提取到顶级，以支持 {selected_module} 格式
     record["selected_module"] = record["extra"]["selected_module"]
     return record["message"]
@@ -57,7 +44,7 @@ def setup_logging():
         # 使用默认的模块字符串进行初始化
         logger.configure(
             extra={
-                "selected_module": log_config.get("selected_module", "00000000000000"),
+                "selected_module": log_config.get("selected_module", ""),
             }
         )
 
