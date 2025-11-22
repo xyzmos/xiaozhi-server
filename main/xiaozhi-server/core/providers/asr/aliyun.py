@@ -175,21 +175,21 @@ class ASRProvider(ASRProviderBase):
             }
 
             # 创建连接并发送请求
-            conn = http.client.HTTPSConnection(self.host)
+            http_client = http.client.HTTPSConnection(self.host)
             request_url = self._construct_request_url()
 
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
                 None,
-                lambda: conn.request(
+                lambda: http_client.request(
                     method="POST", url=request_url, body=pcm_data, headers=headers
                 ),
             )
 
             # 获取响应
-            response = await loop.run_in_executor(None, conn.getresponse)
+            response = await loop.run_in_executor(None, http_client.getresponse)
             body = await loop.run_in_executor(None, response.read)
-            conn.close()
+            http_client.close()
 
             # 解析响应
             try:

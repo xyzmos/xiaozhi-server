@@ -97,16 +97,20 @@ class ASRProvider(ASRProviderBase):
         url = url + "?" + urlencode(v)
         return url
 
-    async def open_audio_channels(self, context):
-        await super().open_audio_channels(context)
+    async def open_audio_channels(self, context, container, event_bus):
+        await super().open_audio_channels(context, container, event_bus)
 
     async def receive_audio(self, context, audio, audio_have_voice):
-        # 先调用父类方法处理基础逻辑
-        await super().receive_audio(context, audio, audio_have_voice)
+        # 确保 self.context、self.container 和 self.event_bus 被设置
+        self.context = context
+        if not hasattr(self, 'container') or not self.container:
+            self.container = context.container if hasattr(context, 'container') else None
+        if not hasattr(self, 'event_bus') or not self.event_bus:
+            self.event_bus = self.container.resolve('event_bus') if self.container else None
 
         # 存储音频数据用于声纹识别
         if not hasattr(context, "asr_audio_for_voiceprint"):
-            context_item.asr_audio_for_voiceprint = []
+            context.asr_audio_for_voiceprint = []
         context.asr_audio_for_voiceprint.append(audio)
 
         # 如果本次有声音，且之前没有建立连接
@@ -401,7 +405,7 @@ class ASRProvider(ASRProviderBase):
                 if hasattr(context_item, "has_valid_voice"):
                     context_item.has_valid_voice = False
 
-    async def handle_voice_stop(self, context, asr_audio_task: List[bytes]):
+    async def handle_voice_stop(self, asr_audio_task: List[bytes]):
         """处理语音停止，发送最后一帧并处理识别结果"""
         try:
             # 先发送最后一帧表示音频结束
@@ -423,7 +427,7 @@ class ASRProvider(ASRProviderBase):
                     logger.bind(tag=TAG).error(f"发送最后一帧失败: {e}")
 
             # 调用父类的handle_voice_stop方法处理识别结果
-            await super().handle_voice_stop(context, asr_audio_task)
+            await super().handle_voice_stop(asr_audio_task)
         except Exception as e:
             logger.bind(tag=TAG).error(f"处理语音停止失败: {e}")
             import traceback

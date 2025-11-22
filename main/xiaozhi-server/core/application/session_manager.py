@@ -102,7 +102,7 @@ class SessionManager:
             conn_from_mqtt_gateway=conn_from_mqtt_gateway,
             need_bind=need_bind,
             bind_code=bind_code,
-            last_activity_time=time.time(),
+            last_activity_time=time.time() * 1000,
         )
 
         # 设置欢迎消息
@@ -233,7 +233,7 @@ class SessionManager:
                 break
 
             # 检查超时
-            idle_time = time.time() - context.last_activity_time
+            idle_time = (time.time() * 1000 - context.last_activity_time) / 1000
             if idle_time > timeout:
                 self.logger.info(
                     f"会话 {session_id} 超时 ({idle_time:.0f}秒)，准备关闭"

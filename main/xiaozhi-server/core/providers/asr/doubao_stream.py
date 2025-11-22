@@ -50,10 +50,18 @@ class ASRProvider(ASRProviderBase):
         self.auth_method = config.get("auth_method", "token")
         self.secret = config.get("secret", "access_secret")
 
-    async def open_audio_channels(self, context):
-        await super().open_audio_channels(context)
+    async def open_audio_channels(self, context, container, event_bus):
+        await super().open_audio_channels(context, container, event_bus)
 
     async def receive_audio(self, context, audio, audio_have_voice):
+        # 确保 self.context、self.container 和 self.event_bus 被设置
+        # 因为 handle_voice_stop 需要它们
+        self.context = context
+        if not hasattr(self, 'container') or not self.container:
+            self.container = context.container if hasattr(context, 'container') else None
+        if not hasattr(self, 'event_bus') or not self.event_bus:
+            self.event_bus = self.container.resolve('event_bus') if self.container else None
+
         context.asr_audio.append(audio)
         context.asr_audio = context.asr_audio[-10:]
 
@@ -64,7 +72,7 @@ class ASRProvider(ASRProviderBase):
 
         # 当没有音频数据时处理完整语音片段
         if not audio and len(context.asr_audio_for_voiceprint) > 0:
-            await self.handle_voice_stop(context, context.asr_audio_for_voiceprint)
+            await self.handle_voice_stop(context.asr_audio_for_voiceprint)
             context.asr_audio_for_voiceprint = []
 
         # 如果本次有声音，且之前没有建立连接
@@ -184,7 +192,7 @@ class ASRProvider(ASRProviderBase):
                                 self.text = ""
                                 context.reset_vad_states()
                                 if len(audio_data) > 15:  # 确保有足够音频数据
-                                    await self.handle_voice_stop(context, audio_data)
+                                    await self.handle_voice_stop(audio_data)
                                 break
 
                             for utterance in utterances:
@@ -195,7 +203,7 @@ class ASRProvider(ASRProviderBase):
                                     )
                                     context.reset_vad_states()
                                     if len(audio_data) > 15:  # 确保有足够音频数据
-                                        await self.handle_voice_stop(context, audio_data)
+                                        await self.handle_voice_stop(audio_data)
                                     break
                         elif "error" in payload:
                             error_msg = payload.get("error", "未知错误")

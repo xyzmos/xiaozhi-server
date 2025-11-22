@@ -117,3 +117,21 @@ class WebSocketTransport:
     def get_all_session_ids(self) -> list:
         """获取所有会话ID"""
         return list(self._connections.keys())
+
+    async def close(self, session_id: str):
+        """关闭指定会话的 WebSocket 连接
+
+        Args:
+            session_id: 会话ID
+        """
+        ws = self._connections.get(session_id)
+        if ws:
+            try:
+                await ws.close()
+                self.logger.info(f"WebSocket 连接已关闭: {session_id}")
+            except Exception as e:
+                self.logger.error(f"关闭 WebSocket 连接失败 {session_id}: {e}", exc_info=True)
+            finally:
+                self.unregister(session_id)
+        else:
+            self.logger.warning(f"尝试关闭不存在的 WebSocket 连接: {session_id}")

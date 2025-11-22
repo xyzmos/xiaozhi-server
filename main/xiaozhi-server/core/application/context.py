@@ -168,7 +168,13 @@ class SessionContext:
 
     def update_activity_time(self):
         """更新活动时间"""
-        self.last_activity_time = time.time()
+        self.last_activity_time = time.time() * 1000
+
+    def reset_vad_states(self):
+        """重置VAD状态"""
+        self.client_have_voice = False
+        self.client_voice_stop = False
+        self.last_is_voice = False
 
     def get_timeout_seconds(self) -> int:
         """获取超时时间（秒）"""

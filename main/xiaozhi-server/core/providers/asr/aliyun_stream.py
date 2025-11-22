@@ -124,13 +124,15 @@ class ASRProvider(ASRProviderBase):
         """检查Token是否过期"""
         return self.expire_time and time.time() > self.expire_time
 
-    async def open_audio_channels(self, context):
+    async def open_audio_channels(self, context, container, event_bus):
         """打开音频通道
 
         Args:
             context: SessionContext 会话上下文
+            container: DI容器
+            event_bus: 事件总线
         """
-        await super().open_audio_channels(context)
+        await super().open_audio_channels(context, container, event_bus)
 
     async def receive_audio(self, context, audio, audio_have_voice):
         """接收音频数据
@@ -140,6 +142,12 @@ class ASRProvider(ASRProviderBase):
             audio: 音频数据
             audio_have_voice: 是否包含语音
         """
+        # 确保 self.context、self.container 和 self.event_bus 被设置
+        self.context = context
+        if not hasattr(self, 'container') or not self.container:
+            self.container = context.container if hasattr(context, 'container') else None
+        if not hasattr(self, 'event_bus') or not self.event_bus:
+            self.event_bus = self.container.resolve('event_bus') if self.container else None
         # 初始化音频缓存
         if not hasattr(context, 'asr_audio_for_voiceprint'):
             context.asr_audio_for_voiceprint = []
@@ -277,7 +285,7 @@ class ASRProvider(ASRProviderBase):
                             context.reset_vad_states()
                             # 传递缓存的音频数据
                             audio_data = getattr(context, 'asr_audio_for_voiceprint', [])
-                            await self.handle_voice_stop(context, audio_data)
+                            await self.handle_voice_stop(audio_data)
                             # 清空缓存
                             context.asr_audio_for_voiceprint = []
                             break

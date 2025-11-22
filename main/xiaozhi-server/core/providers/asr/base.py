@@ -52,9 +52,9 @@ class ASRProviderBase(ABC):
                 message = self.asr_audio_queue.get(timeout=1)
 
                 # 发布文本识别事件
-                from core.infrastructure.event.event_types import TextRecognizedEvent
+                from core.infrastructure.event.event_types import ASRTranscriptEvent
                 future = asyncio.run_coroutine_threadsafe(
-                    self.event_bus.publish(TextRecognizedEvent(
+                    self.event_bus.publish(ASRTranscriptEvent(
                         session_id=self.context.session_id,
                         timestamp=time.time(),
                         text=message,
@@ -118,7 +118,13 @@ class ASRProviderBase(ABC):
 
             # 预先准备WAV数据
             wav_data = None
-            voiceprint_provider = self.container.resolve('voiceprint_provider', session_id=self.context.session_id) if hasattr(self, 'container') else None
+            voiceprint_provider = None
+            if hasattr(self, 'container') and self.container:
+                try:
+                    voiceprint_provider = self.container.resolve('voiceprint_provider', session_id=self.context.session_id)
+                except Exception:
+                    # 声纹识别服务未配置，跳过
+                    pass
             if voiceprint_provider and combined_pcm_data:
                 wav_data = self._pcm_to_wav(combined_pcm_data)
 
@@ -200,8 +206,8 @@ class ASRProviderBase(ABC):
                 enhanced_text = self._build_enhanced_text(raw_text, speaker_name)
 
                 # 发布文本识别事件
-                from core.infrastructure.event.event_types import TextRecognizedEvent
-                await self.event_bus.publish(TextRecognizedEvent(
+                from core.infrastructure.event.event_types import ASRTranscriptEvent
+                await self.event_bus.publish(ASRTranscriptEvent(
                     session_id=self.context.session_id,
                     timestamp=time.time(),
                     text=enhanced_text,

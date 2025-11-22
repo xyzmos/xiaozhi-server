@@ -81,12 +81,8 @@ class AudioSendHandler:
             await self._send_tts_message(session_id, "stop", None)
             context.client_is_speaking = False
             if context.close_after_chat:
-                # TODO: 实现通过事件总线关闭连接
-                await self.event_bus.publish({
-                    'type': 'session_close_request',
-                    'session_id': session_id,
-                    'timestamp': time.time()
-                })
+                self.logger.info(f"会话 {session_id} 将在对话结束后关闭")
+                await context.close()
 
     async def _send_audio(self, session_id: str, audios: Union[bytes, List[bytes]], frame_duration: int = 60):
         """发送音频数据"""
