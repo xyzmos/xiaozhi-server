@@ -25,23 +25,25 @@ from core.utils.modules_initialize import (
     initialize_tts,
     initialize_asr,
 )
-from core.handle.reportHandle import report
+# from core.handle.reportHandle import report  # 旧架构，已被新架构替代
 from core.providers.tts.default import DefaultTTS
 from concurrent.futures import ThreadPoolExecutor
 from core.utils.dialogue import Message, Dialogue
 from core.providers.asr.dto.dto import InterfaceType
-from core.handle.textHandle import handleTextMessage
+# from core.handle.textHandle import handleTextMessage  # 旧架构，已被新架构替代
 from core.providers.tools.unified_tool_handler import UnifiedToolHandler
 from plugins_func.loadplugins import auto_import_modules
 from plugins_func.register import Action, ActionResponse
 from core.auth import AuthMiddleware, AuthenticationError
-from config.config_loader import get_private_config_from_api
+from config.config_loader import get_private_config_from_api, ConfigDict
 from core.providers.tts.dto.dto import ContentType, TTSMessageDTO, SentenceType
 from config.logger import setup_logging, build_module_string, create_connection_logger
 from config.manage_api_client import DeviceNotFoundException, DeviceBindException
 from core.utils.prompt_manager import PromptManager
 from core.utils.voiceprint_provider import VoiceprintProvider
 from core.utils import textUtils
+from core.context.session_context import SessionContext
+from core.components.component_registry import ComponentRegistry
 
 TAG = __name__
 
@@ -142,7 +144,7 @@ class ConnectionHandler:
         self.iot_descriptors = {}
         self.func_handler = None
 
-        self.cmd_exit = self.config["exit_commands"]
+        self.cmd_exit = self.config.get("exit_commands", [])
 
         # 是否在聊天结束后关闭连接
         self.close_after_chat = False
@@ -158,9 +160,12 @@ class ConnectionHandler:
         self.features = None
 
         # 初始化提示词管理器
-        self.prompt_manager = PromptManager(config)
-
-        self.session_context = SessionContext(self.session_id)
+        self.prompt_manager = PromptManager(config, self.logger)
+        
+        # 新增：会话上下文与组件管理器（会话级清理）
+        self.session_context: SessionContext = SessionContext()
+        self.session_context.config = self.config
+        self.component_manager = ComponentRegistry.create_component_manager(self.config)
 
     async def handle_connection(self, ws):
         try:
@@ -202,6 +207,10 @@ class ConnectionHandler:
             # 认证通过,继续处理
             self.websocket = ws
             self.device_id = self.headers.get("device-id", None)
+            # 更新会话上下文关键信息
+            self.session_context.headers = self.headers
+            self.session_context.device_id = self.device_id
+            self.session_context.client_ip = self.client_ip
 
             # 初始化活动时间戳
             self.last_activity_time = time.time() * 1000
@@ -209,7 +218,8 @@ class ConnectionHandler:
             # 启动超时检查任务
             self.timeout_task = asyncio.create_task(self._check_timeout())
 
-            self.welcome_msg = self.config["xiaozhi"]
+            # 新的配置访问方式 - 使用点号访问
+            self.welcome_msg = self.config.xiaozhi
             self.welcome_msg["session_id"] = self.session_id
 
             # 获取差异化配置
@@ -246,6 +256,18 @@ class ConnectionHandler:
                     logger.bind(tag=TAG).error(
                         f"强制关闭连接时出错: {close_error}"
                     )
+            finally:
+                # 会话级组件与回调清理（容错）
+                try:
+                    if hasattr(self, "component_manager") and self.component_manager:
+                        await self.component_manager.cleanup_all()
+                except Exception as e:
+                    self.logger.bind(tag=TAG).error(f"组件清理失败: {e}")
+                try:
+                    if hasattr(self, "session_context") and self.session_context:
+                        await self.session_context.run_cleanup()
+                except Exception as e:
+                    self.logger.bind(tag=TAG).error(f"会话清理回调执行失败: {e}")
 
     async def _save_and_close(self, ws):
         """保存记忆并关闭连接"""
@@ -492,7 +514,8 @@ class ConnectionHandler:
 
         if init_vad:
             self.config["VAD"] = private_config["VAD"]
-            self.config["selected_module"]["VAD"] = private_config["selected_module"][
+            # 新的配置访问方式 - 使用嵌套路径设置
+            self.config["selected_module.VAD"] = private_config["selected_module"][
                 "VAD"
             ]
         if init_asr:
@@ -590,17 +613,16 @@ class ConnectionHandler:
 
         # 获取记忆总结配置
         memory_config = self.config["Memory"]
-        memory_type = self.config["Memory"][self.config["selected_module"]["Memory"]][
-            "type"
-        ]
+        # 新的配置访问方式 - 使用嵌套get方法
+        memory_module = self.config.get("selected_module.Memory")
+        memory_type = self.config.get(f"Memory.{memory_module}.type")
         # 如果使用 nomen，直接返回
         if memory_type == "nomem":
             return
         # 使用 mem_local_short 模式
         elif memory_type == "mem_local_short":
-            memory_llm_name = memory_config[self.config["selected_module"]["Memory"]][
-                "llm"
-            ]
+            # 新的配置访问方式 - 使用嵌套get和f-string
+            memory_llm_name = self.config.get(f"Memory.{memory_module}.llm")
             if memory_llm_name and memory_llm_name in self.config["LLM"]:
                 # 如果配置了专用LLM，则创建独立的LLM实例
                 from core.utils import llm as llm_utils
@@ -920,7 +942,8 @@ class ConnectionHandler:
         """处理上报任务"""
         try:
             # 执行上报（传入二进制数据）
-            report(self, type, text, audio_data, report_time)
+            # report(self, type, text, audio_data, report_time)  # 旧架构，已被新架构替代
+            pass  # 新架构中由ReportProcessor处理
         except Exception as e:
             logger.bind(tag=TAG).error(f"上报处理异常: {e}")
         finally:
