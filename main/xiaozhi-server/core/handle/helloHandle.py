@@ -6,7 +6,7 @@ from core.utils.dialogue import Message
 from core.utils.util import audio_to_data
 from core.providers.tts.dto.dto import SentenceType
 from core.utils.wakeup_word import WakeupWordsConfig
-from core.handle.sendAudioHandle import sendAudioMessage, send_stt_message
+from core.handle.sendAudioHandle import sendAudioMessage, send_tts_message
 from core.utils.util import remove_punctuation_and_length, opus_datas_to_wav_bytes
 from core.providers.tools.device_mcp import (
     MCPClient,
@@ -17,8 +17,18 @@ from core.providers.tools.device_mcp import (
 TAG = __name__
 
 WAKEUP_CONFIG = {
-    "refresh_time": 5,
-    "words": ["你好", "你好啊", "嘿，你好", "嗨"],
+    "refresh_time": 10,
+    "responses": [
+        "我一直都在呢，您请说。",
+        "在的呢，请随时吩咐我。",
+        "来啦来啦，请告诉我吧。",
+        "您请说，我正听着。",
+        "请您讲话，我准备好了。",
+        "请您说出指令吧。",
+        "我认真听着呢，请讲。",
+        "请问您需要什么帮助？",
+        "我在这里，等候您的指令。",
+    ],
 }
 
 # 创建全局的唤醒词配置管理器
@@ -33,15 +43,15 @@ async def handleHelloMessage(conn, msg_json):
     audio_params = msg_json.get("audio_params")
     if audio_params:
         format = audio_params.get("format")
-        conn.logger.bind(tag=TAG).info(f"客户端音频格式: {format}")
+        conn.logger.bind(tag=TAG).debug(f"客户端音频格式: {format}")
         conn.audio_format = format
         conn.welcome_msg["audio_params"] = audio_params
     features = msg_json.get("features")
     if features:
-        conn.logger.bind(tag=TAG).info(f"客户端特性: {features}")
+        conn.logger.bind(tag=TAG).debug(f"客户端特性: {features}")
         conn.features = features
         if features.get("mcp"):
-            conn.logger.bind(tag=TAG).info("客户端支持MCP")
+            conn.logger.bind(tag=TAG).debug("客户端支持MCP")
             conn.mcp_client = MCPClient()
             # 发送初始化
             asyncio.create_task(send_mcp_initialize_message(conn))
@@ -73,7 +83,7 @@ async def checkWakeupWords(conn, text):
         return False
 
     conn.just_woken_up = True
-    await send_stt_message(conn, text)
+    await send_tts_message(conn, "start")
 
     # 获取当前音色
     voice = getattr(conn.tts, "voice", "default")
@@ -85,13 +95,13 @@ async def checkWakeupWords(conn, text):
     if not response or not response.get("file_path"):
         response = {
             "voice": "default",
-            "file_path": "config/assets/wakeup_words.wav",
+            "file_path": "config/assets/wakeup_words_short.wav",
             "time": 0,
-            "text": "哈啰啊，我是小智啦，声音好听的台湾女孩一枚，超开心认识你耶，最近在忙啥，别忘了给我来点有趣的料哦，我超爱听八卦的啦",
+            "text": "我在这里哦！",
         }
 
     # 获取音频数据
-    opus_packets = audio_to_data(response.get("file_path"))
+    opus_packets = await audio_to_data(response.get("file_path"), use_cache=False)
     # 播放唤醒词回复
     conn.client_abort = False
 
@@ -110,7 +120,7 @@ async def checkWakeupWords(conn, text):
 
 
 async def wakeupWordsResponse(conn):
-    if not conn.tts or not conn.llm or not conn.llm.response_no_stream:
+    if not conn.tts:
         return
 
     try:
@@ -118,16 +128,8 @@ async def wakeupWordsResponse(conn):
         if not await _wakeup_response_lock.acquire():
             return
 
-        # 生成唤醒词回复
-        wakeup_word = random.choice(WAKEUP_CONFIG["words"])
-        question = (
-            "此刻用户正在和你说```"
-            + wakeup_word
-            + "```。\n请你根据以上用户的内容进行20-30字回复。要符合系统设置的角色情感和态度，不要像机器人一样说话。\n"
-            + "请勿对这条内容本身进行任何解释和回应，请勿返回表情符号，仅返回对用户的内容的回复。"
-        )
-
-        result = conn.llm.response_no_stream(conn.config["prompt"], question)
+        # 从预定义回复列表中随机选择一个回复
+        result = random.choice(WAKEUP_CONFIG["responses"])
         if not result or len(result) == 0:
             return
 

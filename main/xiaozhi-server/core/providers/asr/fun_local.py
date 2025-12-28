@@ -1,14 +1,16 @@
-import time
 import os
-import sys
 import io
+import sys
+import time
+import shutil
 import psutil
+import asyncio
+
 from config.logger import setup_logging
 from typing import Optional, Tuple, List
-from core.providers.asr.base import ASRProviderBase
 from funasr import AutoModel
 from funasr.utils.postprocess_utils import rich_transcription_postprocess
-import shutil
+from core.providers.asr.base import ASRProviderBase
 from core.providers.asr.dto.dto import InterfaceType
 
 TAG = __name__
@@ -90,16 +92,17 @@ class ASRProvider(ASRProviderBase):
                 else:
                     file_path = self.save_audio_to_file(pcm_data, session_id)
 
-                # 语音识别
+                # 语音识别 - 使用线程池避免阻塞事件循环
                 start_time = time.time()
-                result = self.model.generate(
+                result = await asyncio.to_thread(
+                    self.model.generate,
                     input=combined_pcm_data,
                     cache={},
                     language="auto",
                     use_itn=True,
                     batch_size_s=60,
                 )
-                text = rich_transcription_postprocess(result[0]["text"])
+                text = await asyncio.to_thread(rich_transcription_postprocess, result[0]["text"])
                 logger.bind(tag=TAG).debug(
                     f"语音识别耗时: {time.time() - start_time:.3f}s | 结果: {text}"
                 )

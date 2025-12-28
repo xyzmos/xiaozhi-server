@@ -139,4 +139,31 @@ public class RedisKeys {
         return "sms:Validate:Code:" + phone + ":today_count";
     }
 
+    /**
+     * 聊天记录UUID映射的Key
+     */
+    public static String getChatHistoryKey(String uuid) {
+        return "agent:chat:history:" + uuid;
+    }
+
+    /**
+     * 获取音色克隆音频ID的缓存key
+     */
+    public static String getVoiceCloneAudioIdKey(String uuid) {
+        return "voiceClone:audio:id:" + uuid;
+    }
+
+    /**
+     * 获取知识库缓存key
+     */
+    public static String getKnowledgeBaseCacheKey(String datasetId) {
+        return "knowledge:base:" + datasetId;
+    }
+
+    /**
+     * 获取临时注册设备标记key
+     */
+    public static String getTmpRegisterMacKey(String deviceId) {
+        return "tmp_register_mac:" + deviceId;
+    }
 }

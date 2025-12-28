@@ -98,4 +98,14 @@ public interface DeviceService extends BaseService<DeviceEntity> {
      */
     void updateDeviceConnectionInfo(String agentId, String deviceId, String appVersion);
 
+    /**
+     * 生成WebSocket认证token
+     *
+     * @param clientId 客户端ID
+     * @param username 用户名(通常为deviceId)
+     * @return 认证token字符串
+     * @throws Exception 生成token时的异常
+     */
+    String generateWebSocketToken(String clientId, String username) throws Exception;
+
 }
