@@ -42,6 +42,12 @@ class ConnectionService:
         # 设置transport接口
         context.transport = transport
         
+        # 传入共享 ASR 管理器（如果有）
+        # 这使得 ASRAdapter 可以使用预加载的模型实例
+        if '_shared_asr_manager' in self.config:
+            context.shared_asr_manager = self.config['_shared_asr_manager']
+            logger.debug("连接使用共享 ASR 实例")
+        
         # 兼容性：设置websocket属性（如果transport是WebSocket）
         if hasattr(transport, '_websocket'):
             context.websocket = transport._websocket

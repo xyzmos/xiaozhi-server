@@ -316,3 +316,4 @@ class MultiProtocolServer:
     def is_protocol_enabled(self, protocol: str) -> bool:
         """检查协议是否启用"""
         return protocol in self.servers
+

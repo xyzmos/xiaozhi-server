@@ -243,3 +243,4 @@ class UDPAudioHandler:
         self._closed = True
         self.message_callback = None
         self.remote_address = None
+

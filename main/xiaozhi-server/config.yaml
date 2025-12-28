@@ -297,12 +297,15 @@ Memory:
     # 如果这里不填，则会默认使用selected_module.LLM的模型作为意图识别的思考模型
     # 如果你的不想使用selected_module.LLM记忆存储，这里最好使用独立的LLM作为意图识别，例如使用免费的ChatGLMLLM
     llm: ChatGLMLLM
-
 ASR:
   FunASR:
     type: fun_local
     model_dir: models/SenseVoiceSmall
     output_dir: tmp/
+    # 队列最大大小（可选，默认100）
+    # 当并发请求超过此值时，会返回"服务繁忙"提示
+    # 建议根据服务器性能调整，GPU 服务器可适当增大
+    queue_max_size: 100
   FunASRServer:
     # 独立部署FunASR，使用FunASR的API服务，只需要五句话
     # 第一句：mkdir -p ./funasr-runtime-resources/models

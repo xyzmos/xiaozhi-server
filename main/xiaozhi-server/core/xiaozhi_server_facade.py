@@ -11,12 +11,18 @@ from config.config_loader import get_protocol_config, get_mqtt_server_config
 from core.servers.multi_protocol_server import MultiProtocolServer
 
 logger = setup_logging()
+TAG = __name__
 
 
 class XiaozhiServerFacade:
     """
     小智服务器门面类
     提供统一的服务器管理接口，屏蔽内部协议复杂性
+    
+    功能：
+    - 协议管理（WebSocket、MQTT）
+    - 本地 ASR 模型预加载
+    - 优雅启动和停止
     """
     
     def __init__(self, config: Dict[str, Any]):
@@ -28,6 +34,7 @@ class XiaozhiServerFacade:
         """
         self.config = config
         self.multi_protocol_server: Optional[MultiProtocolServer] = None
+        self.shared_asr_manager = None  # 共享 ASR 管理器
         self.is_initialized = False
         self.is_running = False
         
@@ -116,21 +123,72 @@ class XiaozhiServerFacade:
     async def initialize(self):
         """初始化服务器"""
         if self.is_initialized:
-            logger.warning("服务器已经初始化")
+            logger.bind(tag=TAG).warning("服务器已经初始化")
             return
         
         try:
-            logger.info("正在初始化小智服务器...")
+            logger.bind(tag=TAG).info("正在初始化小智服务器...")
+            
+            # 检查并预加载本地 ASR 模型（关键步骤）
+            await self._preload_asr_if_needed()
             
             # 创建多协议服务器
             self.multi_protocol_server = MultiProtocolServer(self.config)
             
             self.is_initialized = True
-            logger.info("小智服务器初始化完成")
+            logger.bind(tag=TAG).info("小智服务器初始化完成")
             
         except Exception as e:
-            logger.error(f"初始化服务器失败: {e}")
+            logger.bind(tag=TAG).error(f"初始化服务器失败: {e}")
             raise
+    
+    async def _preload_asr_if_needed(self):
+        """
+        检查并预加载本地 ASR 模型
+        
+        如果配置使用本地 ASR 模型（如 FunASR），则在服务器启动时预加载，
+        避免首次语音识别时的延迟导致客户端超时。
+        """
+        try:
+            # 获取 ASR 配置
+            selected_asr = self.config.get("selected_module", {}).get("ASR")
+            if not selected_asr:
+                logger.bind(tag=TAG).info("未配置 ASR 模块，跳过预加载")
+                return
+            
+            # 获取 ASR 类型
+            asr_config = self.config.get("ASR", {}).get(selected_asr, {})
+            asr_type = asr_config.get("type", selected_asr)
+            
+            # 导入 SharedASRManager 检查是否为本地模型
+            from core.providers.asr.shared_asr_manager import SharedASRManager
+            
+            if SharedASRManager.is_local_model_type(asr_type):
+                logger.bind(tag=TAG).info(
+                    f"检测到本地 ASR 模型: {asr_type}，开始预加载..."
+                )
+                
+                # 创建全局 ASR 管理器
+                self.shared_asr_manager = SharedASRManager(self.config, asr_type)
+                
+                # 预加载模型
+                await self.shared_asr_manager.initialize()
+                
+                # 将管理器放入配置中供后续使用
+                self.config['_shared_asr_manager'] = self.shared_asr_manager
+                
+                logger.bind(tag=TAG).info(
+                    f"ASR 模型预加载完成，类型: {asr_type}"
+                )
+            else:
+                logger.bind(tag=TAG).info(
+                    f"ASR 类型为远程服务: {asr_type}，无需预加载"
+                )
+                
+        except Exception as e:
+            logger.bind(tag=TAG).error(f"ASR 预加载失败: {e}")
+            # 预加载失败不影响服务器启动，继续使用懒加载模式
+            logger.bind(tag=TAG).warning("将回退到懒加载模式")
     
     async def start(self):
         """启动服务器"""
@@ -158,20 +216,30 @@ class XiaozhiServerFacade:
     async def stop(self):
         """停止服务器"""
         if not self.is_running:
-            logger.info("服务器未在运行")
+            logger.bind(tag=TAG).info("服务器未在运行")
             return
         
         try:
-            logger.info("正在停止小智服务器...")
+            logger.bind(tag=TAG).info("正在停止小智服务器...")
             
+            # 停止多协议服务器
             if self.multi_protocol_server:
                 await self.multi_protocol_server.stop()
             
+            # 关闭共享 ASR 管理器（优雅停机）
+            if self.shared_asr_manager:
+                logger.bind(tag=TAG).info("正在关闭共享 ASR 管理器...")
+                await self.shared_asr_manager.shutdown()
+                self.shared_asr_manager = None
+                # 从配置中移除
+                if '_shared_asr_manager' in self.config:
+                    del self.config['_shared_asr_manager']
+            
             self.is_running = False
-            logger.info("小智服务器已停止")
+            logger.bind(tag=TAG).info("小智服务器已停止")
             
         except Exception as e:
-            logger.error(f"停止服务器失败: {e}")
+            logger.bind(tag=TAG).error(f"停止服务器失败: {e}")
     
     async def restart(self):
         """重启服务器"""
@@ -224,6 +292,16 @@ class XiaozhiServerFacade:
         if self.multi_protocol_server:
             server_status = self.multi_protocol_server.get_server_status()
             base_status.update(server_status)
+        
+        # 添加 ASR 状态
+        if self.shared_asr_manager:
+            base_status['asr'] = {
+                'mode': 'shared',
+                'ready': self.shared_asr_manager.is_ready(),
+                'queue_status': self.shared_asr_manager.get_queue_status()
+            }
+        else:
+            base_status['asr'] = {'mode': 'lazy_load'}
         
         return base_status
     
@@ -289,3 +367,4 @@ class XiaozhiServerFacade:
             'mqtt': self.get_mqtt_info(),
             'active_connections': self.get_active_connections_count()
         }
+

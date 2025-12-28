@@ -430,3 +430,4 @@ class MQTTProtocol:
             self.socket.close()
         except Exception as e:
             logger.error(f"关闭socket失败: {e}")
+
