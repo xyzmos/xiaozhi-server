@@ -226,7 +226,7 @@ class XiaozhiServerFacade:
             if self.multi_protocol_server:
                 await self.multi_protocol_server.stop()
             
-            # 关闭共享 ASR 管理器（优雅停机）
+            # 关闭共享 ASR 管理器
             if self.shared_asr_manager:
                 logger.bind(tag=TAG).info("正在关闭共享 ASR 管理器...")
                 await self.shared_asr_manager.shutdown()
