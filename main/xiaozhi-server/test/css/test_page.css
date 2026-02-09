@@ -1377,8 +1377,8 @@ body {
     position: fixed;
     top: 20px;
     left: 20px;
-    width: 240px;
-    height: 180px;
+    width: 180px;
+    height: 240px;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
     border-radius: 8px;
@@ -1402,10 +1402,11 @@ body {
 
 @keyframes flipWithPosition {
     0% {
-        transform: var(--original-transform) rotateY(0deg); 
+        transform: var(--original-transform) rotateY(0deg);
     }
+
     100% {
-        transform: var(--original-transform) rotateY(180deg); 
+        transform: var(--original-transform) rotateY(180deg);
     }
 }
 
@@ -1425,10 +1426,10 @@ body {
 
 .camera-switch {
     display: none;
-    position: fixed; 
-    bottom: 23px; 
-    right: 20px; 
-    z-index: 999; 
+    position: fixed;
+    bottom: 23px;
+    right: 20px;
+    z-index: 999;
     color: #fff;
 }
 
