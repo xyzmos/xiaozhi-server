@@ -762,6 +762,7 @@ export default {
   'roleConfig.memoryHis': 'Speicher',
   'roleConfig.memory': 'Speicher',
   'roleConfig.intent': 'Intent',
+  'roleConfig.language': 'Sprache auswählen',
   'roleConfig.voiceType': 'Stimmtyp',
   'roleConfig.pleaseEnterContent': 'Bitte Inhalt eingeben',
   'roleConfig.pleaseEnterLangCode': 'Bitte Sprachcode eingeben, z.B.: en_US',

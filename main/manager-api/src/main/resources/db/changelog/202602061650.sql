@@ -12,3 +12,9 @@ SET languages = CASE
     WHEN languages = '粤语及粤英混合' THEN '粤语、英语'
     ELSE languages
 END;
+
+-- 添加音色语言字段到 ai_agent 表
+ALTER TABLE `ai_agent` ADD COLUMN `tts_language` VARCHAR(50) NULL COMMENT '音色语言' AFTER `tts_voice_id`;
+
+-- 添加音色语言字段到 ai_agent_template 表
+ALTER TABLE `ai_agent_template` ADD COLUMN `tts_language` VARCHAR(50) NULL COMMENT '音色语言' AFTER `tts_voice_id`;

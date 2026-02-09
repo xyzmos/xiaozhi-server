@@ -45,6 +45,9 @@ public class AgentEntity {
     @Schema(description = "音色标识")
     private String ttsVoiceId;
 
+    @Schema(description = "音色语言")
+    private String ttsLanguage;
+
     @Schema(description = "记忆模型标识")
     private String memModelId;
 

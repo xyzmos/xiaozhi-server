@@ -232,47 +232,71 @@
                         </div>
                       </div>
                     </el-form-item>
-                    <el-form-item :label="$t('roleConfig.voiceType')">
-                      <el-select
-                        v-model="form.ttsVoiceId"
-                        filterable
-                        :placeholder="$t('roleConfig.pleaseSelect')"
-                        class="form-select"
-                      >
-                        <el-option
-                          v-for="(item, index) in voiceOptions"
-                          :key="`voice-${index}`"
-                          :label="item.label"
-                          :value="item.value"
-                        >
-                          <div
-                            style="
-                              display: flex;
-                              justify-content: space-between;
-                              align-items: center;
-                            "
+                    <div class="model-row">
+                      <!-- 语言筛选器 -->
+                      <el-form-item :label="$t('roleConfig.language')" class="model-item">
+                        <div class="model-select-wrapper">
+                          <el-select
+                            v-model="selectedLanguage"
+                            :placeholder="$t('roleConfig.selectLanguage')"
+                            class="form-select"
+                            @change="filterVoicesByLanguage"
                           >
-                            <span>{{ item.label }}</span>
-                            <template v-if="hasAudioPreview(item)">
-                              <el-button
-                                type="text"
-                                :icon="
-                                  playingVoice &&
-                                  currentPlayingVoiceId === item.value &&
-                                  !isPaused
-                                    ? 'el-icon-video-pause'
-                                    : 'el-icon-video-play'
+                            <el-option
+                              v-for="(lang, index) in languageOptions"
+                              :key="`lang-${index}`"
+                              :label="lang.label"
+                              :value="lang.value"
+                            />
+                          </el-select>
+                        </div>
+                      </el-form-item>
+                      
+                      <!-- 音色选择器 -->
+                      <el-form-item :label="$t('roleConfig.voiceType')" class="model-item">
+                        <div class="model-select-wrapper">
+                          <el-select
+                            v-model="form.ttsVoiceId"
+                            filterable
+                            :placeholder="$t('roleConfig.pleaseSelect')"
+                            class="form-select"
+                          >
+                            <el-option
+                              v-for="(item, index) in voiceOptions"
+                              :key="`voice-${index}`"
+                              :label="item.label"
+                              :value="item.value"
+                            >
+                              <div
+                                style="
+                                  display: flex;
+                                  justify-content: space-between;
+                                  align-items: center;
                                 "
-                                size="small"
-                                @click.stop="toggleAudioPlayback(item.value)"
-                                :loading="false"
-                                class="play-button"
-                              />
-                            </template>
-                          </div>
-                        </el-option>
-                      </el-select>
-                    </el-form-item>
+                              >
+                                <span>{{ item.label }}</span>
+                                <template v-if="hasAudioPreview(item)">
+                                  <el-button
+                                    type="text"
+                                    :icon="
+                                      playingVoice &&
+                                      currentPlayingVoiceId === item.value &&
+                                      !isPaused
+                                        ? 'el-icon-video-pause'
+                                        : 'el-icon-video-play'
+                                    "
+                                    size="small"
+                                    @click.stop="toggleAudioPlayback(item.value)"
+                                    :loading="false"
+                                    class="play-button"
+                                  />
+                                </template>
+                              </div>
+                            </el-option>
+                          </el-select>
+                        </div>
+                      </el-form-item>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -357,6 +381,9 @@ export default {
       isPaused: false,
       currentAudio: null,
       currentPlayingVoiceId: null,
+      // 语言筛选相关状态
+      languageOptions: [], // 语言选项列表
+      selectedLanguage: '', // 当前选中的语言
       // 功能状态
       featureStatus: {
         vad: false, // 语言检测活动功能状态
@@ -378,6 +405,7 @@ export default {
         vllmModelId: this.form.model.vllmModelId,
         ttsModelId: this.form.model.ttsModelId,
         ttsVoiceId: this.form.ttsVoiceId,
+        ttsLanguage: this.selectedLanguage,
         chatHistoryConf: this.form.chatHistoryConf,
         memModelId: this.form.model.memModelId,
         intentModelId: this.form.model.intentModelId,
@@ -592,32 +620,84 @@ export default {
       if (!modelId) {
         this.voiceOptions = [];
         this.voiceDetails = {};
+        this.languageOptions = [];
+        this.selectedLanguage = '';
         return;
       }
       Api.model.getModelVoices(modelId, "", ({ data }) => {
         if (data.code === 0 && data.data) {
-          this.voiceOptions = data.data.map((voice) => ({
-            value: voice.id,
-            label: voice.name,
-            // 只保留后端实际返回的音频相关字段
-            voiceDemo: voice.voiceDemo,
-            voice_demo: voice.voice_demo,
-            // 使用后端实际返回的 isClone 字段
-            isClone: Boolean(voice.isClone),
-            // 保存训练状态字段
-            train_status: voice.trainStatus,
-          }));
-          // 保存完整的音色信息，添加调试信息
+          // 保存完整的音色信息
           this.voiceDetails = data.data.reduce((acc, voice) => {
             acc[voice.id] = voice;
             return acc;
           }, {});
+          
+          // 提取所有语言选项并去重
+          const allLanguages = new Set();
+          data.data.forEach(voice => {
+            if (voice.languages) {
+              const languagesArray = voice.languages.split('、').map(lang => lang.trim()).filter(lang => lang);
+              languagesArray.forEach(lang => allLanguages.add(lang));
+            }
+          });
+
+          this.languageOptions = Array.from(allLanguages).map(lang => ({
+            value: lang,
+            label: lang
+          }));
+
+          // 使用后端返回的用户选择的语言，如果没有则使用第一个语言选项
+          if (this.form.ttsLanguage && this.languageOptions.some(option => option.value === this.form.ttsLanguage)) {
+            this.selectedLanguage = this.form.ttsLanguage;
+          } else if (this.languageOptions.length > 0) {
+            this.selectedLanguage = this.languageOptions[0].value;
+          }
+
+          // 根据选中的语言筛选音色
+          this.filterVoicesByLanguage();
         } else {
           this.voiceOptions = [];
           this.voiceDetails = {};
+          this.languageOptions = [];
+          this.selectedLanguage = '';
         }
       });
     },
+    
+    // 根据语言筛选音色
+    filterVoicesByLanguage() {
+      if (!this.voiceDetails || Object.keys(this.voiceDetails).length === 0) {
+        this.voiceOptions = [];
+        return;
+      }
+
+      const allVoices = Object.values(this.voiceDetails);
+
+      // 根据选中的语言筛选音色
+      const filteredVoices = allVoices.filter(voice => {
+        if (!voice.languages) return false;
+        const languagesArray = voice.languages.split('、').map(lang => lang.trim()).filter(lang => lang);
+        return languagesArray.includes(this.selectedLanguage);
+      });
+
+      this.voiceOptions = filteredVoices.map((voice) => ({
+        value: voice.id,
+        label: voice.name,
+        voiceDemo: voice.voiceDemo,
+        voice_demo: voice.voice_demo,
+        isClone: Boolean(voice.isClone),
+        train_status: voice.trainStatus,
+      }));
+
+      // 检查当前选中的音色是否支持当前语言，如果不支持则选择第一个
+      const currentVoiceSupportsLanguage = this.form.ttsVoiceId &&
+        filteredVoices.some(voice => voice.id === this.form.ttsVoiceId);
+
+      if (!currentVoiceSupportsLanguage) {
+        this.form.ttsVoiceId = filteredVoices.length > 0 ? filteredVoices[0].id : '';
+      }
+    },
+
     getFunctionDisplayChar(name) {
       if (!name || name.length === 0) return "";
 

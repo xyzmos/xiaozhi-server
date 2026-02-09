@@ -762,6 +762,7 @@ export default {
   'roleConfig.memoryHis': 'Bộ nhớ',
   'roleConfig.memory': 'Mô hình bộ nhớ',
   'roleConfig.intent': 'Nhận dạng ý định',
+  'roleConfig.language': 'Chọn ngôn ngữ',
   'roleConfig.voiceType': 'Loại giọng nói',
   'roleConfig.pleaseEnterContent': 'Vui lòng nhập nội dung',
   'roleConfig.pleaseEnterLangCode': 'Vui lòng nhập mã ngôn ngữ, ví dụ: en_US',

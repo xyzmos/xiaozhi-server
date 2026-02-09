@@ -87,6 +87,7 @@ public class ConfigServiceImpl implements ConfigService {
                 null,
                 null,
                 null,
+                null,
                 agent.getVadModelId(),
                 agent.getAsrModelId(),
                 null,
@@ -135,15 +136,24 @@ public class ConfigServiceImpl implements ConfigService {
         String voice = null;
         String referenceAudio = null;
         String referenceText = null;
+        String language = null;
         TimbreDetailsVO timbre = timbreService.get(agent.getTtsVoiceId());
         if (timbre != null) {
             voice = timbre.getTtsVoice();
             referenceAudio = timbre.getReferenceAudio();
             referenceText = timbre.getReferenceText();
+            // 优先使用用户选择的语言，如果没有则使用音色支持的第一个语言
+            if (StringUtils.isNotBlank(agent.getTtsLanguage())) {
+                language = agent.getTtsLanguage();
+            } else if (StringUtils.isNotBlank(timbre.getLanguages())) {
+                language = timbre.getLanguages().split("、")[0].trim();
+            }
         } else {
             VoiceCloneEntity voice_print = cloneVoiceService.selectById(agent.getTtsVoiceId());
             if (voice_print != null) {
                 voice = voice_print.getVoiceId();
+                // 优先使用用户选择的语言，如果没有则使用默认值
+                language = StringUtils.isNotBlank(agent.getTtsLanguage()) ? agent.getTtsLanguage() : "普通话";
             }
         }
         // 构建返回数据
@@ -208,6 +218,7 @@ public class ConfigServiceImpl implements ConfigService {
                 voice,
                 referenceAudio,
                 referenceText,
+                language,
                 agent.getVadModelId(),
                 agent.getAsrModelId(),
                 agent.getLlmModelId(),
@@ -385,6 +396,7 @@ public class ConfigServiceImpl implements ConfigService {
             String voice,
             String referenceAudio,
             String referenceText,
+            String language,
             String vadModelId,
             String asrModelId,
             String llmModelId,
@@ -423,6 +435,8 @@ public class ConfigServiceImpl implements ConfigService {
                         ((Map<String, Object>) model.getConfigJson()).put("ref_audio", referenceAudio);
                     if (referenceText != null)
                         ((Map<String, Object>) model.getConfigJson()).put("ref_text", referenceText);
+                    if (language != null)
+                        ((Map<String, Object>) model.getConfigJson()).put("language", language);
 
                     // 火山引擎声音克隆需要替换resource_id
                     Map<String, Object> map = (Map<String, Object>) model.getConfigJson();

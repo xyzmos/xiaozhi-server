@@ -16,6 +16,7 @@
         <result column="llmModelId" property="llmModelId"/>
         <result column="ttsModelId" property="ttsModelId"/>
         <result column="ttsVoiceId" property="ttsVoiceId"/>
+        <result column="ttsLanguage" property="ttsLanguage"/>
         <result column="memModelId" property="memModelId"/>
         <result column="intentModelId" property="intentModelId"/>
 
@@ -45,6 +46,7 @@
                a.vllm_model_id     AS vllmModelId,
                a.tts_model_id      AS ttsModelId,
                a.tts_voice_id      AS ttsVoiceId,
+               a.tts_language      AS ttsLanguage,
                a.mem_model_id      AS memModelId,
                a.intent_model_id   AS intentModelId,
                COALESCE(

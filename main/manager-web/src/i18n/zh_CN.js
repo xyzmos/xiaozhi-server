@@ -762,6 +762,7 @@ export default {
   'roleConfig.memoryHis': '记忆',
   'roleConfig.memory': '记忆模式',
   'roleConfig.tts': '语音合成(TTS)',
+  'roleConfig.language': '选择语言',
   'roleConfig.voiceType': '声音音色(Voice)',
   'roleConfig.pleaseEnterContent': '请输入内容',
   'roleConfig.pleaseEnterLangCode': '请输入语言编码，如：zh_CN',

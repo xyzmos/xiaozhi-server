@@ -65,6 +65,11 @@ public class AgentTemplateEntity implements Serializable {
     private String ttsVoiceId;
 
     /**
+     * 音色语言
+     */
+    private String ttsLanguage;
+
+    /**
      * 记忆模型标识
      */
     private String memModelId;

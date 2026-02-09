@@ -41,6 +41,9 @@ public class AgentUpdateDTO implements Serializable {
     @Schema(description = "音色标识", example = "voice_02", nullable = true)
     private String ttsVoiceId;
 
+    @Schema(description = "音色语言", example = "普通话", nullable = true)
+    private String ttsLanguage;
+
     @Schema(description = "记忆模型标识", example = "mem_model_02", nullable = true)
     private String memModelId;
 

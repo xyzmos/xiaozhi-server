@@ -762,6 +762,7 @@ export default {
   'roleConfig.memoryHis': 'Memory',
   'roleConfig.memory': 'Memory Model',
   'roleConfig.intent': 'Intent Recognition',
+  'roleConfig.language': 'Select Language',
   'roleConfig.voiceType': 'Voice Type',
   'roleConfig.pleaseEnterContent': 'Please enter content',
   'roleConfig.pleaseEnterLangCode': 'Please enter language code, e.g.: en_US',

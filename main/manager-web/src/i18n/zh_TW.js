@@ -762,6 +762,7 @@ export default {
   'roleConfig.memoryHis': '記憶',
   'roleConfig.memory': '記憶模式',
   'roleConfig.intent': '意圖識別(Intent)',
+  'roleConfig.language': '選擇語言',
   'roleConfig.voiceType': '聲音音色(Voice)',
   'roleConfig.pleaseEnterContent': '請輸入內容',
   'roleConfig.pleaseEnterLangCode': '請輸入語言編碼，如：zh_TW',
