@@ -98,6 +98,14 @@ class UIController {
             });
         }
 
+        // Camera switch button
+        const cameraSwitch = document.getElementById('cameraSwitch');
+        if (cameraSwitch) {
+            cameraSwitch.addEventListener('click', () => {
+                window.switchCamera();
+            })
+        }
+
         // Dial button
         const dialBtn = document.getElementById('dialBtn');
         if (dialBtn) {
@@ -115,6 +123,7 @@ class UIController {
                 if (isConnected) {
                     wsHandler.disconnect();
                     this.updateDialButton(false);
+                    if (cameraSwitch) cameraSwitch.classList.remove('active');
                     this.addChatMessage('Disconnected, see you next time~😊', false);
                 } else {
                     // Check if OTA URL is filled
@@ -153,6 +162,7 @@ class UIController {
                     if (isActive) {
                         // 关闭摄像头
                         if (typeof window.stopCamera === 'function') {
+                            if (cameraSwitch) cameraSwitch.classList.remove('active');
                             window.stopCamera();
                         }
                         cameraContainer.classList.remove('active');

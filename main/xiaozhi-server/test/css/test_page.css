@@ -1400,6 +1400,20 @@ body {
     border-color: rgba(88, 101, 242, 0.5);
 }
 
+@keyframes flipWithPosition {
+    0% {
+        transform: var(--original-transform) rotateY(0deg); 
+    }
+    100% {
+        transform: var(--original-transform) rotateY(180deg); 
+    }
+}
+
+
+.camera-container.flip {
+    animation: flipWithPosition 0.5s ease-in-out 1 forwards;
+}
+
 #cameraVideo {
     width: 100%;
     height: 100%;
@@ -1407,4 +1421,17 @@ body {
     background: #1a1a1a;
     pointer-events: none;
     transform: scaleX(-1);
+}
+
+.camera-switch {
+    display: none;
+    position: fixed; 
+    bottom: 23px; 
+    right: 20px; 
+    z-index: 999; 
+    color: #fff;
+}
+
+.camera-switch.active {
+    display: block;
 }
