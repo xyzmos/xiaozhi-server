@@ -1201,150 +1201,6 @@ body {
     z-index: 999;
 }
 
-/* ==================== 响应式设计 ==================== */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .live2d-section {
-        height: 60vh;
-        margin-bottom: 10px;
-    }
-
-    .live2d-canvas {
-        max-width: 300px;
-        max-height: 450px;
-    }
-
-    .control-bar {
-        bottom: 10px;
-        padding: 8px 16px;
-        gap: 12px;
-    }
-
-    .control-btn {
-        width: 50px;
-        height: 50px;
-    }
-
-    .btn-icon {
-        width: 20px;
-        height: 20px;
-    }
-
-    .btn-text {
-        font-size: 10px;
-    }
-
-    .chat-container {
-        width: 230px;
-        right: 10px;
-        bottom: 105px;
-    }
-
-    .message-bubble {
-        max-width: 200px;
-        font-size: 12px;
-    }
-
-    .modal-content {
-        width: 95%;
-        margin: 10px;
-    }
-
-    .config-row {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .audio-visualizer {
-        width: 150px;
-        height: 50px;
-        left: 10px;
-        bottom: 80px;
-    }
-}
-
-@media (max-width: 480px) {
-    .live2d-section {
-        height: 50vh;
-    }
-
-    .live2d-canvas {
-        max-width: 250px;
-        max-height: 350px;
-    }
-
-    .control-bar {
-        gap: 8px;
-        padding: 6px 12px;
-    }
-
-    .control-btn {
-        width: 45px;
-        height: 45px;
-    }
-
-    .btn-text {
-        display: none;
-    }
-
-    .chat-stream {
-        width: 200px;
-        max-height: 150px;
-    }
-
-    .audio-visualizer {
-        width: 120px;
-        height: 40px;
-        left: 5px;
-        bottom: 70px;
-    }
-}
-
-/* 竖屏优化 */
-@media (max-height: 700px) {
-    .live2d-section {
-        height: 55vh;
-    }
-
-    .live2d-canvas {
-        max-height: 400px;
-    }
-
-    .chat-stream {
-        bottom: 70px;
-        max-height: 150px;
-    }
-
-    .audio-visualizer {
-        bottom: 70px;
-    }
-}
-
-/* 横屏优化 */
-@media (min-width: 1024px) and (min-height: 600px) {
-    .live2d-section {
-        height: 75vh;
-    }
-
-    .live2d-canvas {
-        max-width: 500px;
-        max-height: 650px;
-    }
-
-    .chat-stream {
-        width: 350px;
-        max-height: 250px;
-    }
-
-    .audio-visualizer {
-        width: 250px;
-        height: 80px;
-    }
-}
-
 /* 滚动条样式 */
 .chat-stream::-webkit-scrollbar,
 .modal-body::-webkit-scrollbar,
@@ -1435,4 +1291,161 @@ body {
 
 .camera-switch.active {
     display: block;
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .live2d-section {
+        height: 60vh;
+        margin-bottom: 10px;
+    }
+
+    .live2d-canvas {
+        max-width: 300px;
+        max-height: 450px;
+    }
+
+    .control-bar {
+        bottom: 10px;
+        padding: 8px 16px;
+        gap: 12px;
+    }
+
+    .control-btn {
+        width: 50px;
+        height: 50px;
+    }
+
+    .btn-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .btn-text {
+        font-size: 10px;
+    }
+
+    .chat-container {
+        width: 230px;
+        right: 10px;
+        bottom: 105px;
+    }
+
+    .message-bubble {
+        max-width: 200px;
+        font-size: 12px;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+
+    .config-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .audio-visualizer {
+        width: 150px;
+        height: 50px;
+        left: 10px;
+        bottom: 80px;
+    }
+
+    .chat-ipt input {
+        font-size: 12px;
+    }
+
+    .camera-container {
+        width: 130px;
+        height: 180px;
+    }
+
+    .status-indicator {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .live2d-section {
+        height: 50vh;
+    }
+
+    .live2d-canvas {
+        max-width: 250px;
+        max-height: 350px;
+    }
+
+    .control-bar {
+        gap: 8px;
+        padding: 6px 12px;
+    }
+
+    .control-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .btn-text {
+        display: none;
+    }
+
+    .chat-stream {
+        width: 200px;
+        max-height: 150px;
+    }
+
+    .audio-visualizer {
+        width: 120px;
+        height: 40px;
+        left: 5px;
+        bottom: 70px;
+    }
+}
+
+/* 竖屏优化 */
+@media (max-height: 700px) {
+    .live2d-section {
+        height: 55vh;
+    }
+
+    .live2d-canvas {
+        max-height: 400px;
+    }
+
+    .chat-stream {
+        bottom: 70px;
+        max-height: 150px;
+    }
+
+    .audio-visualizer {
+        bottom: 70px;
+    }
+}
+
+/* 横屏优化 */
+@media (min-width: 1024px) and (min-height: 600px) {
+    .live2d-section {
+        height: 75vh;
+    }
+
+    .live2d-canvas {
+        max-width: 500px;
+        max-height: 650px;
+    }
+
+    .chat-stream {
+        width: 350px;
+        max-height: 250px;
+    }
+
+    .audio-visualizer {
+        width: 250px;
+        height: 80px;
+    }
 }
