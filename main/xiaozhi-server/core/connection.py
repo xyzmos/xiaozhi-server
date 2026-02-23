@@ -1119,6 +1119,14 @@ class ConnectionHandler:
     async def close(self, ws=None):
         """资源清理方法"""
         try:
+            # 清理 VAD 连接资源
+            if (
+                hasattr(self, "vad")
+                and self.vad
+                and hasattr(self.vad, "release_conn_resources")
+            ):
+                self.vad.release_conn_resources(self)
+
             # 清理音频缓冲区
             if hasattr(self, "audio_buffer"):
                 self.audio_buffer.clear()
