@@ -260,7 +260,7 @@ Nếu bạn là một nhà phát triển phần mềm, đây có một [Lá thư
 ---
 
 ## Hệ sinh thái sản phẩm 👬
-Xiaozhi là một hệ sinh thái, khi bạn sử dụng sản phẩm này, bạn cũng có thể xem các [dự án xuất sắc](https://github.com/78/xiaozhi-esp32?tab=readme-ov-file#related-open-source-projects) khác trong hệ sinh thái này
+Xiaozhi là một hệ sinh thái, khi bạn sử dụng sản phẩm này, bạn cũng có thể xem các [dự án xuất sắc](https://github.com/78/xiaozhi-esp32/blob/main/README_zh.md#%E7%9B%B8%E5%85%B3%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE) khác trong hệ sinh thái này
 
 ---
 

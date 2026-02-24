@@ -21,7 +21,7 @@ Suporte ao protocolo MQTT+UDP, protocolo WebSocket, ponto de acesso MCP, reconhe
   <a href="./README_en.md"><img alt="README in English" src="https://img.shields.io/badge/English-DFE0E5"></a>
   <a href="./README_vi.md"><img alt="Tiếng Việt" src="https://img.shields.io/badge/Tiếng Việt-DFE0E5"></a>
   <a href="./README_de.md"><img alt="Deutsch" src="https://img.shields.io/badge/Deutsch-DFE0E5"></a>
-  <a href="./README_pt_BR.md"><img alt="Português (Brasil)" src="https://img.shields.io/badge/Português (Brasil)-DFE0E5"></a>
+  <a href="./README_pt_BR.md"><img alt="Português (Brasil)" src="https://img.shields.io/badge/Português (Brasil)-DBEDFA"></a>
   <a href="https://github.com/xinnan-tech/xiaozhi-esp32-server/releases">
     <img alt="GitHub Contributors" src="https://img.shields.io/github/v/release/xinnan-tech/xiaozhi-esp32-server?logo=docker" />
   </a>
@@ -185,6 +185,7 @@ Este projeto oferece dois métodos de implantação. Por favor, escolha de acord
 | **Instalação Simplificada** | Diálogo inteligente, gerenciamento de agente único | Ambientes de baixa configuração, dados armazenados em arquivos de configuração, sem necessidade de banco de dados | [①Versão Docker](./docs/Deployment.md#%E6%96%B9%E5%BC%8F%E4%B8%80docker%E5%8F%AA%E8%BF%90%E8%A1%8Cserver) / [②Implantação via Código-Fonte](./docs/Deployment.md#%E6%96%B9%E5%BC%8F%E4%BA%8C%E6%9C%AC%E5%9C%B0%E6%BA%90%E7%A0%81%E5%8F%AA%E8%BF%90%E8%A1%8Cserver)| 2 núcleos 4GB se usar `FunASR`, 2 núcleos 2GB se todas APIs | - |
 | **Instalação de Módulo Completo** | Diálogo inteligente, gerenciamento multiusuário, gerenciamento de múltiplos agentes, operação de interface do console inteligente | Experiência com funcionalidade completa, dados armazenados em banco de dados |[①Versão Docker](./docs/Deployment_all.md#%E6%96%B9%E5%BC%8F%E4%B8%80docker%E8%BF%90%E8%A1%8C%E5%85%A8%E6%A8%A1%E5%9D%97) / [②Implantação via Código-Fonte](./docs/Deployment_all.md#%E6%96%B9%E5%BC%8F%E4%BA%8C%E6%9C%AC%E5%9C%B0%E6%BA%90%E7%A0%81%E8%BF%90%E8%A1%8C%E5%85%A8%E6%A8%A1%E5%9D%97) / [③Tutorial de Atualização Automática via Código-Fonte](./docs/dev-ops-integration.md) | 4 núcleos 8GB se usar `FunASR`, 2 núcleos 4GB se todas APIs| [Tutorial em Vídeo de Inicialização via Código-Fonte Local](https://www.bilibili.com/video/BV1wBJhz4Ewe) |
 
+Perguntas frequentes e tutoriais relacionados podem ser consultados [neste link](./docs/FAQ.md)
 
 > 💡 Nota: Abaixo está uma plataforma de teste implantada com o código mais recente. Você pode gravar e testar se necessário. Usuários simultâneos: 6, os dados serão limpos diariamente.
 
@@ -216,14 +217,15 @@ Endereço da Interface WebSocket: wss://2662r3426b.vicp.fun/xiaozhi/v1/
 | Intent(Reconhecimento de Intenção) | function_call(Chamada de função) | function_call(Chamada de função) |
 | Memory(Função de Memória) | mem_local_short(Memória local de curto prazo) | mem_local_short(Memória local de curto prazo) |
 
+Se você está preocupado com o tempo de resposta de cada componente, consulte o [Relatório de Teste de Desempenho dos Componentes Xiaozhi](https://github.com/xinnan-tech/xiaozhi-performance-research), e teste em seu próprio ambiente seguindo os métodos de teste do relatório.
+
 #### 🔧 Ferramentas de Teste
 Este projeto fornece as seguintes ferramentas de teste para ajudá-lo a verificar o sistema e escolher modelos adequados:
 
 | Nome da Ferramenta | Localização | Método de Uso | Descrição da Função |
 |:---:|:---|:---:|:---:|
 | Ferramenta de Teste de Interação por Áudio | main》xiaozhi-server》test》test_page.html | Abrir diretamente com Google Chrome | Testa as funções de reprodução e recepção de áudio, verifica se o processamento de áudio no lado Python está normal |
-| Ferramenta de Teste de Resposta de Modelo 1 | main》xiaozhi-server》performance_tester.py | Execute `python performance_tester.py` | Testa a velocidade de resposta de três módulos principais: ASR(reconhecimento de fala), LLM(modelo de linguagem), TTS(síntese de voz) |
-| Ferramenta de Teste de Resposta de Modelo 2 | main》xiaozhi-server》performance_tester_vllm.py | Execute `python performance_tester_vllm.py` | Testa a velocidade de resposta do VLLM(modelo de visão) |
+| Ferramenta de Teste de Resposta de Modelo | main》xiaozhi-server》performance_tester.py | Execute `python performance_tester.py` | Testa a velocidade de resposta dos três módulos principais: ASR(reconhecimento de fala), LLM(modelo de linguagem), VLLM(modelo de visão), TTS(síntese de voz) |
 
 > 💡 Nota: Ao testar a velocidade dos modelos, apenas os modelos com chaves configuradas serão testados.
 
@@ -241,8 +243,8 @@ Este projeto fornece as seguintes ferramentas de teste para ajudá-lo a verifica
 | Reconhecimento de Intenção | Suporta reconhecimento de intenção por LLM, Function Call (chamada de função), fornece mecanismo de processamento de intenção baseado em plugins |
 | Sistema de Memória | Suporta memória local de curto prazo, memória via interface mem0ai, memória inteligente PowerMem, com funcionalidade de resumo de memória |
 | Base de Conhecimento | Suporta base de conhecimento RAGFlow, permitindo que o LLM julgue se deve acionar a base de conhecimento após receber a pergunta do usuário, e então responda à pergunta |
-| Envio de Comandos | Suporta envio de comandos MCP para dispositivos ESP32 via protocolo MQTT a partir do Console Inteligente |
 | Chamada de Ferramentas | Suporta protocolo IOT do cliente, protocolo MCP do cliente, protocolo MCP do servidor, protocolo de endpoint MCP, funções de ferramentas personalizadas |
+| Envio de Comandos | Suporta envio de comandos MCP para dispositivos ESP32 via protocolo MQTT a partir do Console Inteligente |
 | Backend de Gerenciamento | Fornece interface de gerenciamento Web, suporta gerenciamento de usuários, configuração do sistema e gerenciamento de dispositivos; Suporta exibição em Chinês Simplificado, Chinês Tradicional e Inglês |
 | Ferramentas de Teste | Fornece ferramentas de teste de desempenho, ferramentas de teste de modelo de visão e ferramentas de teste de interação por áudio |
 | Suporte à Implantação | Suporta implantação via Docker e implantação local, fornece gerenciamento completo de arquivos de configuração |
@@ -250,20 +252,14 @@ Este projeto fornece as seguintes ferramentas de teste para ajudá-lo a verifica
 
 ### Em Desenvolvimento 🚧
 
-Para conhecer o progresso específico do plano de desenvolvimento, [clique aqui](https://github.com/users/xinnan-tech/projects/3)
+Para conhecer o progresso específico do plano de desenvolvimento, [clique aqui](https://github.com/users/xinnan-tech/projects/3). Perguntas frequentes e tutoriais relacionados podem ser consultados [neste link](./docs/FAQ.md)
 
 Se você é um desenvolvedor de software, aqui está uma [Carta Aberta aos Desenvolvedores](docs/contributor_open_letter.md). Seja bem-vindo a participar!
 
 ---
 
 ## Ecossistema do Produto 👬
-Xiaozhi é um ecossistema. Ao utilizar este produto, você também pode conferir outros [projetos excelentes](https://github.com/78/xiaozhi-esp32?tab=readme-ov-file#related-open-source-projects) neste ecossistema
-
-| Nome do Projeto | Endereço do Projeto | Descrição do Projeto |
-|:---------------------|:--------|:--------|
-| Cliente Android Xiaozhi | [xiaozhi-android-client](https://github.com/TOM88812/xiaozhi-android-client) | Um aplicativo de diálogo por voz para Android e iOS baseado no xiaozhi-server, com suporte a interação por voz em tempo real e diálogo por texto.<br/>Atualmente uma versão Flutter, conectando as plataformas iOS e Android. |
-| Cliente Desktop Xiaozhi | [py-xiaozhi](https://github.com/Huang-junsen/py-xiaozhi) | Este projeto fornece um cliente de IA baseado em Python para iniciantes, permitindo que os usuários experimentem a funcionalidade de IA do Xiaozhi através de código, mesmo sem condições de hardware físico. |
-| Servidor Java Xiaozhi | [xiaozhi-esp32-server-java](https://github.com/joey-zhou/xiaozhi-esp32-server-java) | O serviço backend de código aberto Xiaozhi na versão Java é um projeto de código aberto baseado em Java.<br/>Inclui serviços de frontend e backend, visando fornecer aos usuários uma solução completa de serviço backend. |
+Xiaozhi é um ecossistema. Ao utilizar este produto, você também pode conferir outros [projetos excelentes](https://github.com/78/xiaozhi-esp32/blob/main/README_zh.md#%E7%9B%B8%E5%85%B3%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE) neste ecossistema
 
 ---
 
@@ -277,8 +273,10 @@ Xiaozhi é um ecossistema. Ao utilizar este produto, você também pode conferir
 | Chamadas via interface Dify | Dify | - |
 | Chamadas via interface FastGPT | FastGPT | - |
 | Chamadas via interface Coze | Coze | - |
+| Chamadas via interface Xinference | Xinference | - |
+| Chamadas via interface HomeAssistant | HomeAssistant | - |
 
-Na verdade, qualquer LLM que suporte chamadas via interface OpenAI pode ser integrado e utilizado, incluindo interfaces Xinference e HomeAssistant.
+Na verdade, qualquer LLM que suporte chamadas via interface openai pode ser integrado e utilizado.
 
 ---
 
@@ -297,7 +295,7 @@ Na verdade, qualquer VLLM que suporte chamadas via interface OpenAI pode ser int
 | Método de Uso | Plataformas Suportadas | Plataformas Gratuitas |
 |:---:|:---:|:---:|
 | Chamadas via interface | EdgeTTS, iFLYTEK, Volcano Engine, Tencent Cloud, Alibaba Cloud e Bailian, CosyVoiceSiliconflow, TTS302AI, CozeCnTTS, GizwitsTTS, ACGNTTS, OpenAITTS, Lingxi Streaming TTS, MinimaxTTS | Lingxi Streaming TTS, EdgeTTS, CosyVoiceSiliconflow(parcial) |
-| Serviços locais | FishSpeech, GPT_SOVITS_V2, GPT_SOVITS_V3, MinimaxTTS | FishSpeech, GPT_SOVITS_V2, GPT_SOVITS_V3, MinimaxTTS |
+| Serviços locais | FishSpeech, GPT_SOVITS_V2, GPT_SOVITS_V3, Index-TTS, PaddleSpeech | Index-TTS, PaddleSpeech, FishSpeech, GPT_SOVITS_V2, GPT_SOVITS_V3 |
 
 ---
 
@@ -343,6 +341,7 @@ Na verdade, qualquer VLLM que suporte chamadas via interface OpenAI pode ser int
 |:------:|:-------------:|:----:|:-------:|:---------------------:|
 | Intenção | intent_llm | Chamadas via interface | Baseado no preço do LLM | Reconhece intenção através de modelos de linguagem, forte generalização |
 | Intenção | function_call | Chamadas via interface | Baseado no preço do LLM | Completa a intenção através de chamada de função do modelo de linguagem, velocidade rápida, bom resultado |
+| Intenção | nointent | Modo sem intenção | Gratuito | Não realiza reconhecimento de intenção, retorna diretamente o resultado do diálogo |
 
 ---
 
@@ -360,10 +359,10 @@ Na verdade, qualquer VLLM que suporte chamadas via interface OpenAI pode ser int
 |:---:|:---:|:---|
 | <img src="./docs/images/logo_bailing.png" width="160"> | [Robô de Diálogo por Voz Bailing](https://github.com/wwbin2017/bailing) | Este projeto foi inspirado pelo [Robô de Diálogo por Voz Bailing](https://github.com/wwbin2017/bailing) e implementado com base nele |
 | <img src="./docs/images/logo_tenclass.png" width="160"> | [Tenclass](https://www.tenclass.com/) | Agradecimentos à [Tenclass](https://www.tenclass.com/) por formular protocolos de comunicação padrão, soluções de compatibilidade multidispositivo e demonstrações práticas de cenários de alta concorrência para o ecossistema Xiaozhi; fornecendo suporte completo de documentação técnica para este projeto |
-| <img src="./docs/images/logo_xuanfeng.png" width="160"> | [Xuanfeng Technology (旋风科技)](https://github.com/Eric0308) | Agradecimentos à [Xuanfeng Technology](https://github.com/Eric0308) por contribuir com o framework de chamada de função, protocolo de comunicação MCP e implementação do mecanismo de chamada baseado em plugins. Através de um sistema padronizado de agendamento de instruções e capacidades de expansão dinâmica, melhora significativamente a eficiência de interação e extensibilidade funcional dos dispositivos de frontend (IoT) |
+| <img src="./docs/images/logo_xuanfeng.png" width="160"> | [Xuanfeng Technology (玄凤科技)](https://github.com/Eric0308) | Agradecimentos à [Xuanfeng Technology](https://github.com/Eric0308) por contribuir com o framework de chamada de função, protocolo de comunicação MCP e implementação do mecanismo de chamada baseado em plugins. Através de um sistema padronizado de agendamento de instruções e capacidades de expansão dinâmica, melhora significativamente a eficiência de interação e extensibilidade funcional dos dispositivos de frontend (IoT) |
 | <img src="./docs/images/logo_junsen.png" width="160"> | [huangjunsen](https://github.com/huangjunsen0406) | Agradecimentos a [huangjunsen](https://github.com/huangjunsen0406) por contribuir com o módulo `Console de Controle Inteligente Mobile`, que permite controle eficiente e interação em tempo real em dispositivos móveis, melhorando significativamente a conveniência operacional e a eficiência de gerenciamento do sistema em cenários móveis. |
-| <img src="./docs/images/logo_huiyuan.png" width="160"> | [Huiyuan Design (汇源设计)](http://ui.kwd988.net/) | Agradecimentos à [Huiyuan Design](http://ui.kwd988.net/) por fornecer soluções visuais profissionais para este projeto, utilizando sua experiência prática de design atendendo mais de mil empresas para potencializar a experiência do usuário deste produto |
-| <img src="./docs/images/logo_qinren.png" width="160"> | [Xi'an Qinren Information Technology (西安秦人信息科技)](https://www.029app.com/) | Agradecimentos à [Xi'an Qinren Information Technology](https://www.029app.com/) por aprofundar o sistema visual deste projeto, garantindo consistência e extensibilidade do estilo de design geral em aplicações de múltiplos cenários |
+| <img src="./docs/images/logo_huiyuan.png" width="160"> | [Huiyuan Design (汇远设计)](http://ui.kwd988.net/) | Agradecimentos à [Huiyuan Design](http://ui.kwd988.net/) por fornecer soluções visuais profissionais para este projeto, utilizando sua experiência prática de design atendendo mais de mil empresas para potencializar a experiência do usuário deste produto |
+| <img src="./docs/images/logo_qinren.png" width="160"> | [Xi'an Qinren Information Technology (西安勤人信息科技)](https://www.029app.com/) | Agradecimentos à [Xi'an Qinren Information Technology](https://www.029app.com/) por aprofundar o sistema visual deste projeto, garantindo consistência e extensibilidade do estilo de design geral em aplicações de múltiplos cenários |
 | <img src="./docs/images/logo_contributors.png" width="160"> | [Contribuidores de Código](https://github.com/xinnan-tech/xiaozhi-esp32-server/graphs/contributors) | Agradecimentos a [todos os contribuidores de código](https://github.com/xinnan-tech/xiaozhi-esp32-server/graphs/contributors), seus esforços tornaram o projeto mais robusto e poderoso. |
 
 

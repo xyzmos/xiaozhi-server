@@ -259,7 +259,7 @@ Wenn Sie ein Softwareentwickler sind, finden Sie hier einen [Offenen Brief an En
 ---
 
 ## Produktökosystem 👬
-Xiaozhi ist ein Ökosystem. Wenn Sie dieses Produkt verwenden, können Sie sich auch andere [hervorragende Projekte](https://github.com/78/xiaozhi-esp32?tab=readme-ov-file#related-open-source-projects) in diesem Ökosystem ansehen
+Xiaozhi ist ein Ökosystem. Wenn Sie dieses Produkt verwenden, können Sie sich auch andere [hervorragende Projekte](https://github.com/78/xiaozhi-esp32/blob/main/README_zh.md#%E7%9B%B8%E5%85%B3%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE) in diesem Ökosystem ansehen
 
 ---
 

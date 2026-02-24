@@ -130,7 +130,7 @@ export default {
   'chatHistory.loading': 'Carregando...',
   'chatHistory.noMoreData': 'Não há mais dados',
   'chatHistory.noChatRecords': 'Nenhum registro de conversa',
-  'chatRecordsDescription': 'Os registros de conversas com agentes serão exibidos aqui',
+  'chatHistory.chatRecordsDescription': 'Os registros de conversas com agentes serão exibidos aqui',
   // Chat History Detail Page
   'chatHistory.pageTitle': 'Detalhe da Conversa',
   'chatHistory.assistantName': 'Assistente Inteligente',
