@@ -35,7 +35,6 @@ class TTSProvider(TTSProviderBase):
         self.stream = str(config.get("stream", False)).lower() in ("true", "1", "yes")
         self.output_file = config.get("output_dir")
         self.pitch_factor = int(config.get("pitch_factor", 0))
-        self.format = config.get("format", "mp3")
         self.audio_file_type = config.get("format", "mp3")
         self.emotion = int(config.get("emotion", 1))
         self.header = {"Content-Type": "application/json"}
@@ -57,7 +56,7 @@ class TTSProvider(TTSProviderBase):
                 "to_lang": self.to_lang,
                 "text": text,
                 "emotion": self.emotion,
-                "format": self.format,
+                "format": self.audio_file_type,
                 "volume_change_dB": self.volume_change_dB,
                 "voice_id": self.voice,
                 "pitch_factor": self.pitch_factor,

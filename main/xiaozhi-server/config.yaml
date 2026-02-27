@@ -813,6 +813,9 @@ TTS:
     access_token: 你的coze web key
     response_format: wav
     # language: "中文"  # 指定输出语种,如:中文、英语、日语、韩语等,请根据所选音色支持的语言进行设置,不填则默认为中文
+    # 以下可不用设置，使用默认设置
+    # speed: 1  # 语速：-0.5到2
+    # loudness_rate: 0  # 音量：-50到100
   VolcesAiGatewayTTS:
     type: openai
     # 火山引擎 - 边缘大模型网关
@@ -984,7 +987,10 @@ TTS:
     region: ap-guangzhou
     voice: 101001
     # language: "中文"  # 指定输出语种,如:中文、英语、日语、韩语等,请根据所选音色支持的语言进行设置,不填则默认为中文
-
+    # 以下可不用设置，使用默认设置
+    # format: wav  # 音频格式：pcm、wav、mp3
+    # volume: 0  # 音量：-10到10
+    # speech_rate: 0  # 语速：-2到6
   TTS302AI:
     # 302AI语音合成服务，需要先在302平台创建账户充值，并获取密钥信息
     # 添加 302.ai TTS 配置

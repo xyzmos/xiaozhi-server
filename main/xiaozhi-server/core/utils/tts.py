@@ -156,10 +156,9 @@ def convert_percentage_to_range(percentage, min_val, max_val, base_val=None):
     Returns:
         转换后的值
     """
-    if base_val is None:
-        base_val = (min_val + max_val) / 2
+    percentage, min_val, max_val = float(percentage), float(min_val), float(max_val)
+    base_val = float(base_val) if base_val is not None else (min_val + max_val) / 2
 
-    # 百分比 -100 对应 min_val, 0 对应 base_val, 100 对应 max_val
     if percentage < 0:
         # 负百分比：从 base_val 向 min_val 线性插值
         result = base_val + (base_val - min_val) * (percentage / 100)

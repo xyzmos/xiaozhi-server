@@ -5,7 +5,7 @@ from core.providers.tts.base import TTSProviderBase
 class TTSProvider(TTSProviderBase):
     TTS_PARAM_CONFIG = [
         ("ttsVolume", "gain", -10, 10, 0, int),
-        ("ttsRate", "speed", 0.25, 4, 1, lambda v: round(float(v), 1)),
+        ("ttsRate", "speed", 0.25, 4, 1, lambda v: round(float(v), 2)),
     ]
 
     def __init__(self, config, delete_audio_file):
@@ -16,7 +16,6 @@ class TTSProvider(TTSProviderBase):
             self.voice = config.get("private_voice")
         else:
             self.voice = config.get("voice")
-        self.response_format = config.get("response_format", "mp3")
         self.audio_file_type = config.get("response_format", "mp3")
         self.speed = float(config.get("speed", 1.0))
         self.gain = config.get("gain")
@@ -32,7 +31,7 @@ class TTSProvider(TTSProviderBase):
             "model": self.model,
             "input": text,
             "voice": self.voice,
-            "response_format": self.response_format,
+            "response_format": self.audio_file_type,
         }
         headers = {
             "Authorization": f"Bearer {self.access_token}",
