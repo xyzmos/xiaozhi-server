@@ -3,6 +3,11 @@ from core.providers.tts.base import TTSProviderBase
 
 
 class TTSProvider(TTSProviderBase):
+    TTS_PARAM_CONFIG = [
+        ("ttsVolume", "gain", -10, 10, 0, int),
+        ("ttsRate", "speed", 0.25, 4, 1, lambda v: round(float(v), 1)),
+    ]
+
     def __init__(self, config, delete_audio_file):
         super().__init__(config, delete_audio_file)
         self.model = config.get("model")
@@ -15,6 +20,9 @@ class TTSProvider(TTSProviderBase):
         self.audio_file_type = config.get("response_format", "mp3")
         self.speed = float(config.get("speed", 1.0))
         self.gain = config.get("gain")
+
+        # 应用百分比调整（如果存在），否则使用公有化配置
+        self._apply_percentage_params(config)
 
         self.host = "api.siliconflow.cn"
         self.api_url = f"https://{self.host}/v1/audio/speech"

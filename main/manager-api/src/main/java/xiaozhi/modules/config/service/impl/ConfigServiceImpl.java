@@ -88,6 +88,9 @@ public class ConfigServiceImpl implements ConfigService {
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
                 agent.getVadModelId(),
                 agent.getAsrModelId(),
                 null,
@@ -219,6 +222,9 @@ public class ConfigServiceImpl implements ConfigService {
                 referenceAudio,
                 referenceText,
                 language,
+                agent.getTtsVolume(),
+                agent.getTtsRate(),
+                agent.getTtsPitch(),
                 agent.getVadModelId(),
                 agent.getAsrModelId(),
                 agent.getLlmModelId(),
@@ -397,6 +403,9 @@ public class ConfigServiceImpl implements ConfigService {
             String referenceAudio,
             String referenceText,
             String language,
+            Integer ttsVolume,
+            Integer ttsRate,
+            Integer ttsPitch,
             String vadModelId,
             String asrModelId,
             String llmModelId,
@@ -437,6 +446,12 @@ public class ConfigServiceImpl implements ConfigService {
                         ((Map<String, Object>) model.getConfigJson()).put("ref_text", referenceText);
                     if (language != null)
                         ((Map<String, Object>) model.getConfigJson()).put("language", language);
+                    if (ttsVolume != null)
+                        ((Map<String, Object>) model.getConfigJson()).put("ttsVolume", ttsVolume);
+                    if (ttsRate != null)
+                        ((Map<String, Object>) model.getConfigJson()).put("ttsRate", ttsRate);
+                    if (ttsPitch != null)
+                        ((Map<String, Object>) model.getConfigJson()).put("ttsPitch", ttsPitch);
 
                     // 火山引擎声音克隆需要替换resource_id
                     Map<String, Object> map = (Map<String, Object>) model.getConfigJson();

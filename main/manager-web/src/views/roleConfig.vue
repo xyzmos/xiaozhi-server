@@ -234,12 +234,12 @@
                     </el-form-item>
                     <div class="model-row">
                       <!-- 语言筛选器 -->
-                      <el-form-item :label="$t('roleConfig.language')" class="model-item">
+                      <el-form-item :label="$t('roleConfig.language')" class="model-item language-select-item">
                         <div class="model-select-wrapper">
                           <el-select
                             v-model="selectedLanguage"
                             :placeholder="$t('roleConfig.selectLanguage')"
-                            class="form-select"
+                            class="form-select language-select"
                             @change="filterVoicesByLanguage"
                           >
                             <el-option
@@ -251,7 +251,7 @@
                           </el-select>
                         </div>
                       </el-form-item>
-                      
+
                       <!-- 音色选择器 -->
                       <el-form-item :label="$t('roleConfig.voiceType')" class="model-item">
                         <div class="model-select-wrapper">
@@ -294,6 +294,13 @@
                               </div>
                             </el-option>
                           </el-select>
+                          <el-button
+                            class="edit-function-btn"
+                            style="margin-left: 10px;"
+                            @click="openTtsAdvancedSettings"
+                          >
+                            {{ $t('roleConfig.advancedSettings') }}
+                          </el-button>
                         </div>
                       </el-form-item>
                     </div>
@@ -318,6 +325,11 @@
       :providers="currentContextProviders"
       @confirm="handleUpdateContext"
     />
+    <tts-advanced-settings
+      :visible.sync="showTtsAdvancedDialog"
+      :settings="ttsSettings"
+      @save="handleTtsSettingsSave"
+    />
   </div>
 </template>
 
@@ -327,20 +339,30 @@ import { getServiceUrl } from "@/apis/api";
 import RequestService from "@/apis/httpRequest";
 import FunctionDialog from "@/components/FunctionDialog.vue";
 import ContextProviderDialog from "@/components/ContextProviderDialog.vue";
+import TtsAdvancedSettings from "@/components/TtsAdvancedSettings.vue";
 import HeaderBar from "@/components/HeaderBar.vue";
 import i18n from "@/i18n";
 import featureManager from "@/utils/featureManager"; 
 
 export default {
   name: "RoleConfigPage",
-  components: { HeaderBar, FunctionDialog, ContextProviderDialog },
+  components: { HeaderBar, FunctionDialog, ContextProviderDialog, TtsAdvancedSettings },
   data() {
     return {
       showContextProviderDialog: false,
+      showTtsAdvancedDialog: false,
+      ttsSettings: {
+        volume: 0,
+        speed: 0,
+        pitch: 0
+      },
       form: {
         agentCode: "",
         agentName: "",
         ttsVoiceId: "",
+        ttsVolume: null,
+        ttsRate: null,
+        ttsPitch: null,
         chatHistoryConf: 0,
         systemPrompt: "",
         summaryMemory: "",
@@ -422,6 +444,17 @@ export default {
         }),
         contextProviders: this.currentContextProviders,
       };
+
+      // 只在用户设置了TTS参数时才传递（不为null/undefined）
+      if (this.form.ttsVolume !== null && this.form.ttsVolume !== undefined) {
+        configData.ttsVolume = this.form.ttsVolume;
+      }
+      if (this.form.ttsRate !== null && this.form.ttsRate !== undefined) {
+        configData.ttsRate = this.form.ttsRate;
+      }
+      if (this.form.ttsPitch !== null && this.form.ttsPitch !== undefined) {
+        configData.ttsPitch = this.form.ttsPitch;
+      }
       Api.agent.updateAgentConfig(this.$route.query.agentId, configData, ({ data }) => {
         if (data.code === 0) {
           this.$message.success({
@@ -535,6 +568,14 @@ export default {
               intentModelId: data.data.intentModelId,
             },
           };
+
+          // 同步TTS设置到ttsSettings
+          this.ttsSettings = {
+            volume: this.form.ttsVolume || 0,
+            speed: this.form.ttsRate || 0,
+            pitch: this.form.ttsPitch || 0
+          };
+
           // 后端只给了最小映射：[{ id, agentId, pluginId }, ...]
           const savedMappings = data.data.functions || [];
           
@@ -696,6 +737,13 @@ export default {
       if (!currentVoiceSupportsLanguage) {
         this.form.ttsVoiceId = filteredVoices.length > 0 ? filteredVoices[0].id : '';
       }
+
+      // 同步到ttsSettings（如果值为null，使用0作为显示默认值，但不修改form中的值）
+      this.ttsSettings = {
+        volume: this.form.ttsVolume !== null && this.form.ttsVolume !== undefined ? this.form.ttsVolume : 0,
+        speed: this.form.ttsRate !== null && this.form.ttsRate !== undefined ? this.form.ttsRate : 0,
+        pitch: this.form.ttsPitch !== null && this.form.ttsPitch !== undefined ? this.form.ttsPitch : 0
+      };
     },
 
     getFunctionDisplayChar(name) {
@@ -762,6 +810,16 @@ export default {
     },
     openContextProviderDialog() {
       this.showContextProviderDialog = true;
+    },
+    openTtsAdvancedSettings() {
+      this.showTtsAdvancedDialog = true;
+    },
+    handleTtsSettingsSave(settings) {
+      // 保存TTS设置
+      this.ttsSettings = { ...settings };
+      this.form.ttsVolume = settings.volume;
+      this.form.ttsRate = settings.speed;
+      this.form.ttsPitch = settings.pitch;
     },
     handleUpdateContext(providers) {
       this.currentContextProviders = providers;
@@ -1316,6 +1374,15 @@ export default {
   margin-bottom: 0;
 }
 
+.model-row .language-select-item {
+  flex: 0 0 35%;
+  max-width: 35%;
+}
+
+.model-row .language-select-item .language-select {
+  width: 100%;
+}
+
 .model-row .el-form-item__label {
   font-size: 12px !important;
   color: #3d4566 !important;
@@ -1490,5 +1557,31 @@ export default {
   &:hover {
     text-decoration: underline;
   }
+}
+
+.slider-wrapper {
+  width: 100%;
+  padding-right: 12px;
+}
+
+.slider-hint {
+  display: block;
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.tts-slider {
+  width: 100%;
+}
+
+.tts-slider ::v-deep .el-slider__input {
+  width: 80px;
+}
+
+.tts-slider ::v-deep .el-input__inner {
+  text-align: center;
+  padding: 0 8px;
 }
 </style>

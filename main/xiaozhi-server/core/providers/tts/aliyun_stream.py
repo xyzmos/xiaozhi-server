@@ -1,4 +1,4 @@
-import random
+import os
 import uuid
 import json
 import hmac
@@ -8,16 +8,16 @@ import time
 import queue
 import asyncio
 import traceback
-from asyncio import Task
 import websockets
-import os
-from datetime import datetime
+
+from asyncio import Task
 from urllib import parse
+from datetime import datetime
+from config.logger import setup_logging
+from core.utils.tts import MarkdownCleaner
 from core.providers.tts.base import TTSProviderBase
 from core.providers.tts.dto.dto import SentenceType, ContentType, InterfaceType
-from core.utils.tts import MarkdownCleaner
-from core.utils import opus_encoder_utils, textUtils
-from config.logger import setup_logging
+
 
 TAG = __name__
 logger = setup_logging()
@@ -86,6 +86,12 @@ class AccessToken:
 
 
 class TTSProvider(TTSProviderBase):
+    TTS_PARAM_CONFIG = [
+        ("ttsVolume", "volume", 0, 100, 50, int),
+        ("ttsRate", "speech_rate", -500, 500, 0, int),
+        ("ttsPitch", "pitch_rate", -500, 500, 0, int),
+    ]
+
     def __init__(self, config, delete_audio_file):
         super().__init__(config, delete_audio_file)
 
@@ -114,6 +120,9 @@ class TTSProvider(TTSProviderBase):
 
         pitch_rate = config.get("pitch_rate", "0")
         self.pitch_rate = int(pitch_rate) if pitch_rate else 0
+
+        # 应用百分比调整（如果存在），否则使用公有化配置
+        self._apply_percentage_params(config)
 
         # WebSocket配置
         self.host = config.get("host", "nls-gateway-cn-beijing.aliyuncs.com")

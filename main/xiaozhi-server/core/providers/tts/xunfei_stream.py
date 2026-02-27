@@ -9,9 +9,9 @@ import hashlib
 import asyncio
 import traceback
 import websockets
+
 from asyncio import Task
 from config.logger import setup_logging
-from core.utils import opus_encoder_utils
 from core.utils.tts import MarkdownCleaner
 from urllib.parse import urlencode, urlparse
 from core.providers.tts.base import TTSProviderBase
@@ -59,6 +59,12 @@ class XunfeiWSAuth:
 
 
 class TTSProvider(TTSProviderBase):
+    TTS_PARAM_CONFIG = [
+        ("ttsVolume", "volume", 0, 100, 50, int),
+        ("ttsRate", "speed", 0, 100, 50, int),
+        ("ttsPitch", "pitch", 0, 100, 50, int),
+    ]
+
     def __init__(self, config, delete_audio_file):
         super().__init__(config, delete_audio_file)
 
@@ -87,6 +93,9 @@ class TTSProvider(TTSProviderBase):
 
         pitch = config.get("pitch", "50")
         self.pitch = int(pitch) if pitch else 50
+
+        # 应用百分比调整（如果存在），否则使用公有化配置
+        self._apply_percentage_params(config)
 
         # 音频编码配置
         self.format = config.get("format", "raw")
