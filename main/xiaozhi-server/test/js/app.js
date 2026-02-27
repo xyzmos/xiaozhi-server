@@ -25,6 +25,7 @@ class App {
         this.audioPlayer = null;
         this.live2dManager = null;
         this.cameraStream = null;
+        this.currentFacingMode = 'user';
     }
 
     // 初始化应用
@@ -127,6 +128,9 @@ class App {
     async initCamera() {
         const cameraContainer = document.getElementById('cameraContainer');
         const cameraVideo = document.getElementById('cameraVideo');
+        const cameraSwitch = document.getElementById('cameraSwitch');
+        const cameraSwitchMask = document.getElementById('cameraSwitchMask');
+        const dialBtn = document.getElementById('dialBtn');
 
         if (!cameraContainer || !cameraVideo) {
             log('摄像头元素未找到，跳过初始化', 'warning');
@@ -188,11 +192,24 @@ class App {
                     }
                     log('正在请求摄像头权限...', 'info');
                     this.cameraStream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: 320, height: 240, facingMode: 'user' },
+                        video: { width: 320, height: 240, facingMode: this.currentFacingMode },
                         audio: false
                     });
                     cameraVideo.srcObject = this.cameraStream;
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    if (videoDevices.length > 1) {
+                        if (cameraSwitch) cameraSwitch.classList.add('active'); 
+                    }
                     cameraContainer.classList.add('active');
+
+                    // 切换时挂断情况
+                    const hasActive = dialBtn.classList.contains('dial-active');
+                    if (!hasActive) {
+                        cameraContainer.classList.remove('active');
+                        cameraSwitch.classList.remove('active');
+                        window.stopCamera();
+                    }
                     log('摄像头已启动', 'success');
                     return true;
                 } catch (error) {
@@ -214,6 +231,32 @@ class App {
                     this.cameraStream = null;
                     cameraVideo.srcObject = null;
                     log('摄像头已关闭', 'info');
+                }
+            };
+
+            window.switchCamera = async() => {
+                if (window.switchCameraTimer) return;
+                if (this.cameraStream) {
+                    const currentTransform = window.getComputedStyle(cameraContainer).transform;
+                    const originalTransform = currentTransform === 'none' ? 'translate(0px, 0px)' : currentTransform;
+                    cameraContainer.style.setProperty('--original-transform', originalTransform);
+                    cameraContainer.classList.add('flip');
+                    if (cameraSwitchMask) cameraSwitchMask.style.opacity = 0; 
+                    this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+                    window.stopCamera();
+                    window.startCamera();
+                    
+                    window.switchCameraTimer = setTimeout(() => {
+                        if (this.currentFacingMode === 'user') {
+                            cameraVideo.style.transform = 'scaleX(-1)';
+                        } else {
+                            cameraVideo.style.transform = 'scaleX(1)';
+                        }
+                        window.switchCameraTimer = null;
+                        cameraContainer.classList.remove('flip');
+                        cameraContainer.style.removeProperty('--original-transform');
+                        if (cameraSwitchMask) cameraSwitchMask.style.opacity = 1; 
+                    }, 500);
                 }
             };
 
