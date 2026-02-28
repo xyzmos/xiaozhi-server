@@ -11,10 +11,34 @@
         <div class="content-area">
           <el-card class="config-card" shadow="never">
             <div class="config-header">
-              <div class="header-icon">
-                <img loading="lazy" src="@/assets/home/setting-user.png" alt="" />
+              <div class="header-left">
+                <div class="header-icon">
+                  <img loading="lazy" src="@/assets/home/setting-user.png" alt="" />
+                </div>
+                <span class="header-title">{{ form.agentName }}</span>
               </div>
-              <span class="header-title">{{ form.agentName }}</span>
+              <div class="header-tags">
+                <el-tag
+                  v-for="tag in dynamicTags"
+                  :key="tag.id"
+                  closable
+                  :disable-transitions="false"
+                  @close="handleClose(tag.id)">
+                  {{tag.tagName}}
+                </el-tag>
+                <el-input
+                  class="input-new-tag"
+                  v-if="inputVisible"
+                  v-model="inputValue"
+                  ref="saveTagInput"
+                  size="small"
+                  maxLength="100"
+                  @keyup.enter.native="handleInputConfirm"
+                  @blur="handleInputConfirm"
+                >
+                </el-input>
+                <el-button v-else size="small" @click="showInput">+ {{ $t("roleConfig.addTag") }}</el-button>
+              </div>
               <div class="header-actions">
                 <div class="hint-text">
                   <img loading="lazy" src="@/assets/home/info.png" alt="" />
@@ -362,13 +386,24 @@ export default {
         vad: false, // 语言检测活动功能状态
         asr: false, // 语音识别功能状态
       },
+      dynamicTags: [],
+      maxVisibleTags: 5,
+      inputVisible: false,
+      inputValue: ''
     };
   },
   methods: {
     goToHome() {
       this.$router.push("/home");
     },
-    saveConfig() {
+    async saveConfig() {
+      try {
+        await this.handleSaveAgentTags(this.$route.query.agentId);
+      } catch (error) {
+        console.error('保存标签失败:', error);
+        return;
+      }
+
       const configData = {
         agentCode: this.form.agentCode,
         agentName: this.form.agentName,
@@ -407,6 +442,7 @@ export default {
           });
         }
       });
+      
     },
     resetConfig() {
       this.$confirm(i18n.t("roleConfig.confirmReset"), i18n.t("message.info"), {
@@ -1010,6 +1046,45 @@ export default {
         console.error("加载功能状态失败:", error);
       }
     },
+    handleClose(id) {
+      this.dynamicTags = this.dynamicTags.filter((item) => item.id !== id);
+    },
+
+    showInput() {
+      this.inputVisible = true;
+      this.$nextTick(_ => {
+        this.$refs.saveTagInput.$refs.input.focus();
+      });
+    },
+
+    handleInputConfirm() {
+      let inputValue = this.inputValue;
+      if (inputValue) {
+        const tag = { id: new Date().getTime(), tagName: inputValue };
+        this.dynamicTags.push(tag);
+      }
+      this.inputVisible = false;
+      this.inputValue = '';
+    },
+    getAgentTags(agentId) {
+      Api.agent.getAgentTags(agentId, ({ data }) => {
+        if (data.code === 0) {
+          this.dynamicTags = data.data || [];
+        }
+      });
+    },
+    handleSaveAgentTags(agentId) {
+      return new Promise((resolve, reject) => {
+        const tagNames = this.dynamicTags.map(tag => tag.tagName);
+        Api.agent.saveAgentTags(agentId, { tagNames }, ({ data }) => {
+          if (data.code === 0) {
+            resolve();
+          } else {
+            reject(data.msg);
+          }
+        });
+      });
+    }
   },
   watch: {
     "form.model.ttsModelId": {
@@ -1036,6 +1111,7 @@ export default {
     const agentId = this.$route.query.agentId;
     if (agentId) {
       this.fetchAgentConfig(agentId);
+      this.getAgentTags(agentId);
       this.fetchAllFunctions();
     }
     this.fetchModelOptions();
@@ -1046,7 +1122,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .welcome {
   min-width: 900px;
   height: 100vh;
@@ -1123,6 +1199,48 @@ export default {
   font-weight: 700;
   font-size: 19px;
   color: #3d4566;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex-shrink: 0;
+}
+
+.header-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  &::-webkit-scrollbar {
+      height: 6px;
+      background: #e6ebff;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #409EFF;
+      border-radius: 8px;
+    }
+}
+
+.header-tags .el-tag {
+  flex-shrink: 0;
+}
+
+.more-tag {
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.all-tags-popover {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
 }
 
 .header-icon {
@@ -1410,5 +1528,8 @@ export default {
   &:hover {
     text-decoration: underline;
   }
+}
+.input-new-tag {
+  width: 90px;
 }
 </style>

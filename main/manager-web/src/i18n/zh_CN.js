@@ -25,7 +25,7 @@ export default {
   'header.featureManagement': '系统功能配置',
   'header.changePassword': '修改密码',
   'header.logout': '退出登录',
-  'header.searchPlaceholder': '输入名称或mac搜索',
+  'header.searchPlaceholder': '名称、标签或mac搜索',
 
   // McpToolCallDialog组件文本
   'mcpToolCall.title': '工具调用',
@@ -747,6 +747,7 @@ export default {
 
   // 角色配置页面文本
   'roleConfig.title': '角色配置',
+  'roleConfig.addTag': '添加新标签',
   'roleConfig.restartNotice': '保存配置后，需要重启设备，新的配置才会生效。',
   'roleConfig.saveConfig': '保存配置',
   'roleConfig.reset': '重置',

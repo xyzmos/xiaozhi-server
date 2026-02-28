@@ -25,7 +25,7 @@ export default {
   'header.featureManagement': 'System Feature Management',
   'header.changePassword': 'Change Password',
   'header.logout': 'Logout',
-  'header.searchPlaceholder': 'Search name or mac',
+  'header.searchPlaceholder': 'Name, tag or MAC search',
 
   // McpToolCallDialog component text
   'mcpToolCall.title': 'Tool Call',
@@ -747,6 +747,7 @@ export default {
 
   // Role configuration page text
   'roleConfig.title': 'Role Configuration',
+  'roleConfig.addTag': 'Add New Tag',
   'roleConfig.restartNotice': 'After saving the configuration, you need to restart the device for the new configuration to take effect.',
   'roleConfig.saveConfig': 'Save Configuration',
   'roleConfig.reset': 'Reset',

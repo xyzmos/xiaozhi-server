@@ -25,7 +25,7 @@ export default {
   'header.featureManagement': 'Cấu hình chức năng hệ thống',
   'header.changePassword': 'Đổi mật khẩu',
   'header.logout': 'Đăng xuất',
-  'header.searchPlaceholder': 'Tìm tên hoặc MAC',
+  'header.searchPlaceholder': 'Tên, thẻ hoặc tìm kiếm mac',
 
   // McpToolCallDialog component text
   'mcpToolCall.title': 'Gọi công cụ',
@@ -747,6 +747,7 @@ export default {
 
   // Role configuration page text
   'roleConfig.title': 'Vai trò',
+  'roleConfig.addTag': 'Thêm mới nhãn',
   'roleConfig.restartNotice': 'Sau khi lưu cấu hình, bạn cần khởi động lại thiết bị để cấu hình mới có hiệu lực.',
   'roleConfig.saveConfig': 'Lưu cấu hình',
   'roleConfig.reset': 'Đặt lại',

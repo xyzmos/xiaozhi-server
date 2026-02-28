@@ -39,6 +39,11 @@
     </div>
     <div class="version-info">
       <div>{{ $t('home.lastConversation') }}：{{ formattedLastConnectedTime }}</div>
+      <div ref="scrollRef" class="version-info-scroll">
+        <div ref="tagsRef" class="version-info-tags">
+          <el-tag v-for="(tag, index) in tags" :key="index" size="mini">{{ tag }}</el-tag>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -81,6 +86,10 @@ export default {
       } else {
         return this.device.lastConnectedAt;
       }
+    },
+    tags() {
+      if (!this.device.tags) return [];
+      return this.device.tags.map((tag) => tag.tagName);
     }
   },
   methods: {
@@ -102,15 +111,34 @@ export default {
       }
       this.$emit('chat-history', { agentId: this.device.agentId, agentName: this.device.agentName })
     }
+  },
+  watch: {
+    tags: {
+      handler(newTags) {
+        if (newTags.length === 0) return;
+        this.$nextTick(() => {
+          const scrollWidth = this.$refs.scrollRef.clientWidth;
+          const tagsWidth = this.$refs.tagsRef.clientWidth;
+          if (tagsWidth < scrollWidth) {
+            this.$refs.tagsRef.style.width = '100%';
+            this.$refs.tagsRef.style.justifyContent = 'flex-end';
+          } else {
+            this.$refs.tagsRef.style.width = 'fit-content';
+            this.$refs.tagsRef.style.justifyContent = 'flex-start';
+          }
+        })
+      },
+      immediate: true
+    }
   }
 }
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .device-item {
   width: 342px;
   border-radius: 20px;
   background: #fafcfe;
-  padding: 22px;
+  padding: 22px 22px 14px;
   box-sizing: border-box;
 }
 
@@ -142,6 +170,42 @@ export default {
   font-size: 12px;
   color: #979db1;
   font-weight: 400;
+  > div {
+    &:first-of-type {
+      margin-top: 5px;
+    }
+  }
+  &-scroll {
+    height: 26px;
+    margin-left: 20px;
+    flex: 1;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    &::-webkit-scrollbar {
+      height: 6px;
+      background: #e6ebff;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #409EFF;
+      border-radius: 8px;
+    }
+  }
+  &-tags {
+    width: fit-content;
+    display: flex;
+    gap: 6px;
+  }
+}
+
+.more-tag {
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.all-tags-popover {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .disabled-btn {
