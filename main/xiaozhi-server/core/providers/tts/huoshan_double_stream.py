@@ -149,6 +149,7 @@ class TTSProvider(TTSProviderBase):
         self.cluster = config.get("cluster")
         self.resource_id = config.get("resource_id")
         self.resource_type = True if self.resource_id == "seed-tts-2.0" else False
+        self.report_on_last = self.resource_type
         self.activate_session = False
         if config.get("private_voice"):
             self.voice = config.get("private_voice")
