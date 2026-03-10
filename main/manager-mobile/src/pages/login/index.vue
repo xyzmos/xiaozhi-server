@@ -9,17 +9,16 @@
 </route>
 
 <script lang="ts" setup>
-import type { LoginData } from '@/api/auth';
-import { computed, onMounted, ref } from 'vue';
-import { login } from '@/api/auth';
-import { useConfigStore } from '@/store';
-import { getEnvBaseUrl } from '@/utils';
-import { toast } from '@/utils/toast';
+import type { LoginData } from '@/api/auth'
+import type { Language } from '@/store/lang'
+import { computed, onMounted, ref } from 'vue'
+import { login } from '@/api/auth'
 // 导入国际化相关功能
-import { t, changeLanguage, getSupportedLanguages, initI18n } from '@/i18n';
-import type { Language } from '@/store/lang';
+import { changeLanguage, getSupportedLanguages, initI18n, t } from '@/i18n'
+import { useConfigStore } from '@/store'
 // 导入SM2加密工具
-import { sm2Encrypt } from '@/utils'
+import { getEnvBaseUrl, sm2Encrypt } from '@/utils'
+import { toast } from '@/utils/toast'
 
 // 获取屏幕边界到安全区域距离
 let safeAreaInsets
@@ -134,7 +133,7 @@ function generateUUID() {
 
 let skipReLaunch = false // 全局或组件作用域
 
-//跳转至服务端设置页面
+// 跳转至服务端设置页面
 function goToServerSetting() {
   uni.switchTab({
     url: '/pages/settings/index',
@@ -143,9 +142,9 @@ function goToServerSetting() {
 
 // 获取验证码
 async function refreshCaptcha() {
-  const uuid = generateUUID();
-  formData.value.captchaId = uuid;
-  captchaImage.value = `${getEnvBaseUrl()}/user/captcha?uuid=${uuid}&t=${Date.now()}`;
+  const uuid = generateUUID()
+  formData.value.captchaId = uuid
+  captchaImage.value = `${getEnvBaseUrl()}/user/captcha?uuid=${uuid}&t=${Date.now()}`
 }
 
 // 登录
@@ -193,7 +192,8 @@ async function handleLogin() {
       // 拼接验证码和密码
       const captchaAndPassword = formData.value.captcha + formData.value.password
       encryptedPassword = sm2Encrypt(sm2PublicKey.value, captchaAndPassword)
-    } catch (error) {
+    }
+    catch (error) {
       console.error('密码加密失败:', error)
       toast.warning(t('sm2.encryptionFailed'))
       return
@@ -203,20 +203,20 @@ async function handleLogin() {
     const loginData: LoginData = {
       username: '',
       password: encryptedPassword,
-      captchaId: formData.value.captchaId
+      captchaId: formData.value.captchaId,
     }
 
     // 如果是手机号登录，将区号+手机号拼接到username字段
     if (loginType.value === 'mobile') {
       loginData.username = `${selectedAreaCode.value}${formData.value.mobile}`
-    } else {
+    }
+    else {
       loginData.username = formData.value.username
     }
 
     const response = await login(loginData)
     // 存储token
-    uni.setStorageSync('token', response.token)
-    uni.setStorageSync('expire', response.expire)
+    uni.setStorageSync('token', JSON.stringify(response))
 
     toast.success(t('message.loginSuccess'))
 
@@ -267,7 +267,8 @@ onMounted(async () => {
   if (!configStore.config.name) {
     try {
       await configStore.fetchPublicConfig()
-    } catch (error) {
+    }
+    catch (error) {
       console.error(t('login.fetchConfigError'), error)
     }
   }
@@ -287,19 +288,21 @@ onMounted(async () => {
         </text>
       </view>
     </view>
-	
-	<!-- 右上角按钮组 -->
-	<view class="top-right-buttons" :style="{ top: `${safeAreaInsets?.top + 10}px` }">
-	  <!-- 语言切换按钮 -->
-	  <view class="lang-btn" @click="showLanguageSheet = true">
-      <text class="lang-text-icon">{{ t('login.selectLanguageTip') }}</text>
-	  </view>
-	  
-	  <!-- 服务端设置按钮 -->
-	  <view class="server-btn" @click="goToServerSetting">
-	    <wd-icon name="setting" custom-class="server-icon" />
-	  </view>
-	</view>
+
+    <!-- 右上角按钮组 -->
+    <view class="top-right-buttons" :style="{ top: `${safeAreaInsets?.top + 10}px` }">
+      <!-- 语言切换按钮 -->
+      <view class="lang-btn" @click="showLanguageSheet = true">
+        <text class="lang-text-icon">
+          {{ t('login.selectLanguageTip') }}
+        </text>
+      </view>
+
+      <!-- 服务端设置按钮 -->
+      <view class="server-btn" @click="goToServerSetting">
+        <wd-icon name="setting" custom-class="server-icon" />
+      </view>
+    </view>
 
     <view class="form-container">
       <view class="form">
@@ -893,7 +896,7 @@ onMounted(async () => {
   cursor: pointer;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 24rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.2);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
 
   &:active {
     transform: scale(0.95);
@@ -901,7 +904,7 @@ onMounted(async () => {
 
   .lang-text-icon {
     font-size: 18rpx;
-    color: #FFFFFF;
+    color: #ffffff;
   }
 
   &:hover {
@@ -919,7 +922,7 @@ onMounted(async () => {
   cursor: pointer;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 24rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.2);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
 
   &:active {
     transform: scale(0.95);
@@ -927,7 +930,7 @@ onMounted(async () => {
 
   .server-icon {
     font-size: 28rpx;
-    color: #FFFFFF;
+    color: #ffffff;
   }
 
   &:hover {
