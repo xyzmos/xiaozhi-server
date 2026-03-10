@@ -87,12 +87,18 @@ async function testServerBaseUrl() {
     if (response.statusCode === 200) {
       return true
     } else {
-      toast.error(t('message.invalidAddress'))
+      toast.error({
+        msg: t('message.invalidAddress'),
+        duration: 3000,
+      })
       return false
     }
   } catch (error) {
     console.error('测试服务端地址失败:', error)
-    toast.error(t('message.invalidAddress'))
+    toast.error({
+      msg: t('message.invalidAddress'),
+      duration: 3000,
+    })
     return false
   }
 }
