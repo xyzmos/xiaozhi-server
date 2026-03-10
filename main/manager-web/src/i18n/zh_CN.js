@@ -189,7 +189,7 @@ export default {
   'editVoiceDialog.remarkPlaceholder': '请输入备注内容',
   'editVoiceDialog.generatePreview': '生成试听',
   'editVoiceDialog.defaultVoiceName': '湾湾小何',
-  'editVoiceDialog.defaultLanguageType': '中文',
+  'editVoiceDialog.defaultLanguageType': '普通话',
   'editVoiceDialog.requiredVoiceCode': '请输入音色编码',
   'editVoiceDialog.requiredVoiceName': '请输入音色名称',
 

@@ -189,7 +189,7 @@ export default {
   'editVoiceDialog.remarkPlaceholder': '請輸入備註內容',
   'editVoiceDialog.generatePreview': '生成試聽',
   'editVoiceDialog.defaultVoiceName': '灣灣小何',
-  'editVoiceDialog.defaultLanguageType': '中文',
+  'editVoiceDialog.defaultLanguageType': '普通話',
   'editVoiceDialog.requiredVoiceCode': '請輸入音色編碼',
   'editVoiceDialog.requiredVoiceName': '請輸入音色名稱',
 
