@@ -17,8 +17,12 @@ class LLMProvider(LLMProviderBase):
             self.base_url = config.get("base_url")
         else:
             self.base_url = config.get("url")
-        timeout = config.get("timeout", 300)
-        self.timeout = int(timeout) if timeout else 300
+        custom_timeout = httpx.Timeout(
+            pool=2.0,
+            connect=3.0,
+            write=5.0,
+            read=10.0
+        )
 
         param_defaults = {
             "max_tokens": int,
@@ -45,7 +49,7 @@ class LLMProvider(LLMProviderBase):
         model_key_msg = check_model_key("LLM", self.api_key)
         if model_key_msg:
             logger.bind(tag=TAG).error(model_key_msg)
-        self.client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=httpx.Timeout(self.timeout))
+        self.client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=custom_timeout)
 
     @staticmethod
     def normalize_dialogue(dialogue):

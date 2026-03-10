@@ -357,7 +357,7 @@ class TTSProviderBase(ABC):
                     sendAudioMessage(self.conn, sentence_type, audio_datas, text),
                     self.conn.loop,
                 )
-                future.result()
+                future.result(timeout=15)
 
                 # 记录输出和报告
                 if self.conn.max_output_size > 0 and text:

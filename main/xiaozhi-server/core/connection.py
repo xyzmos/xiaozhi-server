@@ -116,6 +116,8 @@ class ConnectionHandler:
         self.memory = _memory
         self.intent = _intent
 
+        self.is_exiting = False  # 标记是否正在执行退出流程
+
         # 为每个连接单独管理声纹识别
         self.voiceprint_provider = None
 
@@ -289,6 +291,10 @@ class ConnectionHandler:
 
     async def _route_message(self, message):
         """消息路由"""
+        # 退出状态丢弃所有消息
+        if self.is_exiting:
+           return
+
         # 检查是否已经获取到真实的绑定状态
         if not self.bind_completed_event.is_set():
             # 还没有获取到真实状态，等待直到获取到真实状态或超时
@@ -991,11 +997,23 @@ class ConnectionHandler:
                     )
                     futures_with_data.append((future, tool_call_data))
 
+                TOOL_CALL_TIMEOUT = 30
                 # 等待协程结束（实际等待时长为最慢的那个）
                 tool_results = []
                 for future, tool_call_data in futures_with_data:
-                    result = future.result()
-                    tool_results.append((result, tool_call_data))
+                    try:
+                        result = future.result(timeout=TOOL_CALL_TIMEOUT)
+                        tool_results.append((result, tool_call_data))
+                    except Exception as e:
+                        self.logger.bind(tag=TAG).error(
+                            f"工具调用超时或异常: {tool_call_data['name']}, 错误: {e}"
+                        )
+                        # 超时时返回错误响应，避免整个流程卡死
+                        from plugins_func.register import Action, ActionResponse
+                        tool_results.append((
+                            ActionResponse(action=Action.ERROR, result="哎呀，网络遇到点问题，请稍后再试下！"),
+                            tool_call_data
+                        ))
 
                 # 统一处理所有工具调用结果
                 if tool_results:
