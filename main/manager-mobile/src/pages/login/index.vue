@@ -77,11 +77,6 @@ const areaCodeList = computed(() => {
   return configStore.config.mobileAreaList || [{ name: '中国大陆', key: '+86' }]
 })
 
-// SM2公钥
-const sm2PublicKey = computed(() => {
-  return configStore.config.sm2PublicKey
-})
-
 // 切换登录方式
 function toggleLoginType() {
   loginType.value = loginType.value === 'username' ? 'mobile' : 'username'
@@ -131,8 +126,6 @@ function generateUUID() {
   })
 }
 
-let skipReLaunch = false // 全局或组件作用域
-
 // 跳转至服务端设置页面
 function goToServerSetting() {
   uni.switchTab({
@@ -178,7 +171,8 @@ async function handleLogin() {
   }
 
   // 检查SM2公钥是否配置
-  if (!sm2PublicKey.value) {
+  const sm2PublicKey = configStore.config.sm2PublicKey
+  if (!sm2PublicKey) {
     toast.warning(t('sm2.publicKeyNotConfigured'))
     return
   }
@@ -191,7 +185,7 @@ async function handleLogin() {
     try {
       // 拼接验证码和密码
       const captchaAndPassword = formData.value.captcha + formData.value.password
-      encryptedPassword = sm2Encrypt(sm2PublicKey.value, captchaAndPassword)
+      encryptedPassword = sm2Encrypt(sm2PublicKey, captchaAndPassword)
     }
     catch (error) {
       console.error('密码加密失败:', error)

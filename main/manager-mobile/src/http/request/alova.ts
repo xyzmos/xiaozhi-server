@@ -42,6 +42,12 @@ const alovaInstance = createAlova({
   statesHook: VueHook,
 
   beforeRequest: onAuthRequired((method) => {
+    // h5动态获取最新的 baseURL，确保使用用户设置的服务器地址
+    const currentBaseUrl = getEnvBaseUrl()
+    if (currentBaseUrl !== method.baseURL) {
+      method.baseURL = currentBaseUrl
+    }
+
     // 检查混合内容错误（HTTPS页面请求HTTP接口）
     const currentProtocol = typeof window !== 'undefined' && window.location.protocol
     const requestProtocol = method.baseURL?.split(':')[0]
