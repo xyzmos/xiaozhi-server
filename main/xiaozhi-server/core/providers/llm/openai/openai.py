@@ -17,12 +17,22 @@ class LLMProvider(LLMProviderBase):
             self.base_url = config.get("base_url")
         else:
             self.base_url = config.get("url")
-        custom_timeout = httpx.Timeout(
-            pool=2.0,
-            connect=3.0,
-            write=5.0,
-            read=10.0
-        )
+        
+        timeout_config = config.get("timeout")
+        if isinstance(timeout_config, dict):
+            # 细粒度超时配置
+            custom_timeout = httpx.Timeout(
+                pool=timeout_config.get("pool", 2.0),
+                connect=timeout_config.get("connect", 3.0),
+                write=timeout_config.get("write", 5.0),
+                read=timeout_config.get("read", 60.0)
+            )
+        elif isinstance(timeout_config, (int, float)) and timeout_config > 0:
+            # 兼容旧的单一超时配置（整数或浮点数）
+            custom_timeout = httpx.Timeout(timeout_config)
+        else:
+            # 未配置或配置无效，使用默认值
+            custom_timeout = httpx.Timeout(300)
 
         param_defaults = {
             "max_tokens": int,

@@ -32,7 +32,7 @@ from core.providers.asr.dto.dto import InterfaceType
 from core.handle.textHandle import handleTextMessage
 from core.providers.tools.unified_tool_handler import UnifiedToolHandler
 from plugins_func.loadplugins import auto_import_modules
-from plugins_func.register import Action
+from plugins_func.register import Action, ActionResponse
 from core.auth import AuthenticationError
 from config.config_loader import get_private_config_from_api
 from core.providers.tts.dto.dto import ContentType, TTSMessageDTO, SentenceType
@@ -997,19 +997,19 @@ class ConnectionHandler:
                     )
                     futures_with_data.append((future, tool_call_data))
 
-                TOOL_CALL_TIMEOUT = 30
+                # 工具调用超时时间，可配置，默认30秒
+                tool_call_timeout = int(self.config.get("tool_call_timeout", 30))
                 # 等待协程结束（实际等待时长为最慢的那个）
                 tool_results = []
                 for future, tool_call_data in futures_with_data:
                     try:
-                        result = future.result(timeout=TOOL_CALL_TIMEOUT)
+                        result = future.result(timeout=tool_call_timeout)
                         tool_results.append((result, tool_call_data))
                     except Exception as e:
                         self.logger.bind(tag=TAG).error(
                             f"工具调用超时或异常: {tool_call_data['name']}, 错误: {e}"
                         )
                         # 超时时返回错误响应，避免整个流程卡死
-                        from plugins_func.register import Action, ActionResponse
                         tool_results.append((
                             ActionResponse(action=Action.ERROR, result="哎呀，网络遇到点问题，请稍后再试下！"),
                             tool_call_data

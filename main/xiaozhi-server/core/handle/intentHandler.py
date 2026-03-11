@@ -150,8 +150,8 @@ async def process_intent_result(
             def process_function_call():
                 conn.dialogue.put(Message(role="user", content=original_text))
                 
-                # 使用统一工具处理器处理所有工具调用，添加超时保护
-                TOOL_CALL_TIMEOUT = 30
+                # 工具调用超时时间
+                tool_call_timeout = int(conn.config.get("tool_call_timeout", 30))
                 # 使用统一工具处理器处理所有工具调用
                 try:
                     result = asyncio.run_coroutine_threadsafe(
@@ -159,7 +159,7 @@ async def process_intent_result(
                             conn, function_call_data
                         ),
                         conn.loop,
-                    ).result(timeout=TOOL_CALL_TIMEOUT)
+                    ).result(timeout=tool_call_timeout)
                 except Exception as e:
                     conn.logger.bind(tag=TAG).error(f"工具调用失败: {e}")
                     result = ActionResponse(
