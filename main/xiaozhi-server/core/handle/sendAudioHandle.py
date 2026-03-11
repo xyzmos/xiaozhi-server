@@ -263,7 +263,7 @@ async def _do_send_audio(conn: "ConnectionHandler", opus_packet, flow_control):
 async def send_tts_message(conn: "ConnectionHandler", state, text=None):
     """发送 TTS 状态消息"""
     if text is None and state == "sentence_start":
-        return 
+        return
     message = {"type": "tts", "state": state, "session_id": conn.session_id}
     if text is not None:
         message["text"] = textUtils.check_emoji(text)
