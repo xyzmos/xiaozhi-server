@@ -14,7 +14,7 @@ import type { Language } from '@/store/lang'
 import { computed, onMounted, ref } from 'vue'
 import { login } from '@/api/auth'
 // 导入国际化相关功能
-import { changeLanguage, getSupportedLanguages, initI18n, t } from '@/i18n'
+import { changeLanguage, getCurrentLanguage, getSupportedLanguages, initI18n, t } from '@/i18n'
 import { useConfigStore } from '@/store'
 // 导入SM2加密工具
 import { getEnvBaseUrl, sm2Encrypt } from '@/utils'
@@ -114,6 +114,22 @@ function goToRegister() {
 function goToForgotPassword() {
   uni.navigateTo({
     url: '/pages/forgot-password/index',
+  })
+}
+
+// 跳转到用户协议
+function goToUserAgreement() {
+  const lang = getCurrentLanguage() === 'zh_CN' ? 'zh' : 'en'
+  uni.navigateTo({
+    url: `/pages/login/user-agreement-${lang}`,
+  })
+}
+
+// 跳转到隐私政策
+function goToPrivacyPolicy() {
+  const lang = getCurrentLanguage() === 'zh_CN' ? 'zh' : 'en'
+  uni.navigateTo({
+    url: `/pages/login/privacy-policy-${lang}`,
   })
 }
 
@@ -385,6 +401,16 @@ onMounted(async () => {
               {{ t('login.forgotPassword') }}
             </text>
           </view>
+        </view>
+
+        <view class="policy-links">
+          <text class="policy-link" @click="goToUserAgreement">
+            {{ t('login.userAgreement') }}
+          </text>
+          <text class="policy-divider">|</text>
+          <text class="policy-link" @click="goToPrivacyPolicy">
+            {{ t('login.privacyPolicy') }}
+          </text>
         </view>
 
         <!-- 登录方式切换 -->
@@ -679,6 +705,29 @@ onMounted(async () => {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30rpx;
+    }
+
+    .policy-links {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20rpx;
+      margin-bottom: 30rpx;
+
+      .policy-link {
+        color: #667eea;
+        font-size: 26rpx;
+        cursor: pointer;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .policy-divider {
+        color: #999999;
+        font-size: 26rpx;
+      }
     }
 
     .forgot-password {

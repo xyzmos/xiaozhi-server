@@ -30,6 +30,8 @@ export default {
     'login.requiredMobile': 'Bitte gültige Handynummer eingeben',
     'login.captchaError': 'Grafischer Bestätigungscode Fehler',
     'login.forgotPassword': 'Passwort vergessen',
+    'login.userAgreement': 'Nutzungsbedingungen',
+    'login.privacyPolicy': 'Datenschutzrichtlinie',
 
     // Registrierungsseite
     'register.pageTitle': 'Registrieren',

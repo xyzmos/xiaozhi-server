@@ -30,6 +30,8 @@ export default {
   'login.requiredMobile': '请输入正确的手机号码',
   'login.captchaError': '图形验证码错误',
   'login.forgotPassword': '忘记密码',
+  'login.userAgreement': '用户协议',
+  'login.privacyPolicy': '隐私政策',
 
   // 注册页面
   'register.pageTitle': '注册',

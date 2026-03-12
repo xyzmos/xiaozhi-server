@@ -30,6 +30,8 @@ export default {
     'login.requiredMobile': 'Vui lòng nhập số điện thoại hợp lệ',
     'login.captchaError': 'Lỗi mã xác minh đồ họa',
     'login.forgotPassword': 'Quên mật khẩu',
+    'login.userAgreement': 'Thỏa thuận người dùng',
+    'login.privacyPolicy': 'Chính sách bảo mật',
 
     // Trang đăng ký
     'register.pageTitle': 'Đăng ký',

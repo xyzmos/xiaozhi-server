@@ -30,6 +30,8 @@ export default {
   'login.requiredMobile': 'Please enter a valid phone number',
   'login.captchaError': 'Graphic verification code error',
   'login.forgotPassword': 'Forgot Password',
+  'login.userAgreement': 'User Agreement',
+  'login.privacyPolicy': 'Privacy Policy',
 
   // Register page
   'register.pageTitle': 'Register',
