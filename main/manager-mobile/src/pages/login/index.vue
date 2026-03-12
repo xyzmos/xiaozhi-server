@@ -240,14 +240,6 @@ async function handleLogin() {
   catch (error: any) {
     // 登录失败重新获取验证码
     refreshCaptcha()
-    // 处理验证码错误 - 从error.message中解析错误码
-    if (error.message.includes('请求错误[10067]')) {
-      toast.warning(t('login.captchaError'))
-    }
-    // 处理账号或密码错误
-    else if (error.message.includes('请求错误[10004]')) {
-      toast.warning(t('message.passwordError'))
-    }
   }
   finally {
     loading.value = false

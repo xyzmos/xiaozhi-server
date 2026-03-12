@@ -587,15 +587,6 @@ function handleTools() {
   })
 }
 
-// 监听插件配置更新
-function watchPluginUpdates() {
-  // 监听store中的插件配置变化
-  watch(() => pluginStore.currentFunctions, (newFunctions) => {
-    console.log('插件配置已更新:', newFunctions)
-    formData.value.functions = newFunctions
-  }, { deep: true })
-}
-
 // 获取智能体标签
 async function loadAgentTags() {
   try {
@@ -611,9 +602,12 @@ async function handleUpdateAgentTags() {
   await updateAgentTags(agentId.value, { tagNames })
 }
 
+// 监听store中的插件配置变化
+watch(() => pluginStore.currentFunctions, (newFunctions) => {
+  formData.value.functions = newFunctions
+}, { deep: true })
+
 onMounted(async () => {
-  // 初始化插件配置监听
-  watchPluginUpdates()
   loadAgentTags()
 
   // 先加载模型选项和角色模板
