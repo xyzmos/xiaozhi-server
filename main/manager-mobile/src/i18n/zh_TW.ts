@@ -492,4 +492,9 @@ export default {
   'deviceConfig.afterConfigSuccessDeviceWillRestart': '配網成功後設備將自動重啟',
   'deviceConfig.audioPlaybackError': '音頻播放錯誤',
   'deviceConfig.playbackFailed': '播放失敗',
+
+  // Voiceprint page
+  'voiceprint.audioNotExist': '該音頻不存在',
+  'voiceprint.getAudioFailed': '獲取音頻失敗',
+  'voiceprint.audioPlayFailed': '音頻播放失敗',
 }

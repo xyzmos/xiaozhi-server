@@ -110,6 +110,10 @@ const inputVisible = ref(false)
 const languageOptions = ref([])
 const isVisibleReport = ref(false)
 
+// 音频播放相关
+const audioRef = ref<UniApp.InnerAudioContext | null>(null)
+const playingVoiceId = ref<string>('')
+
 // 使用插件store
 const pluginStore = usePluginStore()
 const speedPitchStore = useSpeedPitch()
@@ -493,6 +497,57 @@ async function onPickerConfirm(type: string, value: any, name: string) {
 // 选择器取消
 function onPickerCancel(type: string) {
   pickerShow.value[type] = false
+  // 关闭时停止播放
+  if (type === 'voiceprint') {
+    stopAudio()
+  }
+}
+
+// 播放音频
+function playAudio(voiceDemo: string, voiceId: string, event: Event) {
+  event.stopPropagation() // 阻止事件冒泡，防止关闭下拉框
+
+  if (!voiceDemo) {
+    return
+  }
+
+  // 如果正在播放同一个音频，则停止
+  if (playingVoiceId.value === voiceId) {
+    stopAudio()
+    return
+  }
+
+  // 停止之前的音频
+  stopAudio()
+
+  // 创建新的音频实例
+  audioRef.value = uni.createInnerAudioContext()
+  audioRef.value.src = voiceDemo
+  playingVoiceId.value = voiceId
+
+  // 监听播放结束
+  audioRef.value.onEnded(() => {
+    playingVoiceId.value = ''
+  })
+
+  // 监听播放错误
+  audioRef.value.onError(() => {
+    toast.error('音频播放失败')
+    playingVoiceId.value = ''
+  })
+
+  // 播放音频
+  audioRef.value.play()
+}
+
+// 停止音频
+function stopAudio() {
+  if (audioRef.value) {
+    audioRef.value.stop()
+    audioRef.value.destroy()
+    audioRef.value = null
+  }
+  playingVoiceId.value = ''
 }
 
 // 获取模型显示名称
@@ -946,12 +1001,32 @@ onMounted(async () => {
       @select="({ item }) => onPickerConfirm('tts', item.value, item.name)"
     />
 
-    <wd-action-sheet
-      v-model="pickerShow.voiceprint"
-      :actions="voiceOptions"
-      @close="onPickerCancel('voiceprint')"
-      @select="({ item }) => onPickerConfirm('voiceprint', item.value, item.name)"
-    />
+    <!-- 自定义语音选择弹出层 -->
+    <wd-popup v-model="pickerShow.voiceprint" position="bottom" @close="onPickerCancel('voiceprint')">
+      <view class="bg-white rounded-t-[20rpx] pb-[env(safe-area-inset-bottom)]">
+        <view class="flex items-center justify-between border-b border-[#eeeeee] p-[32rpx]">
+          <text class="text-[32rpx] text-[#232338] font-bold">{{ t('agent.voiceprint') }}</text>
+          <wd-icon name="close" size="20px" @click="onPickerCancel('voiceprint')" />
+        </view>
+        <view class="max-h-[600rpx] overflow-y-auto">
+          <view
+            v-for="voice in voiceOptions"
+            :key="voice.value"
+            class="flex items-center justify-between border-b border-[#f5f5f5] p-[32rpx] transition-all active:bg-[#f5f7fb]"
+            @click="onPickerConfirm('voiceprint', voice.value, voice.name)"
+          >
+            <text class="flex-1 text-[28rpx] text-[#232338]">{{ voice.name }}</text>
+            <view v-if="voice.voiceDemo || voice.voice_demo" class="ml-[20rpx]" @click.stop="playAudio(voice.voiceDemo || voice.voice_demo, voice.value, $event)">
+              <wd-icon
+                :name="playingVoiceId === voice.value ? 'pause-circle' : 'play-circle'"
+                size="24px"
+                :custom-class="playingVoiceId === voice.value ? 'text-[#336cff]' : 'text-[#9d9ea3]'"
+              />
+            </view>
+          </view>
+        </view>
+      </view>
+    </wd-popup>
     <wd-action-sheet
       v-model="pickerShow.language"
       :actions="languageOptions"

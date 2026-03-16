@@ -492,4 +492,9 @@ export default {
     'deviceConfig.afterConfigSuccessDeviceWillRestart': 'Sau khi cấu hình thành công, thiết bị sẽ tự động khởi động lại',
     'deviceConfig.audioPlaybackError': 'Lỗi phát âm thanh',
     'deviceConfig.playbackFailed': 'Phát thất bại',
+
+    // Voiceprint page
+    'voiceprint.audioNotExist': 'Âm thanh không tồn tại',
+    'voiceprint.getAudioFailed': 'Không thể lấy âm thanh',
+    'voiceprint.audioPlayFailed': 'Phát âm thanh thất bại',
 }

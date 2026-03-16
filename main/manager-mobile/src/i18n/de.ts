@@ -492,4 +492,9 @@ export default {
     'deviceConfig.afterConfigSuccessDeviceWillRestart': 'Nach erfolgreicher Konfiguration startet Gerät automatisch neu',
     'deviceConfig.audioPlaybackError': 'Audio-Wiedergabe-Fehler',
     'deviceConfig.playbackFailed': 'Wiedergabe fehlgeschlagen',
+
+    // Voiceprint page
+    'voiceprint.audioNotExist': 'Audio existiert nicht',
+    'voiceprint.getAudioFailed': 'Audio konnte nicht abgerufen werden',
+    'voiceprint.audioPlayFailed': 'Audio-Wiedergabe fehlgeschlagen',
 }
