@@ -11,7 +11,7 @@ export default {
   'login.navigationTitle': '登錄',
   'login.fetchConfigError': '獲取配置失敗:',
   'login.selectLanguage': '選擇語言',
-  'login.selectLanguageTip': '简体',
+  'login.selectLanguageTip': '繁體',
   'login.welcomeBack': '歡迎回來',
   'login.pleaseLogin': '請登錄您的賬戶',
   'login.enterUsername': '請輸入用戶名',

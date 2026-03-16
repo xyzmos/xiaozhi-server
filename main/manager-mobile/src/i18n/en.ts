@@ -11,7 +11,7 @@ export default {
   'login.navigationTitle': 'Login',
   'login.fetchConfigError': 'Failed to fetch configuration:',
   'login.selectLanguage': 'Select Language',
-  'login.selectLanguageTip': '中文',
+  'login.selectLanguageTip': 'En',
   'login.welcomeBack': 'Welcome Back',
   'login.pleaseLogin': 'Please log in to your account',
   'login.enterUsername': 'Please enter username',

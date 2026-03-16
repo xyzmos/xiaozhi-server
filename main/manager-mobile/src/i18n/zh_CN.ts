@@ -11,7 +11,7 @@ export default {
   'login.navigationTitle': '登录',
   'login.fetchConfigError': '获取配置失败:',
   'login.selectLanguage': '选择语言',
-  'login.selectLanguageTip': 'En',
+  'login.selectLanguageTip': '中文',
   'login.welcomeBack': '欢迎回来',
   'login.pleaseLogin': '请登录您的账户',
   'login.enterUsername': '请输入用户名',

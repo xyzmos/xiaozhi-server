@@ -11,7 +11,7 @@ export default {
   'login.navigationTitle': 'Entrar',
   'login.fetchConfigError': 'Falha ao buscar configuração:',
   'login.selectLanguage': 'Selecionar Idioma',
-  'login.selectLanguageTip': '中文',
+  'login.selectLanguageTip': 'Pt',
   'login.welcomeBack': 'Bem-vindo de Volta',
   'login.pleaseLogin': 'Por favor, entre na sua conta',
   'login.enterUsername': 'Por favor, insira o nome de usuário',

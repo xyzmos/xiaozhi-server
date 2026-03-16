@@ -11,7 +11,7 @@ export default {
     'login.navigationTitle': 'Anmelden',
     'login.fetchConfigError': 'Konfiguration konnte nicht abgerufen werden:',
     'login.selectLanguage': 'Sprache auswählen',
-    'login.selectLanguageTip': 'Vi',
+    'login.selectLanguageTip': 'De',
     'login.welcomeBack': 'Willkommen zurück',
     'login.pleaseLogin': 'Bitte melden Sie sich an',
     'login.enterUsername': 'Bitte Benutzernamen eingeben',

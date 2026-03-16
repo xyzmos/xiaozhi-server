@@ -11,7 +11,7 @@ export default {
     'login.navigationTitle': 'Đăng nhập',
     'login.fetchConfigError': 'Không thể tải cấu hình:',
     'login.selectLanguage': 'Chọn ngôn ngữ',
-    'login.selectLanguageTip': 'de',
+    'login.selectLanguageTip': 'Vi',
     'login.welcomeBack': 'Chào mừng trở lại',
     'login.pleaseLogin': 'Vui lòng đăng nhập vào tài khoản của bạn',
     'login.enterUsername': 'Vui lòng nhập tên đăng nhập',
