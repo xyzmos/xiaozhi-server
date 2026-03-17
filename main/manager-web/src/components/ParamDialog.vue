@@ -22,7 +22,6 @@
             v-model="form.valueType"
             :placeholder="$t('paramDialog.valueTypePlaceholder')"
             class="custom-select"
-            @change="handleValueTypeChange"
           >
             <el-option
               v-for="item in valueTypeOptions"
@@ -115,11 +114,6 @@ export default {
     };
   },
   methods: {
-    handleValueTypeChange(value) {
-      if (value === 'json') {
-
-      }
-    },
     submit() {
       this.$refs.form.validate((valid) => {
         if (valid) {
