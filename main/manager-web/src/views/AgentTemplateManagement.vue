@@ -587,7 +587,7 @@ export default {
   justify-content: space-between !important;
   align-items: center;
   margin-top: auto;
-  padding: 0 20px 15px !important;
+  padding: 0 20px !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
