@@ -136,17 +136,22 @@
         </div>
       </div>
     </div>
+    <el-footer>
+      <version-footer />
+    </el-footer>
   </div>
 </template>
 
 <script>
 import HeaderBar from "@/components/HeaderBar";
 import agentApi from "@/apis/module/agent";
+import VersionFooter from "@/components/VersionFooter.vue";
 
 export default {
   name: "AgentTemplateManagement",
   components: {
     HeaderBar,
+    VersionFooter
   },
 
   data() {
