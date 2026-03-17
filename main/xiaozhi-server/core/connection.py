@@ -1073,38 +1073,55 @@ class ConnectionHandler:
                     )
 
                 # 如需要大模型先处理一轮，添加相关处理后的日志情况
+                content_parts = []
                 if len(response_message) > 0:
                     text_buff = "".join(response_message)
+                    content_parts.append({"type": "text", "text": text_buff})
                     self.tts_MessageText = text_buff
                     self.dialogue.put(Message(role="assistant", content=text_buff))
                 response_message.clear()
 
+                tool_call_data = tool_calls_list[0]  # 只取第一个工具
+
+                # 构建工具调用的显示文本
+                try:
+                    tool_input = json.loads(tool_call_data['arguments']) if tool_call_data['arguments'] else {}
+                except:
+                    tool_input = {}
+
+                # 格式化工具调用为简洁文本，如: get_weather({"location": "北京"})
+                tool_text = f"{tool_call_data['name']}({json.dumps(tool_input, ensure_ascii=False)})"
+                content_parts.append({"type": "tool", "text": tool_text})
+
+                # 先上报包含文本和工具调用的内容（使用chatType=3表示工具调用）
+                tool_call_timestamp = int(time.time())
+                report_content = json.dumps(content_parts, ensure_ascii=False)
+                self.report_queue.put((3, report_content, None, tool_call_timestamp))
+
                 self.logger.bind(tag=TAG).debug(
-                    f"检测到 {len(tool_calls_list)} 个工具调用"
+                    f"function_name={tool_call_data['name']}, function_id={tool_call_data['id']}, function_arguments={tool_call_data['arguments']}"
                 )
 
-                # 收集所有工具调用的 Future
-                futures_with_data = []
-                for tool_call_data in tool_calls_list:
-                    self.logger.bind(tag=TAG).debug(
-                        f"function_name={tool_call_data['name']}, function_id={tool_call_data['id']}, function_arguments={tool_call_data['arguments']}"
-                    )
+                # 执行单个工具
+                future = asyncio.run_coroutine_threadsafe(
+                    self.func_handler.handle_llm_function_call(
+                        self, tool_call_data
+                    ),
+                    self.loop,
+                )
+                result = future.result()
+                tool_results = [(result, tool_call_data)]
 
-                    future = asyncio.run_coroutine_threadsafe(
-                        self.func_handler.handle_llm_function_call(
-                            self, tool_call_data
-                        ),
-                        self.loop,
-                    )
-                    futures_with_data.append((future, tool_call_data))
+                # 工具执行完成后，单独上报结果（时间戳+1确保在工具调用之后）
+                if result and result.result:
+                    tool_result_text = str(result.result)
 
-                # 等待协程结束（实际等待时长为最慢的那个）
-                tool_results = []
-                for future, tool_call_data in futures_with_data:
-                    result = future.result()
-                    tool_results.append((result, tool_call_data))
+                    # 格式化为 {"result": ...}
+                    result_display = f'{{"result":"{tool_result_text}"}}'
+                    result_content = json.dumps([{"type": "tool_result", "text": result_display}], ensure_ascii=False)
+                    self.report_queue.put((3, result_content, None, tool_call_timestamp + 1))
 
-                # 统一处理所有工具调用结果
+                # 统一处理工具调用结果
                 if tool_results:
                     self._handle_function_result(tool_results, depth=depth)
 

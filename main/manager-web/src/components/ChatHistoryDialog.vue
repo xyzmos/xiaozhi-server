@@ -21,11 +21,22 @@
                         <div v-if="message.type === 'time'" class="time-divider">
                             {{ message.content }}
                         </div>
-                        <div v-else class="message-item" :class="{ 'user-message': message.chatType === 1 }">
+                        <div v-else class="message-item" :class="{ 'user-message': message.chatType === 1, 'tool-message': message.chatType === 3 }">
                             <img :src="message.chatType === 1 ? getUserAvatar(currentSessionId) : require('@/assets/xiaozhi-logo.png')"
                                 class="avatar" />
                             <div class="message-content">
-                                {{ extractContentFromString(message.content) }}
+                                <template v-if="Array.isArray(extractContentFromString(message.content))">
+                                    <div class="content-wrapper">
+                                        <div v-for="(item, idx) in extractContentFromString(message.content)" :key="idx">
+                                            <div v-if="item.type === 'text'" class="text-content">{{ item.text }}</div>
+                                            <div v-else-if="item.type === 'tool'" class="tool-call-text">{{ item.text }}</div>
+                                            <div v-else-if="item.type === 'tool_result'" class="tool-call-text">{{ item.text }}</div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    {{ extractContentFromString(message.content) }}
+                                </template>
                                 <i v-if="message.audioId" :class="getAudioIconClass(message)"
                                     @click="playAudio(message)" class="audio-icon"></i>
                             </div>
@@ -154,6 +165,13 @@ export default {
             // 尝试解析为 JSON
             try {
                 const jsonObj = JSON.parse(content);
+
+                // 如果是数组格式（包含 text 和 tool）
+                if (Array.isArray(jsonObj)) {
+                    return jsonObj;
+                }
+
+                // 如果是对象且有 content 字段
                 if (jsonObj && typeof jsonObj === 'object' && jsonObj.content) {
                     return jsonObj.content;
                 }
@@ -440,6 +458,32 @@ export default {
 
 .user-message .audio-icon {
     color: white;
+}
+
+.content-wrapper {
+    width: 100%;
+}
+
+.text-content {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.tool-call-text {
+    color: #1890ff;
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    display: block;
+    margin-top: 4px;
+}
+
+.user-message .tool-call-text {
+    color: #e6f7ff;
+}
+
+.tool-message .message-content {
+    background-color: #e6ebff;
 }
 
 .loading,
