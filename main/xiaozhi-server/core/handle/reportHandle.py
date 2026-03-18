@@ -26,7 +26,7 @@ async def report(conn: "ConnectionHandler", type, text, opus_data, report_time):
 
     Args:
         conn: 连接对象
-        type: 上报类型，1为用户，2为智能体
+        type: 上报类型，1为用户，2为智能体，3为工具调用
         text: 合成文本
         opus_data: opus音频数据
         report_time: 上报时间
