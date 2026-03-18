@@ -12,7 +12,7 @@ import { ContentTypeEnum, ResultEnum, ShowMessage } from './enum'
 // 语言映射, 用于设置 Accept-language 头
 const langMap: Record<Language, string> = {
   zh_CN: 'zh-CN',
-  en: 'en',
+  en: 'en-US',
   zh_TW: 'zh-TW',
   de: 'de',
   vi: 'vi',

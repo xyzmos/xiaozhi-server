@@ -451,20 +451,16 @@ defineExpose({
 
   <!-- 添加说话人弹窗 -->
   <wd-popup
-    v-model="showAddDialog" position="center" custom-style="width: 90%; max-width: 400px; border-radius: 16px;"
+    v-model="showAddDialog"
+    position="center"
+    custom-style="width: 90%; max-width: 400px; border-radius: 16px;"
     safe-area-inset-bottom
   >
     <view>
-      <view class="w-full flex items-center justify-between border-b-[2rpx] border-[#eeeeee] p-[32rpx_32rpx_24rpx]">
-        <text class="w-full text-center text-[32rpx] text-[#232338] font-semibold">
-          {{ t('voiceprint.addSpeaker') }}
-        </text>
-      </view>
-
       <view class="p-[32rpx]">
         <!-- 声纹向量选择 -->
         <view class="mb-[32rpx]">
-          <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
+          <text class="mb-[16rpx] block text-[28rpx] text-red font-medium">
             * {{ t('voiceprint.voiceVector') }}
           </text>
           <view
@@ -483,7 +479,7 @@ defineExpose({
 
         <!-- 姓名 -->
         <view class="mb-[32rpx]">
-          <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
+          <text class="mb-[16rpx] block text-[28rpx] text-red font-medium">
             * {{ t('voiceprint.name') }}
           </text>
           <input
@@ -495,7 +491,7 @@ defineExpose({
 
         <!-- 描述 -->
         <view>
-          <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
+          <text class="mb-[16rpx] block text-[28rpx] text-red font-medium">
             * {{ t('voiceprint.description') }}
           </text>
           <textarea
@@ -590,15 +586,9 @@ defineExpose({
   </wd-popup>
 
   <!-- 自定义语音对话记录选择弹出层 -->
-  <wd-popup v-model="showChatHistoryDialog" position="bottom" @close="stopAudio">
-    <view class="rounded-t-[20rpx] bg-white pb-[env(safe-area-inset-bottom)]">
-      <view class="flex items-center justify-between border-b border-[#eeeeee] p-[32rpx]">
-        <text class="text-[32rpx] text-[#232338] font-bold">
-          {{ t('voiceprint.selectVector') }}
-        </text>
-        <wd-icon name="close" size="20px" @click="showChatHistoryDialog = false; stopAudio()" />
-      </view>
-      <view class="max-h-[600rpx] overflow-y-auto">
+  <wd-popup v-model="showChatHistoryDialog" class="custom-popup" position="bottom" @close="stopAudio">
+    <view class="rounded-[20rpx] bg-white pb-[20rpx] pt-[20rpx]">
+      <view class="max-h-[600rpx] overflow-y-auto rounded-[20rpx]">
         <view
           v-for="item in chatHistoryActions"
           :key="item.audioId"
@@ -621,7 +611,7 @@ defineExpose({
   </wd-popup>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .voiceprint-container {
   position: relative;
 }
@@ -640,14 +630,10 @@ defineExpose({
   color: #666666;
 }
 
-:deep(.wd-swipe-action) {
-  border-radius: 20rpx;
-  overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-  border: 1rpx solid #eeeeee;
-}
-
-:deep(.flex-1) {
-  flex: 1;
+::v-deep .custom-popup {
+  .wd-popup {
+    padding: 20rpx !important;
+    background: transparent;
+  }
 }
 </style>
