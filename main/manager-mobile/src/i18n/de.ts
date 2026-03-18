@@ -11,7 +11,7 @@ export default {
     'login.navigationTitle': 'Anmelden',
     'login.fetchConfigError': 'Konfiguration konnte nicht abgerufen werden:',
     'login.selectLanguage': 'Sprache auswählen',
-    'login.selectLanguageTip': 'Vi',
+    'login.selectLanguageTip': 'De',
     'login.welcomeBack': 'Willkommen zurück',
     'login.pleaseLogin': 'Bitte melden Sie sich an',
     'login.enterUsername': 'Bitte Benutzernamen eingeben',
@@ -492,4 +492,9 @@ export default {
     'deviceConfig.afterConfigSuccessDeviceWillRestart': 'Nach erfolgreicher Konfiguration startet Gerät automatisch neu',
     'deviceConfig.audioPlaybackError': 'Audio-Wiedergabe-Fehler',
     'deviceConfig.playbackFailed': 'Wiedergabe fehlgeschlagen',
+
+    // Voiceprint page
+    'voiceprint.audioNotExist': 'Audio existiert nicht',
+    'voiceprint.getAudioFailed': 'Audio konnte nicht abgerufen werden',
+    'voiceprint.audioPlayFailed': 'Audio-Wiedergabe fehlgeschlagen',
 }
