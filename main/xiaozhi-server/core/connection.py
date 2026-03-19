@@ -1063,6 +1063,10 @@ class ConnectionHandler:
                     )
 
             if not bHasError and len(tool_calls_list) > 0:
+                self.logger.bind(tag=TAG).debug(
+                    f"检测到 {len(tool_calls_list)} 个工具调用"
+                )
+
                 # 更新工具调用统计
                 if depth == 0:
                     current_turn = len(self.dialogue.dialogue) // 2
@@ -1079,39 +1083,43 @@ class ConnectionHandler:
                     self.dialogue.put(Message(role="assistant", content=text_buff))
                 response_message.clear()
 
-                tool_call_data = tool_calls_list[0]  # 只取第一个工具
+                # 收集所有工具调用的 Future
+                futures_with_data = []
+                for tool_call_data in tool_calls_list:
+                    self.logger.bind(tag=TAG).debug(
+                        f"function_name={tool_call_data['name']}, function_id={tool_call_data['id']}, function_arguments={tool_call_data['arguments']}"
+                    )
 
-                # 构建工具调用的显示文本，格式如: get_weather({"location": "北京"})
-                tool_input = json.loads(tool_call_data.get("arguments") or "{}")
-                tool_text = json.dumps(
-                    [
-                        {
-                            "type": "tool",
-                            "text": f"{tool_call_data['name']}({json.dumps(tool_input, ensure_ascii=False)})",
-                        }
-                    ]
-                )
+                    # 构建工具调用的显示文本，格式如: get_weather({"location": "北京"})
+                    tool_input = json.loads(tool_call_data.get("arguments") or "{}")
+                    tool_text = json.dumps(
+                        [
+                            {
+                                "type": "tool",
+                                "text": f"{tool_call_data['name']}({json.dumps(tool_input, ensure_ascii=False)})",
+                            }
+                        ]
+                    )
 
-                # 上报工具调用的内容（使用chatType=3表示工具调用）
-                tool_call_timestamp = int(time.time())
-                self.report_queue.put((3, tool_text, None, tool_call_timestamp))
+                    # 上报工具调用的内容（使用chatType=3表示工具调用）
+                    tool_call_timestamp = int(time.time())
+                    self.report_queue.put((3, tool_text, None, tool_call_timestamp))
 
-                self.logger.bind(tag=TAG).debug(
-                    f"function_name={tool_call_data['name']}, function_id={tool_call_data['id']}, function_arguments={tool_call_data['arguments']}"
-                )
+                    future = asyncio.run_coroutine_threadsafe(
+                        self.func_handler.handle_llm_function_call(
+                            self, tool_call_data
+                        ),
+                        self.loop,
+                    )
+                    futures_with_data.append((future, tool_call_data))
+                
+                # 等待协程结束（实际等待时长为最慢的那个）
+                tool_results = []
+                for future, tool_call_data in futures_with_data:
+                    result = future.result()
+                    tool_results.append((result, tool_call_data))
 
-                # 执行单个工具
-                future = asyncio.run_coroutine_threadsafe(
-                    self.func_handler.handle_llm_function_call(
-                        self, tool_call_data
-                    ),
-                    self.loop,
-                )
-                result = future.result()
-                tool_results = [(result, tool_call_data)]
-
-                # 工具执行完成后，单独上报结果（时间戳+1确保在工具调用之后）
-                if result and result.result:
+                    # 工具执行完成后，单独上报结果（时间戳+1确保在工具调用之后）
                     tool_result_text = str(result.result)
 
                     # 格式化为 {"result": ...}
