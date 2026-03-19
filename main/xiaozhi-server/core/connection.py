@@ -1073,41 +1073,27 @@ class ConnectionHandler:
                     )
 
                 # 如需要大模型先处理一轮，添加相关处理后的日志情况
-                content_parts = []
-                tool_speak_opus_data = None
                 if len(response_message) > 0:
                     text_buff = "".join(response_message)
-                    content_parts.append({"type": "text", "text": text_buff})
                     self.tts_MessageText = text_buff
                     self.dialogue.put(Message(role="assistant", content=text_buff))
-                    # 与主流程独立开来合成相关音频
-                    try:
-                        future = self.executor.submit(self.tts.to_tts, text_buff)
-                        audio_datas = future.result()
-                        if audio_datas:
-                            tool_speak_opus_data = audio_datas
-                            for audio_data in audio_datas:
-                                self.tts.tts_audio_queue.put((SentenceType.MIDDLE, audio_data, text_buff))
-                    except Exception as e:
-                        self.logger.bind(tag=TAG).warning(f"工具调用前文本音频合成失败: {e}")
                 response_message.clear()
 
                 tool_call_data = tool_calls_list[0]  # 只取第一个工具
 
-                # 构建工具调用的显示文本
-                try:
-                    tool_input = json.loads(tool_call_data['arguments']) if tool_call_data['arguments'] else {}
-                except:
-                    tool_input = {}
+                # 构建工具调用的显示文本，格式如: get_weather({"location": "北京"})
+                tool_input = json.loads(tool_call_data.get("arguments") or "{}")
+                tool_text = json.dumps([
+                        {
+                            "type": "tool",
+                            "text": f"{tool_call_data['name']}({json.dumps(tool_input, ensure_ascii=False)})",
+                        }
+                    ]
+                )
 
-                # 格式化工具调用为简洁文本，如: get_weather({"location": "北京"})
-                tool_text = f"{tool_call_data['name']}({json.dumps(tool_input, ensure_ascii=False)})"
-                content_parts.append({"type": "tool", "text": tool_text})
-
-                # 上报包含文本、音频和工具调用的内容（使用chatType=3表示工具调用）
+                # 上报工具调用的内容（使用chatType=3表示工具调用）
                 tool_call_timestamp = int(time.time())
-                report_content = json.dumps(content_parts, ensure_ascii=False)
-                self.report_queue.put((3, report_content, tool_speak_opus_data, tool_call_timestamp))
+                self.report_queue.put((3, tool_text, None, tool_call_timestamp))
 
                 self.logger.bind(tag=TAG).debug(
                     f"function_name={tool_call_data['name']}, function_id={tool_call_data['id']}, function_arguments={tool_call_data['arguments']}"
