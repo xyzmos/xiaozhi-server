@@ -1083,7 +1083,8 @@ class ConnectionHandler:
 
                 # 构建工具调用的显示文本，格式如: get_weather({"location": "北京"})
                 tool_input = json.loads(tool_call_data.get("arguments") or "{}")
-                tool_text = json.dumps([
+                tool_text = json.dumps(
+                    [
                         {
                             "type": "tool",
                             "text": f"{tool_call_data['name']}({json.dumps(tool_input, ensure_ascii=False)})",
