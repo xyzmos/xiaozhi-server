@@ -371,7 +371,7 @@ export default {
     'agent.tools.mcpAccessPoint': 'Điểm truy cập MCP',
     'agent.tools.copy': 'Sao chép',
     'agent.tools.noTools': 'Không có công cụ nào',
-    'agent.tools.parameterConfig': 'Cấu hình tham số',
+    'agent.tools.parameterConfig': 'Cấu hình',
     'agent.tools.noParamsNeeded': 'Không cần tham số',
     'agent.tools.pleaseInput': 'Vui lòng nhập',
     'agent.tools.inputOneItemPerLine': 'Nhập một mục mỗi dòng',
