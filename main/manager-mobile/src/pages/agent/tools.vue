@@ -70,6 +70,7 @@ async function mergeFunctions() {
       uni.setStorageSync(`cachedMcpAddress_${agentId.value}`, address)
     }
     catch (error) {
+      mcpAddress.value = error
       console.error('获取MCP地址失败:', error)
     }
 

@@ -11,7 +11,7 @@ export default {
     'login.navigationTitle': 'Đăng nhập',
     'login.fetchConfigError': 'Không thể tải cấu hình:',
     'login.selectLanguage': 'Chọn ngôn ngữ',
-    'login.selectLanguageTip': 'de',
+    'login.selectLanguageTip': 'Vi',
     'login.welcomeBack': 'Chào mừng trở lại',
     'login.pleaseLogin': 'Vui lòng đăng nhập vào tài khoản của bạn',
     'login.enterUsername': 'Vui lòng nhập tên đăng nhập',
@@ -492,4 +492,9 @@ export default {
     'deviceConfig.afterConfigSuccessDeviceWillRestart': 'Sau khi cấu hình thành công, thiết bị sẽ tự động khởi động lại',
     'deviceConfig.audioPlaybackError': 'Lỗi phát âm thanh',
     'deviceConfig.playbackFailed': 'Phát thất bại',
+
+    // Voiceprint page
+    'voiceprint.audioNotExist': 'Âm thanh không tồn tại',
+    'voiceprint.getAudioFailed': 'Không thể lấy âm thanh',
+    'voiceprint.audioPlayFailed': 'Phát âm thanh thất bại',
 }
