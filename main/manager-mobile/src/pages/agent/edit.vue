@@ -1006,6 +1006,7 @@ onMounted(async () => {
     <wd-action-sheet
       v-model="pickerShow.tts"
       :actions="modelOptions.TTS && modelOptions.TTS.map(item => ({ name: item.modelName, value: item.id }))"
+      class="custom-sheet-tts"
       @close="onPickerCancel('tts')"
       @select="({ item }) => onPickerConfirm('tts', item.value, item.name)"
     />
@@ -1057,6 +1058,15 @@ onMounted(async () => {
   .wd-popup {
     padding: 20rpx !important;
     background: transparent !important;
+  }
+}
+::v-deep .custom-sheet-tts {
+  .wd-action-sheet {
+    padding: 8px 0 !important;
+    overflow: hidden;
+  }
+  .wd-action-sheet__actions {
+    padding: 0 !important;
   }
 }
 </style>

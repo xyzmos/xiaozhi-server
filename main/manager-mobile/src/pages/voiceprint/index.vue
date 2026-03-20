@@ -460,8 +460,11 @@ defineExpose({
       <view class="p-[32rpx]">
         <!-- 声纹向量选择 -->
         <view class="mb-[32rpx]">
-          <text class="mb-[16rpx] block text-[28rpx] text-red font-medium">
-            * {{ t('voiceprint.voiceVector') }}
+          <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
+            <text class="text-red">
+              *
+            </text>
+            {{ t('voiceprint.voiceVector') }}
           </text>
           <view
             class="flex cursor-pointer items-center justify-between border-[1rpx] border-[#eeeeee] rounded-[12rpx] bg-[#f5f7fb] p-[20rpx] transition-all duration-300 active:bg-[#eef3ff]"
@@ -479,8 +482,11 @@ defineExpose({
 
         <!-- 姓名 -->
         <view class="mb-[32rpx]">
-          <text class="mb-[16rpx] block text-[28rpx] text-red font-medium">
-            * {{ t('voiceprint.name') }}
+          <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
+            <text class="text-red">
+              *
+            </text>
+            {{ t('voiceprint.name') }}
           </text>
           <input
             v-model="addForm.sourceName"
@@ -491,8 +497,11 @@ defineExpose({
 
         <!-- 描述 -->
         <view>
-          <text class="mb-[16rpx] block text-[28rpx] text-red font-medium">
-            * {{ t('voiceprint.description') }}
+          <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
+            <text class="text-red">
+              *
+            </text>
+            {{ t('voiceprint.description') }}
           </text>
           <textarea
             v-model="addForm.introduce" :maxlength="100" :placeholder="t('voiceprint.pleaseInputDescription')"
@@ -521,7 +530,7 @@ defineExpose({
     safe-area-inset-bottom
   >
     <view>
-      <view class="w-full flex items-center justify-between border-b-[2rpx] border-[#eeeeee] p-[32rpx_32rpx_24rpx]">
+      <view class="box-border w-full flex items-center justify-between border-b-[2rpx] border-[#eeeeee] p-[32rpx_32rpx_24rpx]">
         <text class="w-full text-center text-[32rpx] text-[#232338] font-semibold">
           {{ t('voiceprint.editSpeaker') }}
         </text>
@@ -531,7 +540,10 @@ defineExpose({
         <!-- 声纹向量选择 -->
         <view class="mb-[32rpx]">
           <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
-            * {{ t('voiceprint.voiceVector') }}
+            <text class="text-red">
+              *
+            </text>
+            {{ t('voiceprint.voiceVector') }}
           </text>
           <view
             class="flex cursor-pointer items-center justify-between border-[1rpx] border-[#eeeeee] rounded-[12rpx] bg-[#f5f7fb] p-[20rpx] transition-all duration-300 active:bg-[#eef3ff]"
@@ -550,7 +562,10 @@ defineExpose({
         <!-- 姓名 -->
         <view class="mb-[32rpx]">
           <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
-            * {{ t('voiceprint.name') }}
+            <text class="text-red">
+              *
+            </text>
+            {{ t('voiceprint.name') }}
           </text>
           <input
             v-model="editForm.sourceName"
@@ -562,7 +577,10 @@ defineExpose({
         <!-- 描述 -->
         <view>
           <text class="mb-[16rpx] block text-[28rpx] text-[#232338] font-medium">
-            * {{ t('voiceprint.description') }}
+            <text class="text-red">
+              *
+            </text>
+            {{ t('voiceprint.description') }}
           </text>
           <textarea
             v-model="editForm.introduce" :maxlength="100" :placeholder="t('voiceprint.pleaseInputDescription')"

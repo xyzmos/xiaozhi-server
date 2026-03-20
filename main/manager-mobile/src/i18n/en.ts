@@ -371,7 +371,7 @@ export default {
   'agent.tools.mcpAccessPoint': 'MCP Access Point',
   'agent.tools.copy': 'Copy',
   'agent.tools.noTools': 'No tools available',
-  'agent.tools.parameterConfig': 'Parameter Configuration',
+  'agent.tools.parameterConfig': 'Param Config',
   'agent.tools.noParamsNeeded': 'No parameters needed',
   'agent.tools.pleaseInput': 'Please input',
   'agent.tools.inputOneItemPerLine': 'Input one item per line',

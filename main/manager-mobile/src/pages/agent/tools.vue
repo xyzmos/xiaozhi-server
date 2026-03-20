@@ -311,7 +311,7 @@ onMounted(async () => {
                 v-if="notSelectedList.length === 0"
                 class="h-[400rpx] flex items-center justify-center"
               >
-                <wd-status-tip image="content" tip="{{ t('agent.tools.noMorePlugins') }}" />
+                <wd-status-tip image="content" :tip="t('agent.tools.noMorePlugins')" />
               </view>
               <view v-else class="p-[20rpx] space-y-[20rpx]">
                 <view
@@ -347,7 +347,7 @@ onMounted(async () => {
                 v-if="selectedList.length === 0"
                 class="h-[400rpx] flex items-center justify-center"
               >
-                <wd-status-tip image="content" tip="{{ t('agent.tools.pleaseSelectPlugin') }}" />
+                <wd-status-tip image="content" :tip="t('agent.tools.pleaseSelectPlugin')" />
               </view>
               <view v-else class="p-[20rpx] space-y-[20rpx]">
                 <view
@@ -445,7 +445,7 @@ onMounted(async () => {
     <!-- 参数编辑弹窗 -->
     <wd-action-sheet
       v-model="showParamDialog"
-      :title="`${t('agent.tools.paramConfiguration')} - ${currentFunction?.name || ''}`"
+      :title="`${t('agent.tools.parameterConfig')} - ${currentFunction?.name || ''}`"
       custom-header-class="h-[75vh]"
       @close="closeParamEdit"
     >
@@ -586,3 +586,9 @@ onMounted(async () => {
     </wd-action-sheet>
   </view>
 </template>
+
+<style scoped lang="scss">
+::v-deep .wd-action-sheet__header {
+  padding-right: 30rpx;
+}
+</style>
