@@ -374,13 +374,6 @@ export default {
           let errorMessage = err.data.msg || "登录失败";
 
           showDanger(errorMessage);
-          if (
-            err.data != null &&
-            err.data.msg != null &&
-            err.data.msg.indexOf("图形验证码") > -1 || err.data.msg.indexOf("Captcha") > -1
-          ) {
-            this.fetchCaptcha();
-          }
         }
       );
 
