@@ -148,7 +148,8 @@ public class ModelProviderServiceImpl extends BaseServiceImpl<ModelProviderDao, 
         UserDetail user = SecurityUser.getUser();
         modelProviderDTO.setUpdater(user.getId());
         modelProviderDTO.setUpdateDate(new Date());
-        if (modelProviderDao.updateById(ConvertUtils.sourceToTarget(modelProviderDTO, ModelProviderEntity.class)) == 0) {
+        if (modelProviderDao
+                .updateById(ConvertUtils.sourceToTarget(modelProviderDTO, ModelProviderEntity.class)) == 0) {
             throw new RenException(ErrorCode.UPDATE_DATA_FAILED);
         }
         return ConvertUtils.sourceToTarget(modelProviderDTO, ModelProviderDTO.class);
