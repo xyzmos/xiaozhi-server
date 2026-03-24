@@ -57,7 +57,8 @@ public class ModelConfigServiceImpl extends BaseServiceImpl<ModelConfigDao, Mode
                         .eq("model_type", modelType)
                         .eq("is_enabled", 1)
                         .like(StringUtils.isNotBlank(modelName), "model_name", modelName)
-                        .select("id", "model_name"));
+                        .select("id", "model_name")
+                        .orderByAsc("sort"));
         return ConvertUtils.sourceToTarget(entities, ModelBasicInfoDTO.class);
     }
 
