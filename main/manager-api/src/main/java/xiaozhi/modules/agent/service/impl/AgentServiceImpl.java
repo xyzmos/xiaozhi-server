@@ -410,9 +410,6 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
             // 删除所有记录
             agentChatHistoryService.deleteByAgentId(existingEntity.getId(), true, true);
             existingEntity.setSummaryMemory("");
-        } else if (existingEntity.getChatHistoryConf() != null && existingEntity.getChatHistoryConf() == 1) {
-            // 删除音频数据
-            agentChatHistoryService.deleteByAgentId(existingEntity.getId(), true, false);
         }
 
         // 更新上下文源配置
