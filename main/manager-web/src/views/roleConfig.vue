@@ -355,6 +355,9 @@
       :settings="ttsSettings"
       @save="handleTtsSettingsSave"
     />
+    <el-footer>
+      <version-footer />
+    </el-footer>
   </div>
 </template>
 
@@ -368,10 +371,11 @@ import TtsAdvancedSettings from "@/components/TtsAdvancedSettings.vue";
 import HeaderBar from "@/components/HeaderBar.vue";
 import i18n from "@/i18n";
 import featureManager from "@/utils/featureManager"; 
+import VersionFooter from "@/components/VersionFooter.vue";
 
 export default {
   name: "RoleConfigPage",
-  components: { HeaderBar, FunctionDialog, ContextProviderDialog, TtsAdvancedSettings },
+  components: { HeaderBar, FunctionDialog, ContextProviderDialog, TtsAdvancedSettings, VersionFooter },
   data() {
     return {
       showContextProviderDialog: false,
@@ -1291,7 +1295,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5vh 24px;
+  padding: 16px 24px;
 }
 
 .page-title {
@@ -1301,9 +1305,9 @@ export default {
 }
 
 .main-wrapper {
-  margin: 1vh 22px;
+  height: calc(100vh - 63px - 35px - 60px);
+  margin: 0 22px;
   border-radius: 15px;
-  height: calc(100vh - 24vh);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   background: rgba(237, 242, 255, 0.5);
