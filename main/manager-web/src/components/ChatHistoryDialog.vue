@@ -30,7 +30,20 @@
                                         <div v-for="(item, idx) in extractContentFromString(message.content)" :key="idx">
                                             <div v-if="item.type === 'text'" class="text-content">{{ item.text }}</div>
                                             <div v-else-if="item.type === 'tool'" class="tool-call-text">{{ item.text }}</div>
-                                            <div v-else-if="item.type === 'tool_result'" class="tool-call-text">{{ item.text }}</div>
+                                            <div v-else-if="item.type === 'tool_result'" class="tool-call-text">
+                                                <div v-if="item.text && item.text.length > 80" class="tool-result-wrapper">
+                                                    <div v-if="isToolResultCollapsed(index, idx)" class="tool-result-collapsed">
+                                                        {{ getFirstLineText(item.text) }}
+                                                    </div>
+                                                    <div v-else class="tool-result-expanded">
+                                                        {{ item.text }}
+                                                    </div>
+                                                    <span class="tool-toggle-btn" @click="toggleToolResult(index, idx)">
+                                                        <i :class="isToolResultCollapsed(index, idx) ? 'el-icon-arrow-down' : 'el-icon-arrow-up'"></i>
+                                                    </span>
+                                                </div>
+                                                <div v-else>{{ item.text }}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
@@ -92,7 +105,8 @@ export default {
             scrollTimer: null,
             isFirstLoad: true,
             playingAudioId: null,
-            audioElement: null
+            audioElement: null,
+            expandedToolResults: {} // 跟踪工具结果的展开状态
         };
     },
     watch: {
@@ -182,6 +196,23 @@ export default {
             // 如果不是 JSON 格式或没有 content 字段，直接返回原内容
             return content;
         },
+        // 切换工具结果的展开/折叠状态
+        toggleToolResult(messageIndex, itemIndex) {
+            const key = `${messageIndex}-${itemIndex}`;
+            this.$set(this.expandedToolResults, key, !this.expandedToolResults[key]);
+        },
+        // 判断工具结果是否处于折叠状态
+        isToolResultCollapsed(messageIndex, itemIndex) {
+            const key = `${messageIndex}-${itemIndex}`;
+            // 默认折叠（true表示折叠）
+            return !this.expandedToolResults[key];
+        },
+        // 获取截断的文本（只显示第一行）
+        getFirstLineText(text) {
+            if (!text) return '';
+            const firstLine = text.split('\n')[0];
+            return firstLine.length < text.length ? firstLine + '...' : text;
+        },
         resetData() {
             this.sessions = [];
             this.messages = [];
@@ -191,6 +222,7 @@ export default {
             this.loading = false;
             this.hasMore = true;
             this.isFirstLoad = true;
+            this.expandedToolResults = {};
         },
         handleClose() {
             this.dialogVisible = false;
@@ -483,7 +515,31 @@ export default {
 }
 
 .tool-message .message-content {
-    background-color: #e6ebff;
+    background-color: #f0f0f0;
+}
+
+.tool-result-wrapper {
+    position: relative;
+    padding-right: 20px;
+}
+
+.tool-result-collapsed {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tool-toggle-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    cursor: pointer;
+    color: #1890ff;
+    font-size: 12px;
+}
+
+.tool-toggle-btn:hover {
+    color: #40a9ff;
 }
 
 .loading,
