@@ -13,9 +13,9 @@ import type { ChatMessage, UserMessageContent } from '@/api/chat-history/types'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { getAudioId, getChatHistory } from '@/api/chat-history/chat-history'
-import { getEnvBaseUrl } from '@/utils'
-import { toast } from '@/utils/toast'
 import { t } from '@/i18n'
+import { debounce, getEnvBaseUrl } from '@/utils'
+import { toast } from '@/utils/toast'
 
 defineOptions({
   name: 'ChatDetail',
@@ -129,7 +129,7 @@ function formatTime(timeStr: string) {
 }
 
 // 播放音频
-async function playAudio(audioId: string) {
+const playAudio = debounce(async (audioId: string) => {
   if (!audioId) {
     toast.error(t('chatHistory.invalidAudioId'))
     return
@@ -139,8 +139,11 @@ async function playAudio(audioId: string) {
     // 如果正在播放其他音频，先停止
     if (audioContext.value) {
       audioContext.value.stop()
-      audioContext.value.destroy()
-      audioContext.value = null
+    }
+    // 如果当前音频ID与请求ID相同暂停播放
+    if (playingAudioId.value === audioId) {
+      playingAudioId.value = null
+      return
     }
 
     // 获取音频下载ID
@@ -151,7 +154,9 @@ async function playAudio(audioId: string) {
     const audioUrl = `${baseUrl}/agent/play/${downloadId}`
 
     // 创建音频上下文
-    audioContext.value = uni.createInnerAudioContext()
+    if (!audioContext.value) {
+      audioContext.value = uni.createInnerAudioContext()
+    }
     audioContext.value.src = audioUrl
 
     // 设置播放状态
@@ -185,7 +190,7 @@ async function playAudio(audioId: string) {
     toast.error(t('chatHistory.playAudioFailed'))
     playingAudioId.value = null
   }
-}
+}, 400)
 
 onLoad((options) => {
   if (options?.sessionId && options?.agentId) {

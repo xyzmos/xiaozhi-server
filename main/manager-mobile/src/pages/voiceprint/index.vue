@@ -137,7 +137,6 @@ async function loadChatHistory() {
       audioId: item.audioId,
       index,
     }))
-    showChatHistoryDialog.value = true
   }
   catch (error) {
     console.error('获取对话记录失败:', error)
@@ -368,6 +367,7 @@ onMounted(async () => {
   // 智能体已简化为默认
 
   loadVoicePrintList()
+  loadChatHistory()
 })
 
 // 暴露方法给父组件
@@ -468,7 +468,7 @@ defineExpose({
           </text>
           <view
             class="flex cursor-pointer items-center justify-between border-[1rpx] border-[#eeeeee] rounded-[12rpx] bg-[#f5f7fb] p-[20rpx] transition-all duration-300 active:bg-[#eef3ff]"
-            @click="loadChatHistory"
+            @click="showChatHistoryDialog = true"
           >
             <text
               class="m-r-[16rpx] flex-1 text-left text-[26rpx] text-[#232338]"
@@ -547,7 +547,7 @@ defineExpose({
           </text>
           <view
             class="flex cursor-pointer items-center justify-between border-[1rpx] border-[#eeeeee] rounded-[12rpx] bg-[#f5f7fb] p-[20rpx] transition-all duration-300 active:bg-[#eef3ff]"
-            @click="loadChatHistory"
+            @click="showChatHistoryDialog = true"
           >
             <text
               class="m-r-[16rpx] flex-1 text-left text-[26rpx] text-[#232338]"
