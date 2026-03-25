@@ -49,6 +49,7 @@
 </template>
 
 <script>
+import { debounce } from '@/utils'
 import Api from '@/apis/api';
 
 export default {
@@ -259,7 +260,7 @@ export default {
             }
             return 'el-icon-video-play';
         },
-        playAudio(message) {
+        playAudio: debounce(function(message) {
             if (this.playingAudioId === message.audioId) {
                 // 如果正在播放当前音频，则停止播放
                 if (this.audioElement) {
@@ -280,9 +281,12 @@ export default {
             this.playingAudioId = message.audioId;
             Api.agent.getAudioId(message.audioId, (res) => {
                 if (res.data && res.data.data) {
+                    if (!this.audioElement) {
+                        this.audioElement = new Audio();
+                    }
+                    
                     // 使用获取到的下载ID播放音频
-                    this.audioElement = new Audio(Api.getServiceUrl() + `/agent/play/${res.data.data}`);
-
+                    this.audioElement.src = Api.getServiceUrl() + `/agent/play/${res.data.data}`;
                     this.audioElement.onended = () => {
                         this.playingAudioId = null;
                         this.audioElement = null;
@@ -291,7 +295,7 @@ export default {
                     this.audioElement.play();
                 }
             });
-        },
+        }, 300),
         getUserAvatar(sessionId) {
             // 从 sessionId 中提取所有数字
             const numbers = sessionId.match(/\d+/g);

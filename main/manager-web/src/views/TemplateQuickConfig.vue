@@ -53,12 +53,16 @@
         </div>
       </div>
     </div>
+    <el-footer>
+      <version-footer />
+    </el-footer>
   </div>
 </template>
 
 <script>
 import HeaderBar from "@/components/HeaderBar.vue";
 import agentApi from '@/apis/module/agent';
+import VersionFooter from "@/components/VersionFooter.vue";
 
 // 默认模型配置常量
 const DEFAULT_MODEL_CONFIG = {
@@ -73,7 +77,7 @@ const DEFAULT_MODEL_CONFIG = {
 
 export default {
   name: 'TemplateQuickConfig',
-  components: { HeaderBar },
+  components: { HeaderBar, VersionFooter },
   data() {
     return {
       form: {
@@ -276,7 +280,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5vh 24px;
+  padding: 16px 24px;
 }
 
 .page-title {
@@ -286,9 +290,9 @@ export default {
 }
 
 .main-wrapper {
-  margin: 1vh 22px;
+  height: calc(100vh - 63px - 35px - 60px);
+  margin: 0 22px;
   border-radius: 15px;
-  height: calc(100vh - 24vh);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   background: rgba(237, 242, 255, 0.5);

@@ -58,7 +58,6 @@ export default new Vuex.Store({
       return new Promise((resolve) => {
         commit('clearAuth')
         goToPage(Constant.PAGE.LOGIN, true);
-        window.location.reload(); // 彻底重置状态
       })
     },
     // 添加获取公共配置的 action
