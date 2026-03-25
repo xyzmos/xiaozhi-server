@@ -28,7 +28,7 @@ class Dialogue:
         self.dialogue: List[Message] = []
         self.logger = logger
 
-        # 从配置中读取最大历史轮数，默认为 10 轮
+        # 从配置中读取最大历史轮数，默认为 6 轮
         if config:
             self.max_history_turns = config.get("max_history_turns", 6)
         else:
