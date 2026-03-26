@@ -69,7 +69,7 @@ export default {
     'home.createFirstAgent': 'Nhấp vào nút + ở góc dưới bên phải để tạo đại lý đầu tiên của bạn',
     'home.dialogTitle': 'Tạo đại lý',
     'home.inputPlaceholder': 'ví dụ: Trợ lý chăm sóc khách hàng, Trợ lý giọng nói, Hỏi đáp kiến thức',
-    'home.createError': 'Vui lòng nhập tên đại lý',
+    'home.createError': 'Độ dài tên phải từ 1 đến 64 ký tự',
     'home.createNow': 'Tạo ngay',
     'home.justNow': 'Vừa xong',
     'home.minutesAgo': 'phút trước',

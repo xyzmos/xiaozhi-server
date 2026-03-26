@@ -69,7 +69,7 @@ export default {
   'home.createFirstAgent': 'Clique no botão + no canto inferior direito para criar seu primeiro agente',
   'home.dialogTitle': 'Criar Agente',
   'home.inputPlaceholder': 'ex: Assistente de Atendimento, Assistente de Voz, Perguntas e Respostas',
-  'home.createError': 'Por favor, insira o nome do agente',
+  'home.createError': 'O comprimento do nome deve estar entre 1 e 64 caracteres',
   'home.createNow': 'Criar Agora',
   'home.justNow': 'Agora mesmo',
   'home.minutesAgo': 'minutos atrás',

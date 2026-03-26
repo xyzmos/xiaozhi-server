@@ -69,7 +69,7 @@ export default {
   'home.createFirstAgent': '点击右下角 + 号创建您的第一个智能体',
   'home.dialogTitle': '创建智能体',
   'home.inputPlaceholder': '例如：客服助手、语音助理、知识问答',
-  'home.createError': '请输入智能体名称',
+  'home.createError': '名称长度必须在 1 到 64 个字符之间',
   'home.createNow': '立即创建',
   'home.justNow': '刚刚',
   'home.minutesAgo': '分钟前',
