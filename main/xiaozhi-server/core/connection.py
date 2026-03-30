@@ -24,7 +24,7 @@ from core.utils.modules_initialize import (
     initialize_tts,
     initialize_asr,
 )
-from core.handle.reportHandle import report
+from core.handle.reportHandle import report, enqueue_tool_report
 from core.providers.tts.default import DefaultTTS
 from concurrent.futures import ThreadPoolExecutor
 from core.utils.dialogue import Message, Dialogue
@@ -1090,20 +1090,9 @@ class ConnectionHandler:
                         f"function_name={tool_call_data['name']}, function_id={tool_call_data['id']}, function_arguments={tool_call_data['arguments']}"
                     )
 
-                    # 构建工具调用的显示文本，格式如: get_weather({"location": "北京"})
+                    # 使用公共方法上报工具调用
                     tool_input = json.loads(tool_call_data.get("arguments") or "{}")
-                    tool_text = json.dumps(
-                        [
-                            {
-                                "type": "tool",
-                                "text": f"{tool_call_data['name']}({json.dumps(tool_input, ensure_ascii=False)})",
-                            }
-                        ]
-                    )
-
-                    # 上报工具调用的内容（使用chatType=3表示工具调用）
-                    tool_call_timestamp = int(time.time())
-                    self.report_queue.put((3, tool_text, None, tool_call_timestamp))
+                    enqueue_tool_report(self, tool_call_data['name'], tool_input)
 
                     future = asyncio.run_coroutine_threadsafe(
                         self.func_handler.handle_llm_function_call(
@@ -1111,21 +1100,16 @@ class ConnectionHandler:
                         ),
                         self.loop,
                     )
-                    futures_with_data.append((future, tool_call_data))
-                
+                    futures_with_data.append((future, tool_call_data, tool_input))
+
                 # 等待协程结束（实际等待时长为最慢的那个）
                 tool_results = []
-                for future, tool_call_data in futures_with_data:
+                for future, tool_call_data, tool_input in futures_with_data:
                     result = future.result()
                     tool_results.append((result, tool_call_data))
 
-                    # 工具执行完成后，单独上报结果（时间戳+1确保在工具调用之后）
-                    tool_result_text = str(result.result)
-
-                    # 格式化为 {"result": ...}
-                    result_display = f'{{"result":"{tool_result_text}"}}'
-                    result_content = json.dumps([{"type": "tool_result", "text": result_display}], ensure_ascii=False)
-                    self.report_queue.put((3, result_content, None, tool_call_timestamp + 1))
+                    # 使用公共方法上报工具调用结果
+                    enqueue_tool_report(self, tool_call_data['name'], tool_input, str(result.result) if result.result else None, report_tool_call=False)
 
                 # 统一处理工具调用结果
                 if tool_results:
