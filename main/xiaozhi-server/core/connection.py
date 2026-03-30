@@ -1143,6 +1143,12 @@ class ConnectionHandler:
                 if len(self.dialogue.dialogue) < original_length:
                     self.logger.bind(tag=TAG).debug("已清理临时的工具调用提醒消息")
 
+            # 触发周期性摘要（异步后台执行，不影响当前响应）
+            try:
+                self.dialogue.maybe_trigger_summary(self.llm)
+            except Exception as e:
+                self.logger.bind(tag=TAG).warning(f"触发周期性摘要失败（已静默降级）: {e}")
+
         return True
 
     def _get_tool_summary(self, functions: list) -> str:

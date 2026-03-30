@@ -25,3 +25,7 @@ manager-api:
   secret: 你的server.secret值
 # 默认系统提示词模板文件
 prompt_template: agent-base-prompt.txt
+# 对话摘要提示词模板文件
+summary_prompt_template: summary-prompt.txt
+# 摘要合并提示词模板文件
+summary_merge_prompt_template: summary-merge-prompt.txt

@@ -60,6 +60,20 @@ delete_audio: true
 # 对话历史最大保留轮数（每轮 = user + assistant/tool 相关消息）
 # 默认 6 轮，可根据 LLM 上下文窗口大小调整
 max_history_turns: 6
+# 是否启用会话历史截断（达到max_history_turns时截断早期对话）
+# 默认 false，关闭后保留全部历史对话，可能导致上下文过长
+enable_history_truncation: false
+# 是否开启周期性对话摘要功能
+# 开启后，每 summary_interval 轮对话后，会异步生成早期对话的摘要
+# 摘要会被注入到系统消息中，帮助 LLM 理解早期对话内容
+enable_history_summary: false
+# 周期性摘要触发间隔（轮次）
+# 每隔这么多轮对话后触发一次摘要生成，默认 8 轮
+summary_interval: 8
+# 对话摘要提示词模板文件
+summary_prompt_template: summary-prompt.txt
+# 摘要合并提示词模板文件
+summary_merge_prompt_template: summary-merge-prompt.txt
 # 没有语音输入多久后断开连接(秒)，默认2分钟，即120秒
 close_connection_no_voice_time: 120
 # TTS请求超时时间(秒)

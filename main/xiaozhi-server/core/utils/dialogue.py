@@ -1,8 +1,20 @@
 import uuid
 import re
 import logging
+import asyncio
+import threading
+import os
 from typing import List, Dict, Optional
 from datetime import datetime
+
+# 项目根目录
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _load_prompt_template(file_path: str) -> str:
+    """加载提示词模板文件"""
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 class Message:
@@ -31,8 +43,45 @@ class Dialogue:
         # 从配置中读取最大历史轮数，默认为 6 轮
         if config:
             self.max_history_turns = config.get("max_history_turns", 6)
+            # 周期性摘要配置
+            self.enable_summary = config.get("enable_history_summary", False)
+            self.summary_interval = config.get("summary_interval", 8)
+            # 历史截断开关配置（默认关闭）
+            self.enable_truncation = config.get("enable_history_truncation", False)
+            # 摘要提示词模板文件
+            self.summary_prompt_file = config.get("summary_prompt_template", "summary-prompt.txt")
+            self.summary_merge_prompt_file = config.get("summary_merge_prompt_template", "summary-merge-prompt.txt")
         else:
             self.max_history_turns = 6
+            self.enable_summary = False
+            self.summary_interval = 8
+            self.enable_truncation = False
+            self.summary_prompt_file = "summary-prompt.txt"
+            self.summary_merge_prompt_file = "summary-merge-prompt.txt"
+
+        # 摘要相关状态
+        self._history_summary: Optional[str] = None  # 历史摘要缓存
+        self._summary_task: Optional[asyncio.Task] = None  # 后台摘要任务
+        self._turn_counter: int = 0  # 用户轮次计数器
+
+        # 预加载并缓存提示词模板
+        self._summary_prompt_template: str = ""
+        self._summary_merge_prompt_template: str = ""
+        self._load_summary_templates()
+
+    def _load_summary_templates(self):
+        """预加载摘要提示词模板（启动时加载一次，避免频繁IO）"""
+        try:
+            summary_prompt_path = os.path.join(PROJECT_ROOT, self.summary_prompt_file)
+            self._summary_prompt_template = _load_prompt_template(summary_prompt_path)
+        except Exception as e:
+            self._summary_prompt_template = ""
+
+        try:
+            merge_prompt_path = os.path.join(PROJECT_ROOT, self.summary_merge_prompt_file)
+            self._summary_merge_prompt_template = _load_prompt_template(merge_prompt_path)
+        except Exception as e:
+            self._summary_merge_prompt_template = ""
 
     def _log_debug(self, msg: str):
         if self.logger:
@@ -40,6 +89,9 @@ class Dialogue:
 
     def put(self, message: Message):
         self.dialogue.append(message)
+        # 用户消息时递增轮次计数器
+        if message.role == "user":
+            self._turn_counter += 1
 
     def getMessages(self, m, dialogue):
         if m.tool_calls is not None:
@@ -127,6 +179,149 @@ class Dialogue:
 
         return result
 
+    async def _do_periodic_summary(self, llm_client):
+        """
+        异步生成周期性摘要
+
+        提取窗口外的早期对话轮次，调用LLM生成摘要，支持增量合并。
+        全程try/except静默降级，不影响主流程。
+        """
+        SUMMARY_MAX_LENGTH = 400  # 摘要硬上限
+        CONTENT_TRUNCATE_LENGTH = 200  # 每条消息截断长度
+
+        try:
+            # 获取非system消息
+            non_system_messages = [m for m in self.dialogue if m.role != "system"]
+            if not non_system_messages:
+                return
+
+            # 找到最后一个user的位置（当前轮次的起点）
+            last_user_idx = -1
+            for i in range(len(non_system_messages) - 1, -1, -1):
+                if non_system_messages[i].role == "user":
+                    last_user_idx = i
+                    break
+
+            if last_user_idx <= 0:
+                return  # 没有历史消息或只有当前轮
+
+            # 历史消息（排除当前轮）
+            history_messages = non_system_messages[:last_user_idx]
+
+            # 按轮次分组
+            history_turns = self._group_messages_by_turns(history_messages)
+
+            # 取出窗口外的早期轮次（排除最近的 max_history_turns 轮）
+            if len(history_turns) <= self.max_history_turns:
+                self._log_debug(f"历史轮次({len(history_turns)})未超过窗口({self.max_history_turns})，无需摘要")
+                return
+
+            early_turns = history_turns[:-self.max_history_turns]
+
+            # 拼接早期对话文本（跳过tool类型消息）
+            conversation_text = ""
+            for turn in early_turns:
+                for msg in turn:
+                    if msg.role == "tool":
+                        continue  # 跳过tool消息
+                    if msg.content:
+                        truncated = msg.content[:CONTENT_TRUNCATE_LENGTH]
+                        role_label = "用户" if msg.role == "user" else "助手"
+                        conversation_text += f"{role_label}: {truncated}\n"
+
+            if not conversation_text.strip():
+                return
+
+            self._log_debug(f"开始生成周期性摘要，早期对话共{len(early_turns)}轮")
+
+            # 构建摘要prompt（使用缓存的模板）
+            summary_prompt = self._summary_prompt_template.replace("{{conversation_text}}", conversation_text)
+
+            # 调用LLM生成摘要
+            new_summary = llm_client.response_no_stream(
+                system_prompt="你是一个对话摘要助手，擅长将长对话压缩为简洁的摘要。",
+                user_prompt=summary_prompt
+            )
+
+            if not new_summary or not new_summary.strip():
+                self._log_debug("LLM返回空摘要，跳过")
+                return
+
+            new_summary = new_summary.strip()
+            self._log_debug(f"周期性摘要生成完成，未合并前内容: {new_summary}")
+
+            # 如果已有摘要，进行增量合并（使用缓存的模板）
+            if self._history_summary:
+                merge_prompt = self._summary_merge_prompt_template.replace("{{existing_summary}}", self._history_summary)
+                merge_prompt = merge_prompt.replace("{{new_summary}}", new_summary)
+
+                merged_summary = llm_client.response_no_stream(
+                    system_prompt="你是一个摘要合并助手，擅长将多段摘要合并为简洁的统一摘要。",
+                    user_prompt=merge_prompt
+                )
+                if merged_summary and merged_summary.strip():
+                    new_summary = merged_summary.strip()
+
+            # 截断到硬上限
+            if len(new_summary) > SUMMARY_MAX_LENGTH:
+                new_summary = new_summary[:SUMMARY_MAX_LENGTH] + "..."
+
+            # 更新摘要缓存
+            self._history_summary = new_summary
+            self._log_debug(f"周期性摘要生成完成，长度: {len(new_summary)}字符")
+            self._log_debug(f"周期性摘要生成完成，合并后内容: {new_summary}")
+
+        except Exception as e:
+            # 静默降级，不影响主流程
+            if self.logger:
+                self.logger.warning(f"周期性摘要生成失败，已静默降级: {e}")
+
+    def maybe_trigger_summary(self, llm_client) -> bool:
+        """
+        检查并触发周期性摘要生成
+
+        触发条件：
+        1. enable_summary 为 True
+        2. _turn_counter > 0 且能被 summary_interval 整除
+        3. 当前没有正在运行的摘要任务
+
+        Args:
+            llm_client: LLM 客户端实例
+
+        Returns:
+            bool: 是否成功触发了摘要任务
+        """
+        # 条件1: 检查功能是否开启
+        if not self.enable_summary:
+            return False
+
+        # 条件2: 检查轮次是否达到触发间隔
+        if self._turn_counter <= 0 or self._turn_counter % self.summary_interval != 0:
+            return False
+
+        # 条件3: 检查是否有正在运行的摘要任务
+        if self._summary_task is not None and not self._summary_task.done():
+            self._log_debug(f"摘要任务已在运行中，跳过触发 (turn={self._turn_counter})")
+            return False
+
+        # 满足所有条件，启动后台摘要任务
+        # 使用线程安全的方式启动异步任务（兼容同步和异步上下文）
+        try:
+            loop = asyncio.get_running_loop()
+            # 在已有事件循环中，使用 create_task
+            self._summary_task = asyncio.create_task(self._do_periodic_summary(llm_client))
+        except RuntimeError:
+            # 没有运行中的事件循环，在新线程中启动
+            def run_async_task():
+                asyncio.run(self._do_periodic_summary(llm_client))
+
+            thread = threading.Thread(target=run_async_task, daemon=True)
+            thread.start()
+            self._log_debug(f"已在新线程中触发周期性摘要任务 (turn={self._turn_counter})")
+
+        self._log_debug(f"已触发周期性摘要任务 (turn={self._turn_counter})")
+        return True
+
     def get_llm_dialogue_with_memory(
         self,
         memory_str: str = None,
@@ -176,7 +371,16 @@ class Dialogue:
                     flags=re.DOTALL,
                 )
 
-            dialogue.append({"role": "system", "content": enhanced_system_prompt})
+            # 注入历史摘要（周期性摘要功能）
+            if self.enable_summary and self._history_summary:
+                enhanced_system_prompt += (
+                    f"\n\n<earlier_conversation_summary>\n"
+                    f"{self._history_summary}\n"
+                    f"</earlier_conversation_summary>"
+                )
+                self._log_debug(f"已注入历史摘要到系统消息，长度: {len(self._history_summary)}字符")
+
+            # dialogue.append({"role": "system", "content": enhanced_system_prompt})
 
         # 获取非系统消息
         non_system_messages = [m for m in self.dialogue if m.role != "system"]
@@ -205,12 +409,15 @@ class Dialogue:
         # 处理历史轮次
         if history_messages:
             history_turns = self._group_messages_by_turns(history_messages)
-            max_history = self.max_history_turns - 1
-            if max_history < 1:
-                max_history = 1
 
-            if len(history_turns) > max_history:
-                history_turns = history_turns[-max_history:]
+            # 根据截断开关决定是否截断历史轮次
+            if self.enable_truncation:
+                max_history = self.max_history_turns
+                if max_history < 1:
+                    max_history = 1
+
+                if len(history_turns) > max_history:
+                    history_turns = history_turns[-max_history:]
 
             for turn in history_turns:
                 complete_turn = self._ensure_tool_calls_complete(turn)
