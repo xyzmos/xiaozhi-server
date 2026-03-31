@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import lombok.RequiredArgsConstructor;
+import xiaozhi.common.constant.Constant;
 import xiaozhi.modules.agent.dto.AgentChatHistoryDTO;
 import xiaozhi.modules.agent.dto.AgentChatSummaryDTO;
 import xiaozhi.modules.agent.dto.AgentMemoryDTO;
@@ -90,21 +91,28 @@ public class AgentChatSummaryServiceImpl implements AgentChatSummaryService {
     @Override
     public boolean generateAndSaveChatSummary(String sessionId) {
         try {
-            // 1. 生成总结
-            AgentChatSummaryDTO summaryDTO = generateChatSummary(sessionId);
-            if (!summaryDTO.isSuccess()) {
-                log.info("生成总结失败: {}", summaryDTO.getErrorMessage());
-                return false;
-            }
-
-            // 2. 获取设备信息（通过会话关联的设备）
+            // 1. 获取设备信息（通过会话关联的设备）
             DeviceEntity device = getDeviceBySessionId(sessionId);
             if (device == null) {
                 log.info("未找到与会话 {} 关联的设备", sessionId);
                 return false;
             }
 
-            // 3. 更新智能体记忆
+            // 2. 检查记忆模型类型，如果是仅上报聊天记录模式则跳过总结
+            String memModelId = agentService.getAgentById(device.getAgentId()).getMemModelId();
+            if (memModelId != null && memModelId.equals(Constant.MEMORY_MEM_REPORT_ONLY)) {
+                log.info("会话 {} 使用仅上报聊天记录模式，跳过记忆总结", sessionId);
+                return true;
+            }
+
+            // 3. 生成总结
+            AgentChatSummaryDTO summaryDTO = generateChatSummary(sessionId);
+            if (!summaryDTO.isSuccess()) {
+                log.info("生成总结失败: {}", summaryDTO.getErrorMessage());
+                return false;
+            }
+
+            // 4. 更新智能体记忆
             AgentMemoryDTO memoryDTO = new AgentMemoryDTO();
             memoryDTO.setSummaryMemory(summaryDTO.getSummary());
 

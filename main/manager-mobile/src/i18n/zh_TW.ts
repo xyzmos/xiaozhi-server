@@ -11,7 +11,7 @@ export default {
   'login.navigationTitle': '登錄',
   'login.fetchConfigError': '獲取配置失敗:',
   'login.selectLanguage': '選擇語言',
-  'login.selectLanguageTip': '简体',
+  'login.selectLanguageTip': '繁體',
   'login.welcomeBack': '歡迎回來',
   'login.pleaseLogin': '請登錄您的賬戶',
   'login.enterUsername': '請輸入用戶名',
@@ -90,7 +90,7 @@ export default {
   'home.createFirstAgent': '點擊右下角 + 號創建您的第一個智能體',
   'home.dialogTitle': '創建智能體',
   'home.inputPlaceholder': '例如：客服助手、語音助理、知識問答',
-  'home.createError': '請輸入智能體暱稱',
+  'home.createError': '暱稱長度必須在 1 到 64 個字元之間。',
   'home.createNow': '立即創建',
   'home.justNow': '剛剛',
   'home.minutesAgo': '分鐘前',
@@ -492,4 +492,9 @@ export default {
   'deviceConfig.afterConfigSuccessDeviceWillRestart': '配網成功後設備將自動重啟',
   'deviceConfig.audioPlaybackError': '音頻播放錯誤',
   'deviceConfig.playbackFailed': '播放失敗',
+
+  // Voiceprint page
+  'voiceprint.audioNotExist': '該音頻不存在',
+  'voiceprint.getAudioFailed': '獲取音頻失敗',
+  'voiceprint.audioPlayFailed': '音頻播放失敗',
 }

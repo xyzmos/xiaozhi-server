@@ -136,17 +136,22 @@
         </div>
       </div>
     </div>
+    <el-footer>
+      <version-footer />
+    </el-footer>
   </div>
 </template>
 
 <script>
 import HeaderBar from "@/components/HeaderBar";
 import agentApi from "@/apis/module/agent";
+import VersionFooter from "@/components/VersionFooter.vue";
 
 export default {
   name: "AgentTemplateManagement",
   components: {
     HeaderBar,
+    VersionFooter
   },
 
   data() {
@@ -478,11 +483,10 @@ export default {
 
 /* 主容器样式 */
 .main-wrapper {
-  margin: 5px 22px;
+  // 顶部 63px 底部 35px 查询72px
+  height: calc(100vh - 63px - 35px - 72px);
+  margin: 0 22px;
   border-radius: 15px;
-  min-height: calc(100vh - 24vh);
-  height: auto;
-  max-height: 80vh;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   background: rgba(237, 242, 255, 0.5);
@@ -587,7 +591,7 @@ export default {
   justify-content: space-between !important;
   align-items: center;
   margin-top: auto;
-  padding: 0 20px 15px !important;
+  padding: 0 20px !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }

@@ -27,6 +27,7 @@ class AudioRateController:
         self.queue_empty_event = asyncio.Event()  # 队列清空事件
         self.queue_empty_event.set()  # 初始为空状态
         self.queue_has_data_event = asyncio.Event()  # 队列数据事件
+        self._last_queue_empty_time = 0  # 上次队列清空的时间（秒）
 
     def reset(self):
         """重置控制器状态"""
@@ -37,12 +38,25 @@ class AudioRateController:
         self.queue.clear()
         self.play_position = 0
         self.start_timestamp = None  # 由首个音频包设置
+        self._last_queue_empty_time = 0  # 重置时间
         # 相关事件处理
         self.queue_empty_event.set()
         self.queue_has_data_event.clear()
 
     def add_audio(self, opus_packet):
         """添加音频包到队列"""
+        # 如果队列之前为空，需要调整时间戳以保持播放时间连续
+        # 这样工具调用等待期间，新加入的音频不会提前播放
+        # 如果间隔很短（<1帧），说明是正常的流式传输，不需要重置
+        if len(self.queue) == 0 and self.play_position > 0:
+            elapsed_since_empty = (time.monotonic() - self._last_queue_empty_time) * 1000
+            # 只有间隔超过1帧时长，才认为是真正的"暂停恢复"
+            if elapsed_since_empty >= self.frame_duration:
+                self.start_timestamp = time.monotonic() - (self.play_position / 1000)
+                self.logger.bind(tag=TAG).debug(
+                    f"队列从空恢复，重置时间戳，当前播放位置: {self.play_position}ms，间隔: {elapsed_since_empty:.0f}ms"
+                )
+
         self.queue.append(("audio", opus_packet))
         # 相关事件处理
         self.queue_empty_event.clear()
@@ -55,6 +69,14 @@ class AudioRateController:
         Args:
             message_callback: 消息发送回调函数 async def()
         """
+        if len(self.queue) == 0 and self.play_position > 0:
+            elapsed_since_empty = (time.monotonic() - self._last_queue_empty_time) * 1000
+            if elapsed_since_empty >= self.frame_duration:
+                self.start_timestamp = time.monotonic() - (self.play_position / 1000)
+                self.logger.bind(tag=TAG).debug(
+                    f"队列从空恢复，重置时间戳，当前播放位置: {self.play_position}ms，间隔: {elapsed_since_empty:.0f}ms"
+                )
+
         self.queue.append(("message", message_callback))
         # 相关事件处理
         self.queue_empty_event.clear()
@@ -126,6 +148,7 @@ class AudioRateController:
         # 队列处理完后清除事件
         self.queue_empty_event.set()
         self.queue_has_data_event.clear()
+        self._last_queue_empty_time = time.monotonic()  # 记录队列清空时间
 
     def start_sending(self, send_audio_callback):
         """

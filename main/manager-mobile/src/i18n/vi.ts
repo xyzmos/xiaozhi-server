@@ -11,7 +11,7 @@ export default {
     'login.navigationTitle': 'Đăng nhập',
     'login.fetchConfigError': 'Không thể tải cấu hình:',
     'login.selectLanguage': 'Chọn ngôn ngữ',
-    'login.selectLanguageTip': 'de',
+    'login.selectLanguageTip': 'Vi',
     'login.welcomeBack': 'Chào mừng trở lại',
     'login.pleaseLogin': 'Vui lòng đăng nhập vào tài khoản của bạn',
     'login.enterUsername': 'Vui lòng nhập tên đăng nhập',
@@ -69,7 +69,7 @@ export default {
     'home.createFirstAgent': 'Nhấp vào nút + ở góc dưới bên phải để tạo đại lý đầu tiên của bạn',
     'home.dialogTitle': 'Tạo đại lý',
     'home.inputPlaceholder': 'ví dụ: Trợ lý chăm sóc khách hàng, Trợ lý giọng nói, Hỏi đáp kiến thức',
-    'home.createError': 'Vui lòng nhập tên đại lý',
+    'home.createError': 'Độ dài tên phải từ 1 đến 64 ký tự',
     'home.createNow': 'Tạo ngay',
     'home.justNow': 'Vừa xong',
     'home.minutesAgo': 'phút trước',
@@ -371,7 +371,7 @@ export default {
     'agent.tools.mcpAccessPoint': 'Điểm truy cập MCP',
     'agent.tools.copy': 'Sao chép',
     'agent.tools.noTools': 'Không có công cụ nào',
-    'agent.tools.parameterConfig': 'Cấu hình tham số',
+    'agent.tools.parameterConfig': 'Cấu hình',
     'agent.tools.noParamsNeeded': 'Không cần tham số',
     'agent.tools.pleaseInput': 'Vui lòng nhập',
     'agent.tools.inputOneItemPerLine': 'Nhập một mục mỗi dòng',
@@ -492,4 +492,9 @@ export default {
     'deviceConfig.afterConfigSuccessDeviceWillRestart': 'Sau khi cấu hình thành công, thiết bị sẽ tự động khởi động lại',
     'deviceConfig.audioPlaybackError': 'Lỗi phát âm thanh',
     'deviceConfig.playbackFailed': 'Phát thất bại',
+
+    // Voiceprint page
+    'voiceprint.audioNotExist': 'Âm thanh không tồn tại',
+    'voiceprint.getAudioFailed': 'Không thể lấy âm thanh',
+    'voiceprint.audioPlayFailed': 'Phát âm thanh thất bại',
 }
