@@ -24,7 +24,7 @@ from core.utils.modules_initialize import (
     initialize_tts,
     initialize_asr,
 )
-from core.handle.reportHandle import report
+from core.handle.reportHandle import report, enqueue_tool_report
 from core.providers.tts.default import DefaultTTS
 from concurrent.futures import ThreadPoolExecutor
 from core.utils.dialogue import Message, Dialogue
@@ -1063,6 +1063,10 @@ class ConnectionHandler:
                     )
 
             if not bHasError and len(tool_calls_list) > 0:
+                self.logger.bind(tag=TAG).debug(
+                    f"检测到 {len(tool_calls_list)} 个工具调用"
+                )
+
                 # 更新工具调用统计
                 if depth == 0:
                     current_turn = len(self.dialogue.dialogue) // 2
@@ -1079,10 +1083,6 @@ class ConnectionHandler:
                     self.dialogue.put(Message(role="assistant", content=text_buff))
                 response_message.clear()
 
-                self.logger.bind(tag=TAG).debug(
-                    f"检测到 {len(tool_calls_list)} 个工具调用"
-                )
-
                 # 收集所有工具调用的 Future
                 futures_with_data = []
                 for tool_call_data in tool_calls_list:
@@ -1090,21 +1090,28 @@ class ConnectionHandler:
                         f"function_name={tool_call_data['name']}, function_id={tool_call_data['id']}, function_arguments={tool_call_data['arguments']}"
                     )
 
+                    # 使用公共方法上报工具调用
+                    tool_input = json.loads(tool_call_data.get("arguments") or "{}")
+                    enqueue_tool_report(self, tool_call_data['name'], tool_input)
+
                     future = asyncio.run_coroutine_threadsafe(
                         self.func_handler.handle_llm_function_call(
                             self, tool_call_data
                         ),
                         self.loop,
                     )
-                    futures_with_data.append((future, tool_call_data))
+                    futures_with_data.append((future, tool_call_data, tool_input))
 
                 # 等待协程结束（实际等待时长为最慢的那个）
                 tool_results = []
-                for future, tool_call_data in futures_with_data:
+                for future, tool_call_data, tool_input in futures_with_data:
                     result = future.result()
                     tool_results.append((result, tool_call_data))
 
-                # 统一处理所有工具调用结果
+                    # 使用公共方法上报工具调用结果
+                    enqueue_tool_report(self, tool_call_data['name'], tool_input, str(result.result) if result.result else None, report_tool_call=False)
+
+                # 统一处理工具调用结果
                 if tool_results:
                     self._handle_function_result(tool_results, depth=depth)
 
