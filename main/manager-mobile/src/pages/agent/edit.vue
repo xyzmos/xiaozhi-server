@@ -162,6 +162,9 @@ function handleInputConfirm() {
   inputVisible.value = false
 }
 
+// 是否禁用历史记忆输入框
+const isMemoryDisabled = computed(() => formData.value.memModelId !== 'Memory_mem_local_short')
+
 // 打开上下文源编辑弹窗
 function openContextProviderDialog() {
   uni.navigateTo({
@@ -942,8 +945,9 @@ onMounted(async () => {
         <textarea
           v-model="formData.summaryMemory"
           :placeholder="t('agent.memoryContent')"
-          disabled
-          class="box-border h-[500rpx] w-full resize-none break-words break-all border border-[#eeeeee] rounded-[12rpx] bg-[#f0f0f0] p-[20rpx] text-[26rpx] text-[#65686f] leading-[1.6] opacity-80 outline-none"
+          :disabled="isMemoryDisabled"
+          :style="isMemoryDisabled ? 'background: #f0f0f0' : ''"
+          class="box-border h-[500rpx] w-full resize-none break-words break-all border border-[#eeeeee] rounded-[12rpx] p-[20rpx] text-[26rpx] leading-[1.6] opacity-80 outline-none"
         />
       </view>
     </view>
