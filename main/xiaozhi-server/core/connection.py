@@ -1117,6 +1117,9 @@ class ConnectionHandler:
                     try:
                         result = future.result(timeout=tool_call_timeout)
                         tool_results.append((result, tool_call_data))
+                        # 使用公共方法上报工具调用结果
+                        enqueue_tool_report(self, tool_call_data['name'], tool_input, str(result.result) if result.result else None, report_tool_call=False)
+
                     except Exception as e:
                         self.logger.bind(tag=TAG).error(
                             f"工具调用超时或异常: {tool_call_data['name']}, 错误: {e}"
@@ -1126,9 +1129,8 @@ class ConnectionHandler:
                             ActionResponse(action=Action.ERROR, result="哎呀，网络遇到点问题，请稍后再试下！"),
                             tool_call_data
                         ))
-
-                    # 使用公共方法上报工具调用结果
-                    enqueue_tool_report(self, tool_call_data['name'], tool_input, str(result.result) if result.result else None, report_tool_call=False)
+                        # 上报工具调用错误
+                        enqueue_tool_report(self, tool_call_data['name'], tool_input, str(e), report_tool_call=False)
 
                 # 统一处理工具调用结果
                 if tool_results:
