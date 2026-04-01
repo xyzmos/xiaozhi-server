@@ -109,6 +109,7 @@ const inputValue = ref('')
 const inputVisible = ref(false)
 const languageOptions = ref([])
 const isVisibleReport = ref(false)
+const tempSummaryMemory = ref('')
 
 // 音频播放相关
 const audioRef = ref<UniApp.InnerAudioContext | null>(null)
@@ -185,6 +186,7 @@ async function loadAgentDetail() {
 
   try {
     loading.value = true
+    tempSummaryMemory.value = ''
     const detail = await getAgentDetail(agentId.value)
     formData.value = { ...detail }
 
@@ -485,6 +487,13 @@ async function onPickerConfirm(type: string, value: any, name: string) {
       displayNames.value.memory = name // 确保显示名称正确更新
       displayNames.value.report = reportOptions[1].name
       isVisibleReport.value = value !== 'Memory_nomem'
+      if (value === 'Memory_nomem' || value === 'Memory_mem_report_only') {
+        tempSummaryMemory.value = formData.value.summaryMemory
+        formData.value.summaryMemory = ''
+      } else if (tempSummaryMemory.value !== '' && formData.value.summaryMemory === '') {
+        formData.value.summaryMemory = tempSummaryMemory.value
+        tempSummaryMemory.value = ''
+      }
       break
     case 'tts':
       formData.value.ttsModelId = value

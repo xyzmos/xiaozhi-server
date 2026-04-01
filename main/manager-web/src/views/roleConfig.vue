@@ -385,6 +385,7 @@ export default {
         speed: 0,
         pitch: 0
       },
+      tempSummaryMemory: "",
       form: {
         agentCode: "",
         agentName: "",
@@ -596,6 +597,7 @@ export default {
     fetchAgentConfig(agentId) {
       Api.agent.getDeviceConfig(agentId, ({ data }) => {
         if (data.code === 0) {
+          this.tempSummaryMemory = "";
           this.form = {
             ...this.form,
             ...data.data,
@@ -817,6 +819,13 @@ export default {
         } else {
           // 有记忆功能的模型，默认记录文本和语音
           this.form.chatHistoryConf = 2;
+        }
+        if (value === "Memory_nomem" || value === "Memory_mem_report_only") {
+          this.tempSummaryMemory = this.form.summaryMemory;
+          this.form.summaryMemory = "";
+        } else if (this.tempSummaryMemory !== "" && this.form.summaryMemory === "") {
+          this.form.summaryMemory = this.tempSummaryMemory;
+          this.tempSummaryMemory = "";
         }
       }
       if (type === "LLM") {
