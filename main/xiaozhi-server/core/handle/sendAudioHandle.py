@@ -318,3 +318,13 @@ async def send_stt_message(conn: "ConnectionHandler", text):
     await send_tts_message(conn, "start")
     # 发送start消息后客户端状态会处于说话中状态，同步服务端状态
     conn.client_is_speaking = True
+
+
+async def send_display_message(conn: "ConnectionHandler", text):
+    """发送纯显示消息"""
+    message = {
+        "type": "stt",
+        "text": text,
+        "session_id": conn.session_id
+    }
+    await conn.websocket.send(json.dumps(message))

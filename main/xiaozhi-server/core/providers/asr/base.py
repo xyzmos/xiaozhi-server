@@ -168,10 +168,10 @@ class ASRProviderBase(ABC):
             self.stop_ws_connection()
 
             if text_len > 0:
-                # 使用自定义模块进行上报
-                await startToChat(conn, enhanced_text)
                 audio_snapshot = asr_audio_task.copy()
                 enqueue_asr_report(conn, enhanced_text, audio_snapshot)
+                # 使用自定义模块进行上报
+                await startToChat(conn, enhanced_text)
         except Exception as e:
             logger.bind(tag=TAG).error(f"处理语音停止失败: {e}")
             import traceback

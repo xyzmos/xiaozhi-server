@@ -192,7 +192,7 @@ class App {
                     }
                     log('正在请求摄像头权限...', 'info');
                     this.cameraStream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: 320, height: 240, facingMode: this.currentFacingMode },
+                        video: { width: 180, height: 240, facingMode: this.currentFacingMode },
                         audio: false
                     });
                     cameraVideo.srcObject = this.cameraStream;
@@ -274,7 +274,7 @@ class App {
                         return;
                     }
 
-                    canvas.width = video.videoWidth || 320;
+                    canvas.width = video.videoWidth || 180;
                     canvas.height = video.videoHeight || 240;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
