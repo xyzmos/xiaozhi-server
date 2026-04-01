@@ -190,7 +190,7 @@ async def process_intent_result(
                         result.action == Action.NOTFOUND
                         or result.action == Action.ERROR
                     ):
-                        text = result.result
+                        text = result.response if result.response else result.result
                         if text is not None:
                             speak_txt(conn, text)
                     elif function_name != "play_music":
