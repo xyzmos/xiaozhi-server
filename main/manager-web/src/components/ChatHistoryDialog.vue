@@ -21,11 +21,35 @@
                         <div v-if="message.type === 'time'" class="time-divider">
                             {{ message.content }}
                         </div>
-                        <div v-else class="message-item" :class="{ 'user-message': message.chatType === 1 }">
+                        <div v-else class="message-item" :class="{ 'user-message': message.chatType === 1, 'tool-message': message.chatType === 3 }">
                             <img :src="message.chatType === 1 ? getUserAvatar(currentSessionId) : require('@/assets/xiaozhi-logo.png')"
                                 class="avatar" />
                             <div class="message-content">
-                                {{ extractContentFromString(message.content) }}
+                                <template v-if="Array.isArray(extractContentFromString(message.content))">
+                                    <div class="content-wrapper">
+                                        <div v-for="(item, idx) in extractContentFromString(message.content)" :key="idx">
+                                            <div v-if="item.type === 'text'" class="text-content">{{ item.text }}</div>
+                                            <div v-else-if="item.type === 'tool'" class="tool-call-text">{{ item.text }}</div>
+                                            <div v-else-if="item.type === 'tool_result'" class="tool-call-text">
+                                                <div v-if="item.text && item.text.length > 80" class="tool-result-wrapper">
+                                                    <div v-if="isToolResultCollapsed(index, idx)" class="tool-result-collapsed">
+                                                        {{ getFirstLineText(item.text) }}
+                                                    </div>
+                                                    <div v-else class="tool-result-expanded">
+                                                        {{ item.text }}
+                                                    </div>
+                                                    <span class="tool-toggle-btn" @click="toggleToolResult(index, idx)">
+                                                        <i :class="isToolResultCollapsed(index, idx) ? 'el-icon-arrow-down' : 'el-icon-arrow-up'"></i>
+                                                    </span>
+                                                </div>
+                                                <div v-else>{{ item.text }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    {{ extractContentFromString(message.content) }}
+                                </template>
                                 <i v-if="message.audioId" :class="getAudioIconClass(message)"
                                     @click="playAudio(message)" class="audio-icon"></i>
                             </div>
@@ -49,6 +73,7 @@
 </template>
 
 <script>
+import { debounce } from '@/utils'
 import Api from '@/apis/api';
 
 export default {
@@ -81,7 +106,8 @@ export default {
             scrollTimer: null,
             isFirstLoad: true,
             playingAudioId: null,
-            audioElement: null
+            audioElement: null,
+            expandedToolResults: {} // 跟踪工具结果的展开状态
         };
     },
     watch: {
@@ -90,6 +116,10 @@ export default {
             if (val) {
                 this.resetData();
                 this.loadSessions();
+            } else {
+                this.audioElement?.pause();
+                this.audioElement = null;
+                this.playingAudioId = null;
             }
         },
         dialogVisible(val) {
@@ -154,6 +184,13 @@ export default {
             // 尝试解析为 JSON
             try {
                 const jsonObj = JSON.parse(content);
+
+                // 如果是数组格式（包含 text 和 tool）
+                if (Array.isArray(jsonObj)) {
+                    return jsonObj;
+                }
+
+                // 如果是对象且有 content 字段
                 if (jsonObj && typeof jsonObj === 'object' && jsonObj.content) {
                     return jsonObj.content;
                 }
@@ -164,6 +201,23 @@ export default {
             // 如果不是 JSON 格式或没有 content 字段，直接返回原内容
             return content;
         },
+        // 切换工具结果的展开/折叠状态
+        toggleToolResult(messageIndex, itemIndex) {
+            const key = `${messageIndex}-${itemIndex}`;
+            this.$set(this.expandedToolResults, key, !this.expandedToolResults[key]);
+        },
+        // 判断工具结果是否处于折叠状态
+        isToolResultCollapsed(messageIndex, itemIndex) {
+            const key = `${messageIndex}-${itemIndex}`;
+            // 默认折叠（true表示折叠）
+            return !this.expandedToolResults[key];
+        },
+        // 获取截断的文本（只显示第一行）
+        getFirstLineText(text) {
+            if (!text) return '';
+            const firstLine = text.split('\n')[0];
+            return firstLine.length < text.length ? firstLine + '...' : text;
+        },
         resetData() {
             this.sessions = [];
             this.messages = [];
@@ -173,6 +227,7 @@ export default {
             this.loading = false;
             this.hasMore = true;
             this.isFirstLoad = true;
+            this.expandedToolResults = {};
         },
         handleClose() {
             this.dialogVisible = false;
@@ -255,7 +310,7 @@ export default {
             }
             return 'el-icon-video-play';
         },
-        playAudio(message) {
+        playAudio: debounce(function(message) {
             if (this.playingAudioId === message.audioId) {
                 // 如果正在播放当前音频，则停止播放
                 if (this.audioElement) {
@@ -276,9 +331,12 @@ export default {
             this.playingAudioId = message.audioId;
             Api.agent.getAudioId(message.audioId, (res) => {
                 if (res.data && res.data.data) {
+                    if (!this.audioElement) {
+                        this.audioElement = new Audio();
+                    }
+                    
                     // 使用获取到的下载ID播放音频
-                    this.audioElement = new Audio(Api.getServiceUrl() + `/agent/play/${res.data.data}`);
-
+                    this.audioElement.src = Api.getServiceUrl() + `/agent/play/${res.data.data}`;
                     this.audioElement.onended = () => {
                         this.playingAudioId = null;
                         this.audioElement = null;
@@ -287,7 +345,7 @@ export default {
                     this.audioElement.play();
                 }
             });
-        },
+        }, 300),
         getUserAvatar(sessionId) {
             // 从 sessionId 中提取所有数字
             const numbers = sessionId.match(/\d+/g);
@@ -440,6 +498,56 @@ export default {
 
 .user-message .audio-icon {
     color: white;
+}
+
+.content-wrapper {
+    width: 100%;
+}
+
+.text-content {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.tool-call-text {
+    color: #1890ff;
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    display: block;
+    margin-top: 4px;
+}
+
+.user-message .tool-call-text {
+    color: #e6f7ff;
+}
+
+.tool-message .message-content {
+    background-color: #f0f0f0;
+}
+
+.tool-result-wrapper {
+    position: relative;
+    padding-right: 20px;
+}
+
+.tool-result-collapsed {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tool-toggle-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    cursor: pointer;
+    color: #1890ff;
+    font-size: 12px;
+}
+
+.tool-toggle-btn:hover {
+    color: #40a9ff;
 }
 
 .loading,

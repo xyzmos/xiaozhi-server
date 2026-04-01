@@ -1,5 +1,6 @@
 import type { uniappRequestAdapter } from '@alova/adapter-uniapp'
 import type { IResponse } from './types'
+import type { Language } from '@/store/lang'
 import AdapterUniapp from '@alova/adapter-uniapp'
 import { createAlova } from 'alova'
 import { createServerTokenAuthentication } from 'alova/client'
@@ -7,6 +8,16 @@ import VueHook from 'alova/vue'
 import { getEnvBaseUrl } from '@/utils'
 import { toast } from '@/utils/toast'
 import { ContentTypeEnum, ResultEnum, ShowMessage } from './enum'
+
+// 语言映射, 用于设置 Accept-language 头
+const langMap: Record<Language, string> = {
+  zh_CN: 'zh-CN',
+  en: 'en-US',
+  zh_TW: 'zh-TW',
+  de: 'de',
+  vi: 'vi',
+  pt_BR: 'pt-BR',
+}
 
 /**
  * 创建请求实例
@@ -42,10 +53,26 @@ const alovaInstance = createAlova({
   statesHook: VueHook,
 
   beforeRequest: onAuthRequired((method) => {
+    // h5动态获取最新的 baseURL，确保使用用户设置的服务器地址
+    const currentBaseUrl = getEnvBaseUrl()
+    if (currentBaseUrl !== method.baseURL) {
+      method.baseURL = currentBaseUrl
+    }
+
+    // 检查混合内容错误（HTTPS页面请求HTTP接口）
+    const currentProtocol = typeof window !== 'undefined' && window.location.protocol
+    const requestProtocol = method.baseURL?.split(':')[0]
+    const currentLang = langMap[uni.getStorageSync('app_language') as Language || 'zh_CN']
+    if (currentProtocol === 'https:' && requestProtocol === 'http') {
+      const errorMessage = '无法配置http协议地址,请检查接口地址'
+      throw new Error(errorMessage)
+    }
+
     // 设置默认 Content-Type
     method.config.headers = {
       'Content-Type': ContentTypeEnum.JSON,
       'Accept': 'application/json, text/plain, */*',
+      'Accept-language': currentLang,
       ...method.config.headers,
     }
 
@@ -55,14 +82,14 @@ const alovaInstance = createAlova({
 
     // 处理认证信息
     if (!ignoreAuth) {
-      const token = uni.getStorageSync('token')
-      if (!token) {
+      const authInfo = JSON.parse(uni.getStorageSync('token') || '{}')
+      if (!authInfo.token) {
         // 跳转到登录页
         uni.reLaunch({ url: '/pages/login/index' })
         throw new Error('[请求错误]：未登录')
       }
       // 添加 Authorization 头
-      method.config.headers.Authorization = `Bearer ${token}`
+      method.config.headers.Authorization = `Bearer ${authInfo.token}`
     }
 
     // 处理动态域名

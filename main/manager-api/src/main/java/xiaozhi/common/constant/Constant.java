@@ -152,6 +152,11 @@ public interface Constant {
     String MEMORY_NO_MEM = "Memory_nomem";
 
     /**
+     * 仅上报聊天记录（不总结记忆）
+     */
+    String MEMORY_MEM_REPORT_ONLY = "Memory_mem_report_only";
+
+    /**
      * 火山引擎双声道语音克隆
      */
     String VOICE_CLONE_HUOSHAN_DOUBLE_STREAM = "huoshan_double_stream";
@@ -304,7 +309,7 @@ public interface Constant {
     /**
      * 版本号
      */
-    public static final String VERSION = "0.9.1";
+    public static final String VERSION = "0.9.2";
 
     /**
      * 无效固件URL

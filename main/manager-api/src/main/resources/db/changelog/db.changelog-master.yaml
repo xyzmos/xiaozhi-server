@@ -558,10 +558,31 @@ databaseChangeLog:
             encoding: utf8
             path: classpath:db/changelog/202603091051.sql
   - changeSet:
+      id: 202603101723
+      author: RanChen
+      changes:
+        - sqlFile:
+            encoding: utf8
+            path: classpath:db/changelog/202603101723.sql
+  - changeSet:
       id: 202603111131
       author: DaGou12138
       changes:
         - sqlFile:
             encoding: utf8
             path: classpath:db/changelog/202603111131.sql
-            
+  - changeSet:
+      id: 202603231037
+      author: rainv123
+      changes:
+        - sqlFile:
+            encoding: utf8
+            path: classpath:db/changelog/202603231037.sql
+  - changeSet:
+      id: 202603311200
+      author: cgd
+      changes:
+        - sqlFile:
+            encoding: utf8
+            path: classpath:db/changelog/202603311200.sql
+

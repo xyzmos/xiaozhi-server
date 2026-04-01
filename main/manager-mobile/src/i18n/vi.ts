@@ -11,7 +11,7 @@ export default {
     'login.navigationTitle': 'Đăng nhập',
     'login.fetchConfigError': 'Không thể tải cấu hình:',
     'login.selectLanguage': 'Chọn ngôn ngữ',
-    'login.selectLanguageTip': 'de',
+    'login.selectLanguageTip': 'Vi',
     'login.welcomeBack': 'Chào mừng trở lại',
     'login.pleaseLogin': 'Vui lòng đăng nhập vào tài khoản của bạn',
     'login.enterUsername': 'Vui lòng nhập tên đăng nhập',
@@ -30,6 +30,8 @@ export default {
     'login.requiredMobile': 'Vui lòng nhập số điện thoại hợp lệ',
     'login.captchaError': 'Lỗi mã xác minh đồ họa',
     'login.forgotPassword': 'Quên mật khẩu',
+    'login.userAgreement': 'Thỏa thuận người dùng',
+    'login.privacyPolicy': 'Chính sách bảo mật',
 
     // Trang đăng ký
     'register.pageTitle': 'Đăng ký',
@@ -67,7 +69,7 @@ export default {
     'home.createFirstAgent': 'Nhấp vào nút + ở góc dưới bên phải để tạo đại lý đầu tiên của bạn',
     'home.dialogTitle': 'Tạo đại lý',
     'home.inputPlaceholder': 'ví dụ: Trợ lý chăm sóc khách hàng, Trợ lý giọng nói, Hỏi đáp kiến thức',
-    'home.createError': 'Vui lòng nhập tên đại lý',
+    'home.createError': 'Độ dài tên phải từ 1 đến 64 ký tự',
     'home.createNow': 'Tạo ngay',
     'home.justNow': 'Vừa xong',
     'home.minutesAgo': 'phút trước',
@@ -149,6 +151,25 @@ export default {
     'contextProviderDialog.addHeader': 'Thêm Header',
     'contextProviderDialog.cancel': 'Hủy bỏ',
     'contextProviderDialog.confirm': 'Xác nhận',
+
+  // Manual add device dialog related
+  'manualAddDeviceDialog.title': 'Thêm thiết bị thủ công',
+  'manualAddDeviceDialog.deviceType': 'Loại thiết bị',
+  'manualAddDeviceDialog.deviceTypePlaceholder': 'Vui lòng chọn loại thiết bị',
+  'manualAddDeviceDialog.firmwareVersion': 'Phiên bản firmware',
+  'manualAddDeviceDialog.firmwareVersionPlaceholder': 'Vui lòng nhập phiên bản firmware',
+  'manualAddDeviceDialog.macAddress': 'Địa chỉ Mac',
+  'manualAddDeviceDialog.macAddressPlaceholder': 'Vui lòng nhập địa chỉ Mac',
+  'manualAddDeviceDialog.confirm': 'Xác nhận',
+  'manualAddDeviceDialog.cancel': 'Hủy bỏ',
+  'manualAddDeviceDialog.requiredMacAddress': 'Vui lòng nhập địa chỉ Mac',
+  'manualAddDeviceDialog.invalidMacAddress': 'Vui lòng nhập đúng định dạng địa chỉ Mac, ví dụ: 00:1A:2B:3C:4D:5E',
+  'manualAddDeviceDialog.requiredDeviceType': 'Vui lòng chọn loại thiết bị',
+  'manualAddDeviceDialog.requiredFirmwareVersion': 'Vui lòng nhập phiên bản firmware',
+  'manualAddDeviceDialog.getFirmwareTypeFailed': 'Không thể lấy loại firmware',
+  'manualAddDeviceDialog.addSuccess': 'Đã thêm thiết bị thành công',
+  'manualAddDeviceDialog.addFailed': 'Thêm thất bại',
+  'manualAddDeviceDialog.bindWithCode': 'Liên kết bằng mã xác minh 6 chữ số',
 
     // Trang lịch sử trò chuyện
     'chatHistory.getChatSessions': 'Lấy danh sách phiên trò chuyện',
@@ -335,7 +356,7 @@ export default {
     'message.unbindFail': 'Hủy liên kết thất bại',
     'message.networkError': 'Lỗi mạng, vui lòng kiểm tra kết nối',
     'message.serverError': 'Lỗi máy chủ, vui lòng thử lại sau',
-    'message.invalidAddress': 'Địa chỉ không hợp lệ, vui lòng kiểm tra máy chủ đã khởi động hoặc kết nối mạng bình thường',
+    'message.invalidAddress': 'Địa chỉ có thể không hợp lệ. Vui lòng kiểm tra xem máy chủ đã khởi động hay kết nối mạng chưa; Có thể không gửi được yêu cầu do lỗi giao thức HTTPS',
     'message.languageChanged': 'Đã thay đổi ngôn ngữ',
     'message.passwordError': 'Lỗi tài khoản hoặc mật khẩu',
     'message.phoneRegistered': 'Số điện thoại này đã được đăng ký',
@@ -350,7 +371,7 @@ export default {
     'agent.tools.mcpAccessPoint': 'Điểm truy cập MCP',
     'agent.tools.copy': 'Sao chép',
     'agent.tools.noTools': 'Không có công cụ nào',
-    'agent.tools.parameterConfig': 'Cấu hình tham số',
+    'agent.tools.parameterConfig': 'Cấu hình',
     'agent.tools.noParamsNeeded': 'Không cần tham số',
     'agent.tools.pleaseInput': 'Vui lòng nhập',
     'agent.tools.inputOneItemPerLine': 'Nhập một mục mỗi dòng',
@@ -471,4 +492,9 @@ export default {
     'deviceConfig.afterConfigSuccessDeviceWillRestart': 'Sau khi cấu hình thành công, thiết bị sẽ tự động khởi động lại',
     'deviceConfig.audioPlaybackError': 'Lỗi phát âm thanh',
     'deviceConfig.playbackFailed': 'Phát thất bại',
+
+    // Voiceprint page
+    'voiceprint.audioNotExist': 'Âm thanh không tồn tại',
+    'voiceprint.getAudioFailed': 'Không thể lấy âm thanh',
+    'voiceprint.audioPlayFailed': 'Phát âm thanh thất bại',
 }

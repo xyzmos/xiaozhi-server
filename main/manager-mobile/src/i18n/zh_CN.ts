@@ -11,7 +11,7 @@ export default {
   'login.navigationTitle': '登录',
   'login.fetchConfigError': '获取配置失败:',
   'login.selectLanguage': '选择语言',
-  'login.selectLanguageTip': 'En',
+  'login.selectLanguageTip': '中文',
   'login.welcomeBack': '欢迎回来',
   'login.pleaseLogin': '请登录您的账户',
   'login.enterUsername': '请输入用户名',
@@ -30,6 +30,8 @@ export default {
   'login.requiredMobile': '请输入正确的手机号码',
   'login.captchaError': '图形验证码错误',
   'login.forgotPassword': '忘记密码',
+  'login.userAgreement': '用户协议',
+  'login.privacyPolicy': '隐私政策',
 
   // 注册页面
   'register.pageTitle': '注册',
@@ -67,7 +69,7 @@ export default {
   'home.createFirstAgent': '点击右下角 + 号创建您的第一个智能体',
   'home.dialogTitle': '创建智能体',
   'home.inputPlaceholder': '例如：客服助手、语音助理、知识问答',
-  'home.createError': '请输入智能体名称',
+  'home.createError': '名称长度必须在 1 到 64 个字符之间',
   'home.createNow': '立即创建',
   'home.justNow': '刚刚',
   'home.minutesAgo': '分钟前',
@@ -149,6 +151,25 @@ export default {
   'contextProviderDialog.addHeader': '添加 Header',
   'contextProviderDialog.cancel': '取消',
   'contextProviderDialog.confirm': '确定',
+
+  // 手動添加設備對話框相關
+  'manualAddDeviceDialog.title': '手动添加设备',
+  'manualAddDeviceDialog.deviceType': '设备型号',
+  'manualAddDeviceDialog.deviceTypePlaceholder': '请选择设备型号',
+  'manualAddDeviceDialog.firmwareVersion': '固件版本',
+  'manualAddDeviceDialog.firmwareVersionPlaceholder': '请输入固件版本',
+  'manualAddDeviceDialog.macAddress': 'Mac地址',
+  'manualAddDeviceDialog.macAddressPlaceholder': '请输入Mac地址',
+  'manualAddDeviceDialog.confirm': '确定',
+  'manualAddDeviceDialog.cancel': '取消',
+  'manualAddDeviceDialog.requiredMacAddress': '请输入Mac地址',
+  'manualAddDeviceDialog.invalidMacAddress': '请输入正确的Mac地址格式，例如：00:1A:2B:3C:4D:5E',
+  'manualAddDeviceDialog.requiredDeviceType': '请选择设备型号',
+  'manualAddDeviceDialog.requiredFirmwareVersion': '请输入固件版本',
+  'manualAddDeviceDialog.getFirmwareTypeFailed': '获取固件类型失败',
+  'manualAddDeviceDialog.addSuccess': '设备添加成功',
+  'manualAddDeviceDialog.addFailed': '添加失败',
+  'manualAddDeviceDialog.bindWithCode': '6位验证码绑定',
 
   // 聊天历史页面
   'chatHistory.getChatSessions': '获取聊天会话列表',
@@ -335,7 +356,7 @@ export default {
   'message.unbindFail': '解绑失败',
   'message.networkError': '网络错误，请检查网络连接',
   'message.serverError': '服务器错误，请稍后再试',
-  'message.invalidAddress': '无效地址，请检查服务端是否启动或网络连接是否正常',
+  'message.invalidAddress': '地址可能无效，请检查服务端是否启动或网络连接是否正常；也可能因 HTTPS 协议问题导致无法发送请求',
   'message.languageChanged': '语言已切换',
   'message.passwordError': '账号或密码错误',
   'message.phoneRegistered': '此手机号码已经注册过',
@@ -471,4 +492,9 @@ export default {
   'deviceConfig.afterConfigSuccessDeviceWillRestart': '配网成功后设备将自动重启',
   'deviceConfig.audioPlaybackError': '音频播放错误',
   'deviceConfig.playbackFailed': '播放失败',
+
+  // Voiceprint page
+  'voiceprint.audioNotExist': '该音频不存在',
+  'voiceprint.getAudioFailed': '获取音频失败',
+  'voiceprint.audioPlayFailed': '音频播放失败',
 }

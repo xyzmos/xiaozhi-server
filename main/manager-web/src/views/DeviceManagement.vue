@@ -119,7 +119,9 @@
       @refresh="fetchBindDevices(currentAgentId)" />
     <ManualAddDeviceDialog :visible.sync="manualAddDeviceDialogVisible" :agent-id="currentAgentId"
       @refresh="fetchBindDevices(currentAgentId)" />
-
+    <el-footer>
+      <version-footer />
+    </el-footer>
   </div>
 </template>
 
@@ -128,12 +130,14 @@ import Api from '@/apis/api';
 import AddDeviceDialog from "@/components/AddDeviceDialog.vue";
 import HeaderBar from "@/components/HeaderBar.vue";
 import ManualAddDeviceDialog from "@/components/ManualAddDeviceDialog.vue";
+import VersionFooter from "@/components/VersionFooter.vue";
 
 export default {
   components: {
     HeaderBar,
     AddDeviceDialog,
-    ManualAddDeviceDialog
+    ManualAddDeviceDialog,
+    VersionFooter
   },
   data() {
     return {
@@ -504,11 +508,9 @@ export default {
 }
 
 .main-wrapper {
-  margin: 5px 22px;
+  height: calc(100vh - 63px - 35px - 72px);
+  margin: 0 22px;
   border-radius: 15px;
-  min-height: calc(100vh - 24vh);
-  height: auto;
-  max-height: 80vh;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   background: rgba(237, 242, 255, 0.5);
@@ -645,7 +647,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-top: 10px;
-  padding-bottom: 10px;
+  /* padding-bottom: 10px; */
 }
 
 
@@ -807,7 +809,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 40vh);
+  /* max-height: calc(100vh - 40vh); */
 }
 
 :deep(.el-table__body-wrapper) {

@@ -83,6 +83,7 @@ VAD:
 9、[知识库ragflow集成指南](./ragflow-integration.md)<br/>
 10、[如何部署上下文源](./context-provider-integration.md)<br/>
 11、[如何集成PowerMem智能记忆](./powermem-integration.md)<br/>
+12、[如何配置天气插件查询天气](./weather-integration.md)<br/>
 
 ### 11、语音克隆、本地语音部署相关教程
 1、[如何在智控台克隆音色](./huoshan-streamTTS-voice-cloning.md)<br/>

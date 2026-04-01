@@ -1,4 +1,6 @@
+import smCrypto from 'sm-crypto'
 import { pages, subPackages } from '@/pages.json'
+
 import { isMpWeixin } from './platform'
 
 /**
@@ -197,23 +199,21 @@ export function getEnvBaseUploadUrl() {
   return baseUploadUrl
 }
 
-import smCrypto from 'sm-crypto'
-
 /**
  * 生成SM2密钥对（十六进制格式）
  * @returns {Object} 包含公钥和私钥的对象
  */
 export function generateSm2KeyPairHex() {
-    // 使用sm-crypto库生成SM2密钥对
-    const sm2 = smCrypto.sm2;
-    const keypair = sm2.generateKeyPairHex();
-    
-    return {
-        publicKey: keypair.publicKey,
-        privateKey: keypair.privateKey,
-        clientPublicKey: keypair.publicKey, // 客户端公钥
-        clientPrivateKey: keypair.privateKey // 客户端私钥
-    };
+  // 使用sm-crypto库生成SM2密钥对
+  const sm2 = smCrypto.sm2
+  const keypair = sm2.generateKeyPairHex()
+
+  return {
+    publicKey: keypair.publicKey,
+    privateKey: keypair.privateKey,
+    clientPublicKey: keypair.publicKey, // 客户端公钥
+    clientPrivateKey: keypair.privateKey, // 客户端私钥
+  }
 }
 
 /**
@@ -223,21 +223,21 @@ export function generateSm2KeyPairHex() {
  * @returns {string} 加密后的密文（十六进制格式）
  */
 export function sm2Encrypt(publicKey: string, plainText: string): string {
-    if (!publicKey) {
-        throw new Error('公钥不能为null或undefined');
-    }
-    
-    if (!plainText) {
-        throw new Error('明文不能为空');
-    }
-    
-    const sm2 = smCrypto.sm2;
-    // SM2加密，添加04前缀表示未压缩公钥
-    const encrypted = sm2.doEncrypt(plainText, publicKey, 1);
-    // 转换为十六进制格式（与后端保持一致，添加04前缀）
-    const result = "04" + encrypted;
-    
-    return result;
+  if (!publicKey) {
+    throw new Error('公钥不能为null或undefined')
+  }
+
+  if (!plainText) {
+    throw new Error('明文不能为空')
+  }
+
+  const sm2 = smCrypto.sm2
+  // SM2加密，添加04前缀表示未压缩公钥
+  const encrypted = sm2.doEncrypt(plainText, publicKey, 1)
+  // 转换为十六进制格式（与后端保持一致，添加04前缀）
+  const result = `04${encrypted}`
+
+  return result
 }
 
 /**
@@ -247,9 +247,56 @@ export function sm2Encrypt(publicKey: string, plainText: string): string {
  * @returns {string} 解密后的明文
  */
 export function sm2Decrypt(privateKey: string, cipherText: string): string {
-    const sm2 = smCrypto.sm2;
-    // 移除04前缀（与后端保持一致）
-    const dataWithoutPrefix = cipherText.startsWith("04") ? cipherText.substring(2) : cipherText;
-    // SM2解密
-    return sm2.doDecrypt(dataWithoutPrefix, privateKey, 1);
+  const sm2 = smCrypto.sm2
+  // 移除04前缀（与后端保持一致）
+  const dataWithoutPrefix = cipherText.startsWith('04') ? cipherText.substring(2) : cipherText
+  // SM2解密
+  return sm2.doDecrypt(dataWithoutPrefix, privateKey, 1)
+}
+
+type AnyFunction = (...args: any[]) => any
+
+interface DebouncedFunction extends AnyFunction {
+  cancel: () => void
+}
+
+/**
+ * 防抖函数
+ * @param fn 要防抖的函数
+ * @param delay 延迟时间（毫秒），默认500ms
+ * @param immediate 是否立即执行，默认false
+ * @returns 防抖处理后的函数
+ */
+export function debounce<T extends AnyFunction>(
+  fn: T,
+  delay = 500,
+  immediate = false,
+): DebouncedFunction {
+  let timer: ReturnType<typeof setTimeout> | null = null
+
+  const debounced = function (this: any, ...args: Parameters<T>) {
+    if (timer) {
+      clearTimeout(timer)
+    }
+
+    if (immediate && !timer) {
+      fn.apply(this, args)
+    }
+
+    timer = setTimeout(() => {
+      if (!immediate) {
+        fn.apply(this, args)
+      }
+      timer = null
+    }, delay)
+  } as DebouncedFunction
+
+  debounced.cancel = () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+
+  return debounced
 }
