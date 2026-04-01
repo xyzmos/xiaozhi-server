@@ -406,8 +406,9 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         existingEntity.setUpdatedAt(new Date());
 
         // 更新记忆策略
-        if (existingEntity.getMemModelId() == null || existingEntity.getMemModelId().equals(Constant.MEMORY_NO_MEM)) {
             // 删除所有记录
+        if (existingEntity.getMemModelId() == null || existingEntity.getMemModelId().equals(Constant.MEMORY_NO_MEM)
+                || existingEntity.getMemModelId().equals(Constant.MEMORY_MEM_REPORT_ONLY)) {
             agentChatHistoryService.deleteByAgentId(existingEntity.getId(), true, true);
             existingEntity.setSummaryMemory("");
         } else if (existingEntity.getChatHistoryConf() != null && existingEntity.getChatHistoryConf() == 1) {
