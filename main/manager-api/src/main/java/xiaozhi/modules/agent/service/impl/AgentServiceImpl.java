@@ -406,14 +406,14 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         existingEntity.setUpdatedAt(new Date());
 
         // 更新记忆策略
-            // 删除所有记录
-        if (existingEntity.getMemModelId() == null || existingEntity.getMemModelId().equals(Constant.MEMORY_NO_MEM)
-                || existingEntity.getMemModelId().equals(Constant.MEMORY_MEM_REPORT_ONLY)) {
+        // 删除所有记录
+        if (existingEntity.getMemModelId() != null && existingEntity.getMemModelId().equals(Constant.MEMORY_NO_MEM)) {
             agentChatHistoryService.deleteByAgentId(existingEntity.getId(), true, true);
             existingEntity.setSummaryMemory("");
-        } else if (existingEntity.getChatHistoryConf() != null && existingEntity.getChatHistoryConf() == 1) {
-            // 删除音频数据
-            agentChatHistoryService.deleteByAgentId(existingEntity.getId(), true, false);
+            // 删除记忆
+        } else if (existingEntity.getMemModelId() != null
+                && existingEntity.getMemModelId().equals(Constant.MEMORY_MEM_REPORT_ONLY)) {
+            existingEntity.setSummaryMemory("");
         }
 
         // 更新上下文源配置
