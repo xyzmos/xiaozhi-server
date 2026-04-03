@@ -75,22 +75,22 @@ class MemoryProvider(MemoryProviderBase):
                 powermem_config["llm"] = config["llm"]
             else:
                 llm_config = {}
-                if "llm_api_key" in config:
+                if config.get("llm_api_key"):
                     llm_config["api_key"] = config["llm_api_key"]
-                if "llm_model" in config:
+                if config.get("llm_model"):
                     llm_config["model"] = config["llm_model"]
                 # Handle base_url based on provider type
                 # - qwen provider uses dashscope_base_url
                 # - openai provider uses openai_base_url
-                if "llm_base_url" in config:
-                    if llm_provider == "qwen":
-                        llm_config["dashscope_base_url"] = config["llm_base_url"]
-                    else:
-                        llm_config["openai_base_url"] = config["llm_base_url"]
-                if "openai_base_url" in config:
-                    llm_config["openai_base_url"] = config["openai_base_url"]
-                if "dashscope_base_url" in config:
-                    llm_config["dashscope_base_url"] = config["dashscope_base_url"]
+                if llm_provider == "qwen":
+                    base_url = config.get("dashscope_base_url") or config.get("llm_base_url")
+                    if base_url:
+                        llm_config["dashscope_base_url"] = base_url
+                else:
+                    base_url = config.get("openai_base_url") or config.get("llm_base_url")
+                    if base_url:
+                        llm_config["openai_base_url"] = base_url
+
                 powermem_config["llm"] = {
                     "provider": llm_provider,
                     "config": llm_config
@@ -101,24 +101,23 @@ class MemoryProvider(MemoryProviderBase):
                 powermem_config["embedder"] = config["embedder"]
             else:
                 embedder_config = {}
-                if "embedding_api_key" in config:
+                if config.get("embedding_api_key"):
                     embedder_config["api_key"] = config["embedding_api_key"]
-                if "embedding_model" in config:
+                if config.get("embedding_model"):
                     embedder_config["model"] = config["embedding_model"]
                 # Handle base_url based on provider type
                 # - qwen provider uses dashscope_base_url
                 # - openai provider uses openai_base_url
                 # Priority: embedding_xxx_base_url > embedding_base_url > xxx_base_url
-                if "embedding_base_url" in config:
-                    if embedding_provider == "qwen":
-                        embedder_config["dashscope_base_url"] = config["embedding_base_url"]
-                    else:
-                        embedder_config["openai_base_url"] = config["embedding_base_url"]
-                # Embedding-specific base_url (higher priority)
-                if "embedding_openai_base_url" in config:
-                    embedder_config["openai_base_url"] = config["embedding_openai_base_url"]
-                if "embedding_dashscope_base_url" in config:
-                    embedder_config["dashscope_base_url"] = config["embedding_dashscope_base_url"]
+                if embedding_provider == "qwen":
+                    base_url = config.get("embedding_dashscope_base_url") or config.get("embedding_base_url")
+                    if base_url:
+                        embedder_config["dashscope_base_url"] = base_url
+                else:
+                    base_url = config.get("embedding_openai_base_url") or config.get("embedding_base_url")
+                    if base_url:
+                        embedder_config["openai_base_url"] = base_url
+
                 powermem_config["embedder"] = {
                     "provider": embedding_provider,
                     "config": embedder_config
