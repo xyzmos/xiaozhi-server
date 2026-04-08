@@ -268,10 +268,9 @@
                             filterable
                             :placeholder="$t('roleConfig.pleaseSelect')"
                             class="form-select"
-                            @change="handleModelChange('SLM', $event)"
                           >
                             <el-option
-                              v-for="(item, optionIndex) in modelOptions['SLM']"
+                              v-for="(item, optionIndex) in modelOptions['LLM']"
                               :key="`option-asr-${optionIndex}`"
                               :label="item.label"
                               :value="item.value"
@@ -515,7 +514,7 @@ export default {
         { label: this.$t("roleConfig.vad"), key: "vadModelId", type: "VAD" },
         { label: this.$t("roleConfig.asr"), key: "asrModelId", type: "ASR" },
         { label: this.$t("roleConfig.llm"), key: "llmModelId", type: "LLM" },
-        { label: this.$t("roleConfig.slm"), key: "llmModelId", type: "SLM" },
+        { label: this.$t("roleConfig.slm"), key: "slmModelId", type: "SLM" },
         { label: this.$t("roleConfig.vllm"), key: "vllmModelId", type: "VLLM" },
         { label: this.$t("roleConfig.intent"), key: "intentModelId", type: "Intent" },
         { label: this.$t("roleConfig.memory"), key: "memModelId", type: "Memory" },
@@ -567,6 +566,7 @@ export default {
         asrModelId: this.form.model.asrModelId,
         vadModelId: this.form.model.vadModelId,
         llmModelId: this.form.model.llmModelId,
+        slmModelId: this.form.model.slmModelId,
         vllmModelId: this.form.model.vllmModelId,
         ttsModelId: this.form.model.ttsModelId,
         ttsVoiceId: this.form.ttsVoiceId,
@@ -635,6 +635,7 @@ export default {
               vadModelId: "",
               asrModelId: "",
               llmModelId: "",
+              slmModelId: "",
               vllmModelId: "",
               memModelId: "",
               intentModelId: "",
@@ -691,6 +692,7 @@ export default {
           vadModelId: templateData.vadModelId || this.form.model.vadModelId,
           asrModelId: templateData.asrModelId || this.form.model.asrModelId,
           llmModelId: templateData.llmModelId || this.form.model.llmModelId,
+          slmModelId: templateData.llmModelId || this.form.model.slmModelId,
           vllmModelId: templateData.vllmModelId || this.form.model.vllmModelId,
           memModelId: templateData.memModelId || this.form.model.memModelId,
           intentModelId: templateData.intentModelId || this.form.model.intentModelId,
@@ -708,6 +710,7 @@ export default {
               vadModelId: data.data.vadModelId,
               asrModelId: data.data.asrModelId,
               llmModelId: data.data.llmModelId,
+              slmModelId: data.data.slmModelId,
               vllmModelId: data.data.vllmModelId,
               memModelId: data.data.memModelId,
               intentModelId: data.data.intentModelId,
@@ -926,9 +929,6 @@ export default {
       if (type === "LLM") {
         // 当LLM类型改变时，更新意图识别选项的可见性
         this.updateIntentOptionsVisibility();
-      }
-      if (type === "SLM") {
-        // TODO: 待处理逻辑
       }
     },
     fetchAllFunctions() {
