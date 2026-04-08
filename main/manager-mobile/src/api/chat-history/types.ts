@@ -3,6 +3,7 @@ export interface ChatSession {
   sessionId: string
   createdAt: string
   chatCount: number
+  title: string
 }
 
 // 聊天会话列表响应
