@@ -107,12 +107,12 @@ class VADProvider(VADProviderBase):
 
                 # 如果之前有声音，但本次没有声音，且与上次有声音的时间差已经超过了静默阈值，则认为已经说完一句话
                 if conn.client_have_voice and not client_have_voice:
-                    stop_duration = time.time() * 1000 - conn.last_activity_time
+                    stop_duration = time.time() * 1000 - conn.vad_last_voice_time
                     if stop_duration >= self.silence_threshold_ms:
                         conn.client_voice_stop = True
                 if client_have_voice:
                     conn.client_have_voice = True
-                    conn.last_activity_time = time.time() * 1000
+                    conn.vad_last_voice_time = time.time() * 1000
 
             return client_have_voice
         except opuslib_next.OpusError as e:

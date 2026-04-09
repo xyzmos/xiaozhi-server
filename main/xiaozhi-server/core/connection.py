@@ -159,6 +159,7 @@ class ConnectionHandler:
         self.client_voice_window = deque(maxlen=5)
         self.first_activity_time = 0.0  # 记录首次活动的时间（毫秒）
         self.last_activity_time = 0.0  # 统一的活动时间戳（毫秒）
+        self.vad_last_voice_time = 0.0  # 记录用户最后一次说话的时间（毫秒）
         self.client_voice_stop = False
         self.last_is_voice = False
 
@@ -1288,10 +1289,7 @@ class ConnectionHandler:
             # 标记任务完成
             self.report_queue.task_done()
 
-    def clearSpeakStatus(self, sentence_id=None):
-        # 如果sentence_id不匹配，说明是旧轮次的回调，不需要执行
-        if sentence_id is not None and sentence_id != self.sentence_id:
-            return
+    def clearSpeakStatus(self):
         self.client_is_speaking = False
         self.logger.bind(tag=TAG).debug(f"清除服务端讲话状态")
 
@@ -1433,6 +1431,7 @@ class ConnectionHandler:
         self.client_voice_stop = False
         self.client_voice_window.clear()
         self.last_is_voice = False
+        self.vad_last_voice_time = 0.0
 
         # Clear ASR buffers
         self.asr_audio.clear()

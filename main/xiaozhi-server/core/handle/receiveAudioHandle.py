@@ -77,6 +77,7 @@ async def startToChat(conn: "ConnectionHandler", text):
         ):
             await max_out_size(conn)
             return
+
     # manual 模式下不打断正在播放的内容
     if conn.client_is_speaking and conn.client_listen_mode != "manual":
         await handleAbortMessage(conn)

@@ -284,8 +284,10 @@ async def send_tts_message(conn: "ConnectionHandler", state, text=None):
         # 停止音频发送循环（仅在流控器已初始化时调用）
         if hasattr(conn, "audio_rate_controller") and conn.audio_rate_controller:
             conn.audio_rate_controller.stop_sending()
-        # 清除服务端讲话状态，传入 sentence_id 用于判断是否是当前轮次
-        conn.clearSpeakStatus(current_sentence_id)
+        # 检查是否是当前轮次
+        if current_sentence_id != conn.sentence_id:
+            return
+        conn.clearSpeakStatus()
 
     # 发送消息到客户端
     await conn.websocket.send(json.dumps(message))
