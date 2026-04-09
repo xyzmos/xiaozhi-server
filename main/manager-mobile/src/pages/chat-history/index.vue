@@ -8,14 +8,14 @@ defineOptions({
   name: 'ChatHistory',
 })
 
+const props = withDefaults(defineProps<Props>(), {
+  agentId: 'default',
+})
+
 // 接收props
 interface Props {
   agentId?: string
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  agentId: 'default'
-})
 
 // 获取屏幕边界到安全区域距离
 let safeAreaInsets: any
@@ -187,8 +187,8 @@ defineExpose({
     <view v-if="loading && sessionList.length === 0" class="loading-container">
       <wd-loading color="#336cff" />
       <text class="loading-text">
-          {{ t('chatHistory.loading') }}
-        </text>
+        {{ t('chatHistory.loading') }}
+      </text>
     </view>
 
     <!-- 会话列表 -->
@@ -205,7 +205,7 @@ defineExpose({
             <view class="session-info">
               <view class="session-header">
                 <text class="session-title">
-                  {{ t('chatHistory.conversationRecord') }} {{ session.sessionId.substring(0, 8) }}...
+                  {{ session.title || `${t('chatHistory.conversationRecord')} ${session.sessionId.substring(0, 8)}...` }}
                 </text>
                 <text class="session-time">
                   {{ formatTime(session.createdAt) }}
@@ -242,11 +242,11 @@ defineExpose({
     <view v-else-if="!loading" class="empty-state">
       <wd-icon name="chat" custom-class="empty-icon" />
       <text class="empty-text">
-          {{ t('chatHistory.noChatRecords') }}
-        </text>
-        <text class="empty-desc">
-          {{ t('chatHistory.chatRecordsDescription') }}
-        </text>
+        {{ t('chatHistory.noChatRecords') }}
+      </text>
+      <text class="empty-desc">
+        {{ t('chatHistory.chatRecordsDescription') }}
+      </text>
     </view>
   </view>
 </template>
@@ -333,7 +333,7 @@ defineExpose({
   padding: 32rpx;
 
   .session-info {
-    flex: 1;
+    width: 94%;
 
     .session-header {
       display: flex;
@@ -345,8 +345,11 @@ defineExpose({
         font-size: 32rpx;
         font-weight: 600;
         color: #232338;
-        max-width: 70%;
+        width: 70%;
         word-break: break-all;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .session-time {
