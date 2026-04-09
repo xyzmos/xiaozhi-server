@@ -5,6 +5,7 @@ import queue
 import asyncio
 import threading
 import traceback
+import concurrent.futures
 
 from core.utils import p3
 from datetime import datetime
@@ -42,6 +43,8 @@ class TTSProviderBase(ABC):
         self.tts_audio_first_sentence = True
         self.before_stop_play_files = []
         self.report_on_last = False
+        # sentence_id 到文本的映射，用于流式TTS获取正确的字幕文本
+        self._sentence_text_map = {}
 
         self.tts_text_buff = []
         self.punctuations = (
@@ -277,14 +280,49 @@ class TTSProviderBase(ABC):
         )
         self.audio_play_priority_thread.start()
 
+    def store_tts_text(self, sentence_id, text):
+        """存储指定 sentence_id 对应的文本，用于流式TTS获取正确的字幕文本
+
+        Args:
+            sentence_id: 会话ID
+            text: 要存储的文本
+        """
+        if sentence_id and text:
+            self._sentence_text_map[sentence_id] = text
+            # 只保留最近 5 个，防止内存泄漏
+            if len(self._sentence_text_map) > 5:
+                oldest = next(iter(self._sentence_text_map))
+                del self._sentence_text_map[oldest]
+
+    def get_tts_text(self, sentence_id):
+        """获取指定 sentence_id 对应的文本
+
+        Args:
+            sentence_id: 会话ID
+
+        Returns:
+            str: 对应的文本，如果不存在返回 None
+        """
+        return self._sentence_text_map.get(sentence_id)
+
+    def clear_tts_text(self, sentence_id):
+        """清除指定 sentence_id 的文本
+
+        Args:
+            sentence_id: 会话ID
+        """
+        if sentence_id in self._sentence_text_map:
+            del self._sentence_text_map[sentence_id]
+
     # 这里默认是非流式的处理方式
     # 流式处理方式请在子类中重写
     def tts_text_priority_thread(self):
         while not self.conn.stop_event.is_set():
             try:
                 message = self.tts_text_queue.get(timeout=1)
-                if message.sentence_type == SentenceType.FIRST:
-                    self.conn.client_abort = False
+                # 过滤旧消息：检查sentence_id是否匹配
+                if message.sentence_id != self.conn.sentence_id:
+                    continue
                 if self.conn.client_abort:
                     logger.bind(tag=TAG).info("收到打断信息，终止TTS文本处理线程")
                     continue
@@ -386,6 +424,7 @@ class TTSProviderBase(ABC):
 
     async def close(self):
         """资源清理方法"""
+        self._sentence_text_map.clear()
         if hasattr(self, "ws") and self.ws:
             await self.ws.close()
 

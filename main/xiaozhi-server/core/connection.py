@@ -838,20 +838,27 @@ class ConnectionHandler:
         self.dialogue.update_system_message(self.prompt)
 
     def chat(self, query, depth=0):
+        # 保存当前任务的sentence_id到局部变量，避免被新任务覆盖
+        current_sentence_id = None
+
         if query is not None:
             self.logger.bind(tag=TAG).info(f"大模型收到用户消息: {query}")
 
         # 为最顶层时新建会话ID和发送FIRST请求
         if depth == 0:
-            self.sentence_id = str(uuid.uuid4().hex)
+            current_sentence_id = str(uuid.uuid4().hex)
+            self.sentence_id = current_sentence_id  # 更新共享属性
             self.dialogue.put(Message(role="user", content=query))
             self.tts.tts_text_queue.put(
                 TTSMessageDTO(
-                    sentence_id=self.sentence_id,
+                    sentence_id=current_sentence_id,
                     sentence_type=SentenceType.FIRST,
                     content_type=ContentType.ACTION,
                 )
             )
+        else:
+            # 递归调用时，使用当前的sentence_id
+            current_sentence_id = self.sentence_id
 
         # 设置最大递归深度，避免无限循环，可根据实际需求调整
         MAX_DEPTH = 5
@@ -976,7 +983,6 @@ class ConnectionHandler:
         # 支持多个并行工具调用 - 使用列表存储
         tool_calls_list = []  # 格式: [{"id": "", "name": "", "arguments": ""}]
         content_arguments = ""
-        self.client_abort = False
         emotion_flag = True
         try:
             for response in llm_responses:
@@ -1013,7 +1019,7 @@ class ConnectionHandler:
                         response_message.append(content)
                         self.tts.tts_text_queue.put(
                             TTSMessageDTO(
-                                sentence_id=self.sentence_id,
+                                sentence_id=current_sentence_id,
                                 sentence_type=SentenceType.MIDDLE,
                                 content_type=ContentType.TEXT,
                                 content_detail=content,
@@ -1023,7 +1029,7 @@ class ConnectionHandler:
             self.logger.bind(tag=TAG).error(f"LLM stream processing error: {e}")
             self.tts.tts_text_queue.put(
                 TTSMessageDTO(
-                    sentence_id=self.sentence_id,
+                    sentence_id=current_sentence_id,
                     sentence_type=SentenceType.MIDDLE,
                     content_type=ContentType.TEXT,
                     content_detail=get_system_error_response(self.config),
@@ -1032,7 +1038,7 @@ class ConnectionHandler:
             if depth == 0:
                 self.tts.tts_text_queue.put(
                     TTSMessageDTO(
-                        sentence_id=self.sentence_id,
+                        sentence_id=current_sentence_id,
                         sentence_type=SentenceType.LAST,
                         content_type=ContentType.ACTION,
                     )
@@ -1085,7 +1091,7 @@ class ConnectionHandler:
                 # 如需要大模型先处理一轮，添加相关处理后的日志情况
                 if len(response_message) > 0:
                     text_buff = "".join(response_message)
-                    self.tts_MessageText = text_buff
+                    self.tts.store_tts_text(current_sentence_id, text_buff)
                     self.dialogue.put(Message(role="assistant", content=text_buff))
                 response_message.clear()
 
@@ -1139,7 +1145,7 @@ class ConnectionHandler:
         # 存储对话内容
         if len(response_message) > 0:
             text_buff = "".join(response_message)
-            self.tts_MessageText = text_buff
+            self.tts.store_tts_text(current_sentence_id, text_buff)
             self.dialogue.put(Message(role="assistant", content=text_buff))
 
             # 更新工具调用统计：如果没有调用工具，增加计数
@@ -1149,7 +1155,7 @@ class ConnectionHandler:
         if depth == 0:
             self.tts.tts_text_queue.put(
                 TTSMessageDTO(
-                    sentence_id=self.sentence_id,
+                    sentence_id=current_sentence_id,
                     sentence_type=SentenceType.LAST,
                     content_type=ContentType.ACTION,
                 )
@@ -1282,7 +1288,10 @@ class ConnectionHandler:
             # 标记任务完成
             self.report_queue.task_done()
 
-    def clearSpeakStatus(self):
+    def clearSpeakStatus(self, sentence_id=None):
+        # 如果sentence_id不匹配，说明是旧轮次的回调，不需要执行
+        if sentence_id is not None and sentence_id != self.sentence_id:
+            return
         self.client_is_speaking = False
         self.logger.bind(tag=TAG).debug(f"清除服务端讲话状态")
 
