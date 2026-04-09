@@ -1212,6 +1212,7 @@ class ConnectionHandler:
             ]:  # 直接回复前端
                 text = result.response if result.response else result.result
                 self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
+                self.tts.store_tts_text(self.sentence_id, text)
                 self.dialogue.put(Message(role="assistant", content=text))
             elif result.action == Action.REQLLM:
                 # 收集需要 LLM 处理的工具
