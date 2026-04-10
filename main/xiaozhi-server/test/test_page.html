@@ -21,13 +21,13 @@
                 warningDiv.innerHTML = `
                     <h2>⚠️ 警告：请使用HTTP服务器打开此页面</h2>
                     <p>您当前使用的是本地文件方式打开页面（file://协议），这可能导致页面功能异常。</p>
-                    <p>您可以使用nginx映射启动测试页面，也可以请按照以下步骤使用python启动测试http服务：</p>
+                    <p>您可以使用nginx映射启动测试页面，也可以请按照以下步骤启动测试运行时：</p>
                     <ol>
                         <li>打开命令行终端</li>
                         <li>命令行进入到 xiaozhi-server/test 目录</li>
-                        <li>执行以下命令启动HTTP服务器：</li>
+                        <li>执行以下命令启动测试页面运行时：</li>
                     </ol>
-                    <pre>python -m http.server 8006</pre>
+                    <pre>python start_test_runtime.py</pre>
                     <p>然后在浏览器中访问：<strong>http://localhost:8006/test_page.html</strong></p>
                 `;
                 document.body.appendChild(warningDiv);
