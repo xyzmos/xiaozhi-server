@@ -283,7 +283,6 @@ function updateDisplayNames() {
 
   // 角色音色特殊处理
   displayNames.value.report = reportOptions.find(item => item.value === formData.value.chatHistoryConf)?.name
-  displayNames.value.language = formData.value.ttsLanguage
 
   isVisibleReport.value = formData.value.memModelId !== 'Memory_nomem'
 

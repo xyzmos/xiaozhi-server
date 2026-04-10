@@ -3,6 +3,7 @@ import type { ChatSession } from '@/api/chat-history/types'
 import { computed, onMounted, ref } from 'vue'
 import { getChatSessions } from '@/api/chat-history/chat-history'
 import { t } from '@/i18n'
+import { deepClone } from '@/utils'
 
 defineOptions({
   name: 'ChatHistory',
@@ -43,7 +44,7 @@ const sessionList = ref<ChatSession[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
-const currentPage = ref(1)
+const currentPage = ref(0)
 const pageSize = 10
 
 // 使用传入的智能体ID
@@ -52,10 +53,8 @@ const currentAgentId = computed(() => {
 })
 
 // 加载聊天会话列表
-async function loadChatSessions(page = 1, isRefresh = false) {
+async function loadChatSessions(page = 1, isUpdate = false) {
   try {
-    console.log(t('chatHistory.getChatSessions'), { page, isRefresh })
-
     // 检查是否有当前选中的智能体
     if (!currentAgentId.value) {
       console.warn(t('chatHistory.noSelectedAgent'))
@@ -76,7 +75,10 @@ async function loadChatSessions(page = 1, isRefresh = false) {
     })
 
     if (page === 1) {
-      sessionList.value = response.list || []
+      const oldSessionList = deepClone(sessionList.value)
+      oldSessionList.splice(0, 10)
+      oldSessionList.unshift(...(response.list || []))
+      sessionList.value = isUpdate ? oldSessionList : response.list || []
     }
     else {
       sessionList.value.push(...(response.list || []))
@@ -170,8 +172,13 @@ function goToChatDetail(session: ChatSession) {
 
 onMounted(async () => {
   // 智能体已简化为默认
-
   loadChatSessions(1)
+})
+
+onShow(() => {
+  if (currentPage.value !== 0) {
+    loadChatSessions(1, true)
+  }
 })
 
 // 暴露方法给父组件

@@ -285,12 +285,15 @@ onLoad((options) => {
   if (options?.sessionId && options?.agentId) {
     sessionId.value = options.sessionId
     agentId.value = options.agentId
-    loadChatHistory()
   }
   else {
     console.error('缺少必要参数')
     toast.error(t('chatHistory.parameterError'))
   }
+})
+
+onShow(() => {
+  loadChatHistory()
 })
 
 // 页面销毁时清理音频资源
