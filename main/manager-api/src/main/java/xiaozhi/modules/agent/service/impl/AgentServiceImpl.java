@@ -300,6 +300,9 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         if (dto.getLlmModelId() != null) {
             existingEntity.setLlmModelId(dto.getLlmModelId());
         }
+        if (dto.getSlmModelId() != null) {
+            existingEntity.setSlmModelId(dto.getSlmModelId());
+        }
         if (dto.getVllmModelId() != null) {
             existingEntity.setVllmModelId(dto.getVllmModelId());
         }
@@ -506,6 +509,13 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
             entity.setLanguage(template.getLanguage());
         }
 
+        if (entity.getSlmModelId() == null) {
+            String defaultSlmModelId = getDefaultLLMModelId();
+            if (defaultSlmModelId != null) {
+                entity.setSlmModelId(defaultSlmModelId);
+            }
+        }
+
         // 设置用户ID和创建者信息
         UserDetail user = SecurityUser.getUser();
         entity.setUserId(user.getId());
@@ -542,6 +552,25 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         // 保存默认插件
         agentPluginMappingService.saveBatch(toInsert);
         return entity.getId();
+    }
+
+    private String getDefaultLLMModelId() {
+        try {
+            List<ModelConfigEntity> llmConfigs = modelConfigService.getEnabledModelsByType("LLM");
+            if (llmConfigs == null || llmConfigs.isEmpty()) {
+                return null;
+            }
+
+            for (ModelConfigEntity config : llmConfigs) {
+                if (config.getIsDefault() != null && config.getIsDefault() == 1) {
+                    return config.getId();
+                }
+            }
+
+            return llmConfigs.get(0).getId();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

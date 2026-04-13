@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import cn.hutool.core.collection.ListUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ import xiaozhi.modules.agent.dto.AgentChatHistoryDTO;
 import xiaozhi.modules.agent.dto.AgentChatSessionDTO;
 import xiaozhi.modules.agent.entity.AgentChatHistoryEntity;
 import xiaozhi.modules.agent.service.AgentChatHistoryService;
+import xiaozhi.modules.agent.service.AgentChatTitleService;
 import xiaozhi.modules.agent.vo.AgentChatHistoryUserVO;
 
 /**
@@ -36,8 +38,11 @@ import xiaozhi.modules.agent.vo.AgentChatHistoryUserVO;
  * @since 1.0.0
  */
 @Service
+@RequiredArgsConstructor
 public class AgentChatHistoryServiceImpl extends ServiceImpl<AiAgentChatHistoryDao, AgentChatHistoryEntity>
         implements AgentChatHistoryService {
+
+    private final AgentChatTitleService agentChatTitleService;
 
     @Override
     public PageData<AgentChatSessionDTO> getSessionListByAgentId(Map<String, Object> params) {
@@ -61,6 +66,7 @@ public class AgentChatHistoryServiceImpl extends ServiceImpl<AiAgentChatHistoryD
             dto.setSessionId((String) map.get("session_id"));
             dto.setCreatedAt((LocalDateTime) map.get("created_at"));
             dto.setChatCount(((Number) map.get("chat_count")).intValue());
+            dto.setTitle(agentChatTitleService.getTitleBySessionId(dto.getSessionId()));
             return dto;
         }).collect(Collectors.toList());
 
@@ -91,7 +97,7 @@ public class AgentChatHistoryServiceImpl extends ServiceImpl<AiAgentChatHistoryD
             if (ToolUtil.isNotEmpty(audioIds)) {
                 // 每批删除1000条
                 List<List<String>> batch = ListUtil.split(audioIds, 1000);
-                batch.forEach(dataList->{
+                batch.forEach(dataList -> {
                     baseMapper.deleteAudioByIds(dataList);
                 });
             }
