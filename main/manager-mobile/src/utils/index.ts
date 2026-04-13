@@ -300,3 +300,36 @@ export function debounce<T extends AnyFunction>(
 
   return debounced
 }
+
+type DeepCloneTarget = string | number | boolean | null | undefined | object
+
+/**
+ * 深拷贝方法
+ * @param target 要拷贝的目标
+ * @returns 拷贝后的新对象
+ */
+export function deepClone<T extends DeepCloneTarget>(target: T): T {
+  if (target === null || typeof target !== 'object') {
+    return target
+  }
+
+  if (target instanceof Date) {
+    return new Date(target.getTime()) as any
+  }
+
+  if (Array.isArray(target)) {
+    return target.map(item => deepClone(item)) as any
+  }
+
+  if (target instanceof Object) {
+    const clonedObj = {} as T
+    for (const key in target) {
+      if (Object.prototype.hasOwnProperty.call(target, key)) {
+        (clonedObj as any)[key] = deepClone((target as any)[key])
+      }
+    }
+    return clonedObj
+  }
+
+  return target
+}

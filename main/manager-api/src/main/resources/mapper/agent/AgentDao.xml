@@ -14,6 +14,8 @@
         <result column="asrModelId" property="asrModelId"/>
         <result column="vadModelId" property="vadModelId"/>
         <result column="llmModelId" property="llmModelId"/>
+        <result column="slmModelId" property="slmModelId"/>
+        <result column="vllmModelId" property="vllmModelId"/>
         <result column="ttsModelId" property="ttsModelId"/>
         <result column="ttsVoiceId" property="ttsVoiceId"/>
         <result column="ttsLanguage" property="ttsLanguage"/>
@@ -46,6 +48,7 @@
                a.asr_model_id      AS asrModelId,
                a.vad_model_id      AS vadModelId,
                a.llm_model_id      AS llmModelId,
+               a.slm_model_id      AS slmModelId,
                a.vllm_model_id     AS vllmModelId,
                a.tts_model_id      AS ttsModelId,
                a.tts_voice_id      AS ttsVoiceId,

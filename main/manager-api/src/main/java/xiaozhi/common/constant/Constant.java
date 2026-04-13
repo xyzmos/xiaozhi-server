@@ -157,6 +157,16 @@ public interface Constant {
     String MEMORY_MEM_REPORT_ONLY = "Memory_mem_report_only";
 
     /**
+     * Mem0AI记忆
+     */
+    String MEMORY_MEM0AI = "Memory_mem0ai";
+
+    /**
+     * PowerMem记忆
+     */
+    String MEMORY_POWERMEM = "Memory_powermem";
+
+    /**
      * 火山引擎双声道语音克隆
      */
     String VOICE_CLONE_HUOSHAN_DOUBLE_STREAM = "huoshan_double_stream";
