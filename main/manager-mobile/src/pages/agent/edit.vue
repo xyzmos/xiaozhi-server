@@ -29,6 +29,7 @@ const formData = ref<Partial<AgentDetail>>({
   vadModelId: '',
   asrModelId: '',
   llmModelId: '',
+  slmModelId: '',
   vllmModelId: '',
   intentModelId: '',
   memModelId: '',
@@ -46,6 +47,7 @@ const displayNames = ref({
   vad: t('agent.pleaseSelect'),
   asr: t('agent.pleaseSelect'),
   llm: t('agent.pleaseSelect'),
+  slm: t('agent.pleaseSelect'),
   vllm: t('agent.pleaseSelect'),
   intent: t('agent.pleaseSelect'),
   memory: t('agent.pleaseSelect'),
@@ -94,6 +96,7 @@ const pickerShow = ref<{
   vad: false,
   asr: false,
   llm: false,
+  slm: false,
   vllm: false,
   intent: false,
   memory: false,
@@ -272,6 +275,7 @@ function updateDisplayNames() {
   displayNames.value.vad = getModelDisplayName('VAD', formData.value.vadModelId)
   displayNames.value.asr = getModelDisplayName('ASR', formData.value.asrModelId)
   displayNames.value.llm = getModelDisplayName('LLM', formData.value.llmModelId)
+  displayNames.value.slm = getModelDisplayName('LLM', formData.value.slmModelId)
   displayNames.value.vllm = getModelDisplayName('VLLM', formData.value.vllmModelId)
   displayNames.value.intent = getModelDisplayName('Intent', formData.value.intentModelId)
   displayNames.value.memory = getModelDisplayName('Memory', formData.value.memModelId)
@@ -279,7 +283,6 @@ function updateDisplayNames() {
 
   // 角色音色特殊处理
   displayNames.value.report = reportOptions.find(item => item.value === formData.value.chatHistoryConf)?.name
-  displayNames.value.language = formData.value.ttsLanguage
 
   isVisibleReport.value = formData.value.memModelId !== 'Memory_nomem'
 
@@ -437,6 +440,7 @@ function selectRoleTemplate(templateId: string) {
       vadModelId: template.vadModelId || formData.value.vadModelId,
       asrModelId: template.asrModelId || formData.value.asrModelId,
       llmModelId: template.llmModelId || formData.value.llmModelId,
+      slmModelId: template.llmModelId || formData.value.slmModelId,
       vllmModelId: template.vllmModelId || formData.value.vllmModelId,
       intentModelId: template.intentModelId || formData.value.intentModelId,
       memModelId: template.memModelId || formData.value.memModelId,
@@ -474,6 +478,9 @@ async function onPickerConfirm(type: string, value: any, name: string) {
     case 'llm':
       formData.value.llmModelId = value
       break
+    case 'slm':
+      formData.value.slmModelId = value
+      break
     case 'vllm':
       formData.value.vllmModelId = value
       break
@@ -490,7 +497,8 @@ async function onPickerConfirm(type: string, value: any, name: string) {
       if (value === 'Memory_nomem' || value === 'Memory_mem_report_only') {
         tempSummaryMemory.value = formData.value.summaryMemory
         formData.value.summaryMemory = ''
-      } else if (tempSummaryMemory.value !== '' && formData.value.summaryMemory === '') {
+      }
+      else if (tempSummaryMemory.value !== '' && formData.value.summaryMemory === '') {
         formData.value.summaryMemory = tempSummaryMemory.value
         tempSummaryMemory.value = ''
       }
@@ -839,6 +847,16 @@ onMounted(async () => {
           <wd-icon name="arrow-right" custom-class="text-[20rpx] text-[#9d9ea3]" />
         </view>
 
+        <view class="flex cursor-pointer items-center justify-between border border-[#eeeeee] rounded-[12rpx] bg-[#f5f7fb] p-[20rpx] transition-all duration-300 active:bg-[#eef3ff]" @click="openPicker('slm')">
+          <text class="text-[28rpx] text-[#232338] font-medium">
+            {{ t('agent.slm') }}
+          </text>
+          <text class="mx-[16rpx] flex-1 text-right text-[26rpx] text-[#65686f]">
+            {{ displayNames.slm }}
+          </text>
+          <wd-icon name="arrow-right" custom-class="text-[20rpx] text-[#9d9ea3]" />
+        </view>
+
         <view class="flex cursor-pointer items-center justify-between border border-[#eeeeee] rounded-[12rpx] bg-[#f5f7fb] p-[20rpx] transition-all duration-300 active:bg-[#eef3ff]" @click="openPicker('vllm')">
           <text class="text-[28rpx] text-[#232338] font-medium">
             {{ t('agent.vllm') }}
@@ -993,6 +1011,13 @@ onMounted(async () => {
       :actions="modelOptions.LLM && modelOptions.LLM.map(item => ({ name: item.modelName, value: item.id }))"
       @close="onPickerCancel('llm')"
       @select="({ item }) => onPickerConfirm('llm', item.value, item.name)"
+    />
+
+    <wd-action-sheet
+      v-model="pickerShow.slm"
+      :actions="modelOptions.LLM && modelOptions.LLM.map(item => ({ name: item.modelName, value: item.id }))"
+      @close="onPickerCancel('slm')"
+      @select="({ item }) => onPickerConfirm('slm', item.value, item.name)"
     />
 
     <wd-action-sheet
