@@ -60,14 +60,24 @@
               <div class="form-content">
                 <div class="form-grid">
                   <div class="form-column">
-                    <el-form-item :label="$t('roleConfig.agentName') + '：'">
+                    <el-form-item>
+                      <template #label>
+                        <el-tooltip :content="$t('roleConfig.tooltip.agentName')" placement="top" effect="light" popper-class="custom-tooltip">
+                          <span>{{ $t('roleConfig.agentName') }}：</span>
+                        </el-tooltip>
+                      </template>
                       <el-input
                         v-model="form.agentName"
                         class="form-input"
                         maxlength="64"
                       />
                     </el-form-item>
-                    <el-form-item :label="$t('roleConfig.roleTemplate') + '：'">
+                    <el-form-item>
+                      <template #label>
+                        <el-tooltip :content="$t('roleConfig.tooltip.roleTemplate')" placement="top" effect="light" popper-class="custom-tooltip">
+                          <span>{{ $t('roleConfig.roleTemplate') }}：</span>
+                        </el-tooltip>
+                      </template>
                       <div class="template-container">
                         <div
                           v-for="(template, index) in templates"
@@ -80,7 +90,12 @@
                         </div>
                       </div>
                     </el-form-item>
-                    <el-form-item :label="$t('roleConfig.contextProvider') + '：'" class="context-provider-item">
+                    <el-form-item class="context-provider-item">
+                      <template #label>
+                        <el-tooltip :content="$t('roleConfig.tooltip.contextProvider')" placement="top" effect="light" popper-class="custom-tooltip">
+                          <span>{{ $t('roleConfig.contextProvider') }}：</span>
+                        </el-tooltip>
+                      </template>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
                         <span style="color: #606266; font-size: 13px;">
                           {{ $t('roleConfig.contextProviderSuccess', { count: currentContextProviders.length }) }}<a href="https://github.com/xinnan-tech/xiaozhi-esp32-server/blob/main/docs/context-provider-integration.md" target="_blank" class="doc-link">{{ $t('roleConfig.contextProviderDocLink') }}</a>
@@ -94,7 +109,12 @@
                         </el-button>
                       </div>
                     </el-form-item>
-                    <el-form-item :label="$t('roleConfig.roleIntroduction') + '：'">
+                    <el-form-item>
+                      <template #label>
+                        <el-tooltip :content="$t('roleConfig.tooltip.roleIntroduction')" placement="top" effect="light" popper-class="custom-tooltip">
+                          <span>{{ $t('roleConfig.roleIntroduction') }}：</span>
+                        </el-tooltip>
+                      </template>
                       <el-input
                         type="textarea"
                         rows="8"
@@ -107,7 +127,12 @@
                       />
                     </el-form-item>
 
-                    <el-form-item :label="$t('roleConfig.memoryHis') + '：'">
+                    <el-form-item>
+                      <template #label>
+                        <el-tooltip :content="$t('roleConfig.tooltip.memoryHis')" placement="top" effect="light" popper-class="custom-tooltip">
+                          <span>{{ $t('roleConfig.memoryHis') }}：</span>
+                        </el-tooltip>
+                      </template>
                       <el-input
                         type="textarea"
                         rows="4"
@@ -120,9 +145,13 @@
                       />
                     </el-form-item>
                     <el-form-item
-                      :label="$t('roleConfig.languageCode') + '：'"
                       style="display: none"
                     >
+                      <template #label>
+                        <el-tooltip :content="$t('roleConfig.tooltip.languageCode')" placement="top" effect="light" popper-class="custom-tooltip">
+                          <span>{{ $t('roleConfig.languageCode') }}：</span>
+                        </el-tooltip>
+                      </template>
                       <el-input
                         v-model="form.langCode"
                         :placeholder="$t('roleConfig.pleaseEnterLangCode')"
@@ -132,9 +161,13 @@
                       />
                     </el-form-item>
                     <el-form-item
-                      :label="$t('roleConfig.interactionLanguage') + '：'"
                       style="display: none"
                     >
+                      <template #label>
+                        <el-tooltip :content="$t('roleConfig.tooltip.interactionLanguage')" placement="top" effect="light" popper-class="custom-tooltip">
+                          <span>{{ $t('roleConfig.interactionLanguage') }}：</span>
+                        </el-tooltip>
+                      </template>
                       <el-input
                         v-model="form.language"
                         :placeholder="$t('roleConfig.pleaseEnterLangName')"
@@ -148,9 +181,13 @@
                     <div class="model-row">
                       <el-form-item 
                         v-if="featureStatus.vad" 
-                        :label="$t('roleConfig.vad')" 
                         class="model-item"
                       >
+                        <template #label>
+                          <el-tooltip :content="$t('roleConfig.tooltip.vad')" placement="top" effect="light" popper-class="custom-tooltip">
+                            <span>{{ $t('roleConfig.vad') }}</span>
+                          </el-tooltip>
+                        </template>
                         <div class="model-select-wrapper">
                           <el-select
                             v-model="form.model.vadModelId"
@@ -170,9 +207,13 @@
                       </el-form-item>
                       <el-form-item 
                         v-if="featureStatus.asr" 
-                        :label="$t('roleConfig.asr')" 
                         class="model-item"
                       >
+                        <template #label>
+                          <el-tooltip :content="$t('roleConfig.tooltip.asr')" placement="top" effect="light" popper-class="custom-tooltip">
+                            <span>{{ $t('roleConfig.asr') }}</span>
+                          </el-tooltip>
+                        </template>
                         <div class="model-select-wrapper">
                           <el-select
                             v-model="form.model.asrModelId"
@@ -191,12 +232,63 @@
                         </div>
                       </el-form-item>
                     </div>
+                    <div class="model-row">
+                      <el-form-item class="model-item">
+                        <template #label>
+                          <el-tooltip :content="$t('roleConfig.tooltip.llm')" placement="top" effect="light" popper-class="custom-tooltip">
+                            <span>{{ $t('roleConfig.llm') }}</span>
+                          </el-tooltip>
+                        </template>
+                        <div class="model-select-wrapper">
+                          <el-select
+                            v-model="form.model.llmModelId"
+                            filterable
+                            :placeholder="$t('roleConfig.pleaseSelect')"
+                            class="form-select"
+                            @change="handleModelChange('LLM', $event)"
+                          >
+                            <el-option
+                              v-for="(item, optionIndex) in modelOptions['LLM']"
+                              :key="`option-asr-${optionIndex}`"
+                              :label="item.label"
+                              :value="item.value"
+                            />
+                          </el-select>
+                        </div>
+                      </el-form-item>
+                      <el-form-item class="model-item">
+                        <template #label>
+                          <el-tooltip :content="$t('roleConfig.tooltip.slm')" placement="top" effect="light" popper-class="custom-tooltip">
+                            <span>{{ $t('roleConfig.slm') }}</span>
+                          </el-tooltip>
+                        </template>
+                        <div class="model-select-wrapper">
+                          <el-select
+                            v-model="form.model.slmModelId"
+                            filterable
+                            :placeholder="$t('roleConfig.pleaseSelect')"
+                            class="form-select"
+                          >
+                            <el-option
+                              v-for="(item, optionIndex) in modelOptions['LLM']"
+                              :key="`option-asr-${optionIndex}`"
+                              :label="item.label"
+                              :value="item.value"
+                            />
+                          </el-select>
+                        </div>
+                      </el-form-item>
+                    </div>
                     <el-form-item
-                      v-for="(model, index) in models.slice(2)"
+                      v-for="(model, index) in models.slice(4)"
                       :key="`model-${index}`"
-                      :label="$t('roleConfig.' + model.type.toLowerCase())"
                       class="model-item"
                     >
+                      <template #label>
+                        <el-tooltip :content="$t('roleConfig.tooltip.' + model.type.toLowerCase())" placement="top" effect="light" popper-class="custom-tooltip">
+                          <span>{{ $t('roleConfig.' + model.type.toLowerCase()) }}</span>
+                        </el-tooltip>
+                      </template>
                       <div class="model-select-wrapper">
                         <el-select
                           v-model="form.model[model.key]"
@@ -217,9 +309,8 @@
                           <el-tooltip
                             v-for="func in currentFunctions"
                             :key="func.name"
-                            effect="dark"
+                            effect="light"
                             placement="top"
-                            popper-class="custom-tooltip"
                           >
                             <div slot="content">
                               <div><strong>功能名称:</strong> {{ func.name }}</div>
@@ -259,7 +350,12 @@
                     </el-form-item>
                     <div class="model-row">
                       <!-- 语言筛选器 -->
-                      <el-form-item :label="$t('roleConfig.language')" class="model-item language-select-item">
+                      <el-form-item class="model-item language-select-item">
+                        <template #label>
+                          <el-tooltip :content="$t('roleConfig.tooltip.language')" placement="top" effect="light" popper-class="custom-tooltip">
+                            <span>{{ $t('roleConfig.language') }}</span>
+                          </el-tooltip>
+                        </template>
                         <div class="model-select-wrapper">
                           <el-select
                             v-model="selectedLanguage"
@@ -278,7 +374,12 @@
                       </el-form-item>
 
                       <!-- 音色选择器 -->
-                      <el-form-item :label="$t('roleConfig.voiceType')" class="model-item">
+                      <el-form-item class="model-item">
+                        <template #label>
+                          <el-tooltip :content="$t('roleConfig.tooltip.voiceType')" placement="top" effect="light" popper-class="custom-tooltip">
+                            <span>{{ $t('roleConfig.voiceType') }}</span>
+                          </el-tooltip>
+                        </template>
                         <div class="model-select-wrapper">
                           <el-select
                             v-model="form.ttsVoiceId"
@@ -404,6 +505,7 @@ export default {
           vadModelId: "",
           asrModelId: "",
           llmModelId: "",
+          slmModelId: "",
           vllmModelId: "",
           memModelId: "",
           intentModelId: "",
@@ -413,6 +515,7 @@ export default {
         { label: this.$t("roleConfig.vad"), key: "vadModelId", type: "VAD" },
         { label: this.$t("roleConfig.asr"), key: "asrModelId", type: "ASR" },
         { label: this.$t("roleConfig.llm"), key: "llmModelId", type: "LLM" },
+        { label: this.$t("roleConfig.slm"), key: "slmModelId", type: "SLM" },
         { label: this.$t("roleConfig.vllm"), key: "vllmModelId", type: "VLLM" },
         { label: this.$t("roleConfig.intent"), key: "intentModelId", type: "Intent" },
         { label: this.$t("roleConfig.memory"), key: "memModelId", type: "Memory" },
@@ -464,6 +567,7 @@ export default {
         asrModelId: this.form.model.asrModelId,
         vadModelId: this.form.model.vadModelId,
         llmModelId: this.form.model.llmModelId,
+        slmModelId: this.form.model.slmModelId,
         vllmModelId: this.form.model.vllmModelId,
         ttsModelId: this.form.model.ttsModelId,
         ttsVoiceId: this.form.ttsVoiceId,
@@ -532,6 +636,7 @@ export default {
               vadModelId: "",
               asrModelId: "",
               llmModelId: "",
+              slmModelId: "",
               vllmModelId: "",
               memModelId: "",
               intentModelId: "",
@@ -588,6 +693,7 @@ export default {
           vadModelId: templateData.vadModelId || this.form.model.vadModelId,
           asrModelId: templateData.asrModelId || this.form.model.asrModelId,
           llmModelId: templateData.llmModelId || this.form.model.llmModelId,
+          slmModelId: templateData.llmModelId || this.form.model.slmModelId,
           vllmModelId: templateData.vllmModelId || this.form.model.vllmModelId,
           memModelId: templateData.memModelId || this.form.model.memModelId,
           intentModelId: templateData.intentModelId || this.form.model.intentModelId,
@@ -606,6 +712,7 @@ export default {
               vadModelId: data.data.vadModelId,
               asrModelId: data.data.asrModelId,
               llmModelId: data.data.llmModelId,
+              slmModelId: data.data.slmModelId,
               vllmModelId: data.data.vllmModelId,
               memModelId: data.data.memModelId,
               intentModelId: data.data.intentModelId,
@@ -1752,5 +1859,13 @@ export default {
   &::v-deep(.el-input__inner) {
     width: 90px !important;
   }
+}
+
+</style>
+
+<style>
+.custom-tooltip {
+  max-width: 400px !important;
+  word-break: break-word;
 }
 </style>
