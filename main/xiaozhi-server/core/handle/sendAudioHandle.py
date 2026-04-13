@@ -17,7 +17,11 @@ AUDIO_FRAME_DURATION = 60
 PRE_BUFFER_COUNT = 5
 
 
-async def sendAudioMessage(conn: "ConnectionHandler", sentenceType, audios, text):
+async def sendAudioMessage(conn: "ConnectionHandler", sentenceType, audios, text, sentence_id=None):
+    # 跳过旧句子残留音频
+    if sentence_id is not None and sentence_id != conn.sentence_id:
+        return
+
     if conn.tts.tts_audio_first_sentence:
         conn.logger.bind(tag=TAG).info(f"发送第一段语音: {text}")
         conn.tts.tts_audio_first_sentence = False
@@ -281,12 +285,14 @@ async def send_tts_message(conn: "ConnectionHandler", state, text=None):
             await sendAudio(conn, audios)
         # 等待所有音频包发送完成
         await _wait_for_audio_completion(conn)
-        # 停止音频发送循环（仅在流控器已初始化时调用）
-        if hasattr(conn, "audio_rate_controller") and conn.audio_rate_controller:
-            conn.audio_rate_controller.stop_sending()
+
         # 检查是否是当前轮次
         if current_sentence_id != conn.sentence_id:
             return
+
+        # 停止音频发送循环（仅在流控器已初始化时调用）
+        if hasattr(conn, "audio_rate_controller") and conn.audio_rate_controller:
+            conn.audio_rate_controller.stop_sending()
         conn.clearSpeakStatus()
 
     # 发送消息到客户端
