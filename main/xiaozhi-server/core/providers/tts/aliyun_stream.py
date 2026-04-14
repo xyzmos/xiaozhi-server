@@ -216,14 +216,6 @@ class TTSProvider(TTSProviderBase):
             try:
                 message = self.tts_text_queue.get(timeout=1)
 
-                # 过滤旧消息：检查sentence_id是否匹配
-                if message.sentence_id != self.conn.sentence_id:
-                    continue
-
-                logger.bind(tag=TAG).debug(
-                    f"收到TTS任务｜{message.sentence_type.name} ｜ {message.content_type.name} | 会话ID: {message.sentence_id}"
-                )
-
                 if self.conn.client_abort:
                     logger.bind(tag=TAG).info("收到打断信息，终止TTS文本处理线程")
                     asyncio.run_coroutine_threadsafe(
@@ -231,6 +223,14 @@ class TTSProvider(TTSProviderBase):
                         loop=self.conn.loop,
                     )
                     continue
+
+                # 过滤旧消息：检查sentence_id是否匹配
+                if message.sentence_id != self.conn.sentence_id:
+                    continue
+
+                logger.bind(tag=TAG).debug(
+                    f"收到TTS任务｜{message.sentence_type.name} ｜ {message.content_type.name} | 会话ID: {message.sentence_id}"
+                )
 
                 if message.sentence_type == SentenceType.FIRST:
                     # 初始化参数

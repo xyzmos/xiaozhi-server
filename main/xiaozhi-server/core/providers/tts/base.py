@@ -320,11 +320,11 @@ class TTSProviderBase(ABC):
         while not self.conn.stop_event.is_set():
             try:
                 message = self.tts_text_queue.get(timeout=1)
-                # 过滤旧消息：检查sentence_id是否匹配
-                if message.sentence_id != self.conn.sentence_id:
-                    continue
                 if self.conn.client_abort:
                     logger.bind(tag=TAG).info("收到打断信息，终止TTS文本处理线程")
+                    continue
+                # 过滤旧消息：检查sentence_id是否匹配
+                if message.sentence_id != self.conn.sentence_id:
                     continue
                 if message.sentence_type == SentenceType.FIRST:
                     self.current_sentence_id = message.sentence_id
