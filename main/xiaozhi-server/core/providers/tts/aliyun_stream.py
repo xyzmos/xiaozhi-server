@@ -423,6 +423,15 @@ class TTSProvider(TTSProviderBase):
                             data = json.loads(msg)
                             header = data.get("header", {})
                             event_name = header.get("name")
+                            task_id = header.get("task_id")
+
+                            # 只处理当前活跃会话的响应
+                            if task_id and self.task_id != task_id:
+                                if event_name in ["SynthesisCompleted", "TaskFailed"]:
+                                    logger.bind(tag=TAG).debug(f"收到残余下行结束响应重置会话状态～～")
+                                    self.activate_session = False
+                                continue
+
                             if event_name == "SynthesisStarted":
                                 logger.bind(tag=TAG).debug("TTS合成已启动")
                                 self.tts_audio_queue.put(

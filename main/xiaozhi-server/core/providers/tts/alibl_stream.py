@@ -331,7 +331,16 @@ class TTSProvider(TTSProviderBase):
                     if isinstance(msg, str):  # JSON控制消息
                         try:
                             data = json.loads(msg)
-                            event = data["header"].get("event")
+                            header = data.get("header", {})
+                            event = header.get("event")
+                            task_id = header.get("task_id")
+
+                            # 只处理当前活跃会话的响应
+                            if task_id and self.conn.sentence_id != task_id:
+                                if event in ["task-finished", "task-failed"]:
+                                    logger.bind(tag=TAG).debug(f"收到残余下行结束响应重置会话状态～～")
+                                    self.activate_session = False
+                                continue
 
                             if event == "task-started":
                                 logger.bind(tag=TAG).debug("TTS任务启动成功~")
@@ -352,8 +361,8 @@ class TTSProvider(TTSProviderBase):
                                 self.activate_session = False
                                 self._process_before_stop_play_files()
                             elif event == "task-failed":
-                                error_code = data["header"].get("error_code", "unknown")
-                                error_message = data["header"].get("error_message", "未知错误")
+                                error_code = header.get("error_code", "unknown")
+                                error_message = header.get("error_message", "未知错误")
                                 logger.bind(tag=TAG).error(
                                     f"TTS任务失败: {error_code} - {error_message}"
                                 )
