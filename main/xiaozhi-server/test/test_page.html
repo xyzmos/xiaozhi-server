@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小智服务器测试页面</title>
-    <link rel="stylesheet" href="css/test_page.css?v=0205">
+    <link rel="stylesheet" href="css/test_page.css?v=0206">
     <script>
         // 检测是否使用file://协议打开
         if (window.location.protocol === 'file:') {
@@ -137,6 +137,7 @@
             <div class="modal-body">
                 <div class="settings-tabs">
                     <button class="tab-btn active" data-tab="device">设备配置</button>
+                    <button class="tab-btn" data-tab="wakeword">唤醒词</button>
                     <button class="tab-btn" data-tab="mcp">MCP工具</button>
                     <button class="tab-btn" data-tab="other">数字人皮肤</button>
                 </div>
@@ -180,6 +181,37 @@
                         <div class="input-group">
                             <label for="visionUrl">视觉分析地址:</label>
                             <input type="text" id="visionUrl" value="" readonly disabled placeholder="成功建立ws连接后自动获取" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="wakewordTab">
+                    <div class="config-panel">
+                        <div class="control-panel">
+                            <div class="config-row">
+                                <div class="config-item">
+                                    <label for="wakewordEnabled">启用本地唤醒词:</label>
+                                    <select id="wakewordEnabled" class="model-select">
+                                        <option value="true">启用</option>
+                                        <option value="false">禁用</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="config-row">
+                                <div class="config-item">
+                                    <label for="wakewordWsUrl">唤醒词服务地址:</label>
+                                    <input type="text" id="wakewordWsUrl" placeholder="ws://127.0.0.1:8006/wakeword-ws">
+                                </div>
+                            </div>
+                            <div class="config-row">
+                                <div class="config-item">
+                                    <label for="wakewordList">唤醒词配置 (一行一个):</label>
+                                    <textarea id="wakewordList" placeholder="例如：&#10;小智小智&#10;你好小智"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="button" class="btn-primary" id="applyWakewordBtn">应用唤醒词</button>
+                            </div>
                         </div>
                     </div>
                 </div>

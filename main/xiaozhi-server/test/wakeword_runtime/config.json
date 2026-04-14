@@ -2,7 +2,6 @@
   "wakeword": {
     "enabled": false
   },
-  "wake_word": "你好小智",
   "model_dir": "models",
   "audio": {
     "input_device": null,
@@ -14,7 +13,7 @@
     "provider": "cpu",
     "max_active_paths": 2,
     "keywords_score": 1.8,
-    "keywords_threshold": 0.05,
+    "keywords_threshold": 0.1,
     "num_trailing_blanks": 1,
     "cooldown_seconds": 1.5
   },
@@ -22,8 +21,5 @@
     "level": "INFO",
     "dir": "logs",
     "file": "wakeword-runtime.log"
-  },
-  "wake_words": [
-    "你好小智"
-  ]
+  }
 }

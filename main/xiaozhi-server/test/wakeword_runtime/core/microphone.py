@@ -60,6 +60,9 @@ class MicrophoneListener:
         logger.info("microphone block size: %s", self._block_size)
 
     def stop(self) -> None:
+        if not self._running and self._stream is None:
+            return
+
         self._running = False
         if self._stream is not None:
             try:

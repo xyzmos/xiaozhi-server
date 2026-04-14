@@ -1,7 +1,6 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 
 @dataclass
@@ -43,11 +42,10 @@ class RuntimeConfig:
     audio: AudioSettings
     detector: DetectorSettings
     logging: LoggingSettings
-    raw: dict[str, Any]
 
     def validate(self) -> None:
         if self.wakeword.enabled and not self.wake_words:
-            raise ValueError("wake_word or wake_words cannot be empty when wakeword is enabled")
+            raise ValueError("keywords.txt cannot be empty when wakeword is enabled")
 
         if self.audio.sample_rate <= 0:
             raise ValueError("audio.sample_rate must be greater than 0")
@@ -85,17 +83,9 @@ def load_config(runtime_root: Path) -> RuntimeConfig:
     config_path = runtime_root / "config.json"
     raw = json.loads(config_path.read_text(encoding="utf-8"))
     wakeword_cfg = dict(raw.get("wakeword", {}))
-    raw_words = raw.get("wake_words")
-    wake_words: list[str] = []
-    if isinstance(raw_words, list):
-        wake_words = [str(item).strip() for item in raw_words if str(item).strip()]
-    if not wake_words:
-        wake_word = str(raw.get("wake_word", "")).strip()
-        if wake_word:
-            wake_words = [wake_word]
-
     raw_model_dir = Path(str(raw.get("model_dir", "models")))
     model_dir = raw_model_dir.resolve() if raw_model_dir.is_absolute() else (runtime_root / raw_model_dir).resolve()
+    wake_words = _load_wake_words_from_keywords_file(model_dir)
 
     audio_cfg = dict(raw.get("audio", {}))
     detector_cfg = dict(raw.get("detector", {}))
@@ -125,7 +115,24 @@ def load_config(runtime_root: Path) -> RuntimeConfig:
             directory=str(logging_cfg.get("dir", "logs")),
             file_name=str(logging_cfg.get("file", "wakeword-runtime.log")),
         ),
-        raw=raw,
     )
     config.validate()
     return config
+
+
+def _load_wake_words_from_keywords_file(model_dir: Path) -> list[str]:
+    keywords_file = model_dir / "keywords.txt"
+    if not keywords_file.exists():
+        return []
+
+    wake_words: list[str] = []
+    for line in keywords_file.read_text(encoding="utf-8").splitlines():
+        text = line.strip()
+        if not text or text.startswith("#") or "@" not in text:
+            continue
+
+        wake_word = text.split("@", 1)[1].strip()
+        if wake_word:
+            wake_words.append(wake_word)
+
+    return wake_words

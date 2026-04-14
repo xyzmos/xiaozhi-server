@@ -2,8 +2,6 @@ import queue
 import threading
 import logging
 import time
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
@@ -12,14 +10,6 @@ from ..config import RuntimeConfig
 from .detector_assets import DetectorAssetsBuilder
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class DetectorBootstrapReport:
-    ready: bool
-    model_root: Path | None
-    keywords_file: Path | None
-    wake_words: list[str]
 
 
 class WakewordDetector:
@@ -39,7 +29,7 @@ class WakewordDetector:
         self.last_detection_time = 0.0
         self.detection_cooldown = self.config.detector.cooldown_seconds
 
-    def initialize(self) -> DetectorBootstrapReport:
+    def initialize(self) -> None:
         if not self.enabled:
             raise RuntimeError("wakeword detector is disabled")
 
@@ -69,17 +59,9 @@ class WakewordDetector:
             provider=detector_cfg.provider,
         )
         self.stream = self.keyword_spotter.create_stream()
-
-        report = DetectorBootstrapReport(
-            ready=True,
-            model_root=assets.model_root,
-            keywords_file=assets.keywords_file,
-            wake_words=self.config.wake_words,
-        )
         logger.info("detector initialized")
         logger.info("detector model root: %s", assets.model_root)
         logger.info("detector keywords file: %s", assets.keywords_file)
-        return report
 
     def on_detected(self, callback: Callable[[str, str], None]) -> None:
         self.on_detected_callback = callback
@@ -123,6 +105,9 @@ class WakewordDetector:
         logger.info("wakeword detector started")
 
     def stop(self) -> None:
+        if not self.is_running_flag and self.audio_source is None and self._worker_thread is None:
+            return
+
         self.is_running_flag = False
 
         if self.audio_source is not None:

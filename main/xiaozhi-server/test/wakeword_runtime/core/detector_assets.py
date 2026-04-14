@@ -56,7 +56,7 @@ class DetectorAssetsBuilder:
 
         wake_words = self.config.wake_words
         if not wake_words:
-            raise ValueError("wake_word or wake_words cannot be empty")
+            raise ValueError("keywords.txt cannot be empty")
 
         keywords_path = model_root / "keywords.txt"
         lines: list[str] = []

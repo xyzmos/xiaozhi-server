@@ -19,12 +19,9 @@ class WakewordEventBridge:
         return self._running
 
     def build_ready_message(self) -> str:
-        return json.dumps(
-            {
-                "type": "bridge_connected",
-                "payload": {"status": "ready"},
-            },
-            ensure_ascii=False,
+        return self.build_message(
+            "bridge_connected",
+            {"status": "ready"},
         )
 
     def publish_detected(self, wake_word: str) -> None:
@@ -40,13 +37,7 @@ class WakewordEventBridge:
         if not self._running:
             return
 
-        message = json.dumps(
-            {
-                "type": event_type,
-                "payload": payload or {},
-            },
-            ensure_ascii=False,
-        )
+        message = self.build_message(event_type, payload or {})
         with self._clients_lock:
             clients = list(self._clients)
 
@@ -68,6 +59,24 @@ class WakewordEventBridge:
         with self._clients_lock:
             self._clients.append(client_queue)
         return client_queue
+
+    def build_message(
+        self,
+        event_type: str,
+        payload: dict[str, Any] | None = None,
+        request_id: str | None = None,
+        success: bool = True,
+        error: str | None = None,
+    ) -> str:
+        message: dict[str, Any] = {
+            "type": event_type,
+            "requestId": request_id,
+            "success": success,
+            "payload": payload or {},
+        }
+        if error:
+            message["error"] = error
+        return json.dumps(message, ensure_ascii=False)
 
     def remove_client(self, client_queue: queue.Queue[str]) -> None:
         with self._clients_lock:

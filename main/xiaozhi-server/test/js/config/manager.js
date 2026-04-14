@@ -19,6 +19,9 @@ export function loadConfig() {
     const deviceNameInput = document.getElementById('deviceName');
     const clientIdInput = document.getElementById('clientId');
     const otaUrlInput = document.getElementById('otaUrl');
+    const wakewordWsUrlInput = document.getElementById('wakewordWsUrl');
+    const wakewordEnabledInput = document.getElementById('wakewordEnabled');
+    const wakewordListInput = document.getElementById('wakewordList');
 
     // 从localStorage加载MAC地址，如果没有则生成新的
     let savedMac = localStorage.getItem('xz_tester_deviceMac');
@@ -43,6 +46,21 @@ export function loadConfig() {
     if (savedOtaUrl) {
         otaUrlInput.value = savedOtaUrl;
     }
+
+    const savedWakewordWsUrl = localStorage.getItem('xz_tester_wakewordWsUrl');
+    if (savedWakewordWsUrl !== null && wakewordWsUrlInput) {
+        wakewordWsUrlInput.value = savedWakewordWsUrl;
+    }
+
+    const savedWakewordEnabled = localStorage.getItem('xz_tester_wakewordEnabled');
+    if (savedWakewordEnabled !== null && wakewordEnabledInput) {
+        wakewordEnabledInput.value = savedWakewordEnabled;
+    }
+
+    const savedWakewordList = localStorage.getItem('xz_tester_wakewordList');
+    if (savedWakewordList !== null && wakewordListInput) {
+        wakewordListInput.value = savedWakewordList;
+    }
 }
 
 // 保存配置
@@ -50,10 +68,22 @@ export function saveConfig() {
     const deviceMacInput = document.getElementById('deviceMac');
     const deviceNameInput = document.getElementById('deviceName');
     const clientIdInput = document.getElementById('clientId');
+    const wakewordWsUrlInput = document.getElementById('wakewordWsUrl');
+    const wakewordEnabledInput = document.getElementById('wakewordEnabled');
+    const wakewordListInput = document.getElementById('wakewordList');
 
     localStorage.setItem('xz_tester_deviceMac', deviceMacInput.value);
     localStorage.setItem('xz_tester_deviceName', deviceNameInput.value);
     localStorage.setItem('xz_tester_clientId', clientIdInput.value);
+    if (wakewordEnabledInput) {
+        localStorage.setItem('xz_tester_wakewordEnabled', wakewordEnabledInput.value);
+    }
+    if (wakewordListInput) {
+        localStorage.setItem('xz_tester_wakewordList', wakewordListInput.value);
+    }
+    if (wakewordWsUrlInput && wakewordWsUrlInput.value.trim()) {
+        localStorage.setItem('xz_tester_wakewordWsUrl', wakewordWsUrlInput.value.trim());
+    }
 }
 
 // 获取配置值

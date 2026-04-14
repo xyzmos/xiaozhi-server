@@ -1,17 +1,27 @@
 import logging
+from typing import Protocol
 
 from ..config import RuntimeConfig
 from ..plugins import AudioPlugin, PluginManager, WakeWordPlugin
-from .http_server import TestRuntimeHttpServer
 
 logger = logging.getLogger(__name__)
 
 
+class EventPublisher(Protocol):
+    def publish_service_ready(self) -> None:
+        ...
+
+    def publish_service_stopping(self) -> None:
+        ...
+
+    def publish_detected(self, wake_word: str) -> None:
+        ...
+
+
 class TestRuntimeApplication:
-    def __init__(self, config: RuntimeConfig, http_server: TestRuntimeHttpServer) -> None:
+    def __init__(self, config: RuntimeConfig, event_publisher: EventPublisher) -> None:
         self.config = config
-        self.http_server = http_server
-        self.event_bridge = http_server.event_bridge
+        self.event_bridge = event_publisher
         self.plugins = PluginManager()
         self.audio_source = None
         self._is_setup = False

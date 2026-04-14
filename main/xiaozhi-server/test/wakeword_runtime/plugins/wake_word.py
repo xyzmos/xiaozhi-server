@@ -41,7 +41,8 @@ class WakeWordPlugin(Plugin):
             self.detector.stop()
 
     def shutdown(self) -> None:
-        self.stop()
+        self.detector = None
+        self.app = None
 
     def _on_detected(self, wake_word: str, full_text: str) -> None:
         if self.app is None:

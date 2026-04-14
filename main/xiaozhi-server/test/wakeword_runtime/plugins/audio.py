@@ -31,6 +31,7 @@ class AudioPlugin(Plugin):
             self.source.stop()
 
     def shutdown(self) -> None:
-        self.stop()
         if self.app is not None:
             self.app.audio_source = None
+        self.source = None
+        self.app = None
