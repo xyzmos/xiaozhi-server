@@ -293,9 +293,11 @@ class ASRProvider(ASRProviderBase):
                 "show_utterances": True,
                 "result_type": self.result_type,
                 "sequence": 1,
-                "boosting_table_name": self.boosting_table_name,
-                "correct_table_name": self.correct_table_name,
                 "end_window_size": self.end_window_size,
+                "corpus": {
+                    "boosting_table_name": self.boosting_table_name,
+                    "correct_table_name": self.correct_table_name,
+                }
             },
             "audio": {
                 "format": self.format,
