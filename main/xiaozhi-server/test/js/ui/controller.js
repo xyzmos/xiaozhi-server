@@ -2,7 +2,7 @@
 import { loadConfig, saveConfig } from '../config/manager.js?v=0205';
 import { getAudioPlayer } from '../core/audio/player.js?v=0205';
 import { getAudioRecorder } from '../core/audio/recorder.js?v=0205';
-import { requestWakewordBridge } from '../core/network/wakeword-bridge.js?v=0205';
+import { requestWakewordBridge, stopWakewordBridgeListener, startWakewordBridgeListener, getWakewordBridgeUrl, onNextBridgeConnected } from '../core/network/wakeword-bridge.js?v=0205';
 import { getWebSocketHandler } from '../core/network/websocket.js?v=0205';
 import { log } from '../utils/logger.js?v=0205';
 
@@ -544,6 +544,7 @@ class UIController {
     async handleApplyWakeword() {
         const wakewordEnabledInput = document.getElementById('wakewordEnabled');
         const wakewordListInput = document.getElementById('wakewordList');
+        const wakewordWsUrlInput = document.getElementById('wakewordWsUrl');
         if (!wakewordEnabledInput || !wakewordListInput) {
             return;
         }
@@ -571,17 +572,63 @@ class UIController {
         }
 
         try {
-            const response = await requestWakewordBridge('set_wakeword_config', payload);
-            this.applyWakewordConfig(response.payload || payload);
-
-            const shouldRestart = window.confirm('唤醒词已保存。是否现在重启唤醒词服务以立即生效？');
-            if (!shouldRestart) {
-                this.addChatMessage('唤醒词配置已保存，可稍后手动重启服务后生效。', false);
-                return;
+            // 保存地址到 localStorage
+            if (wakewordWsUrlInput && wakewordWsUrlInput.value.trim()) {
+                localStorage.setItem('xz_tester_wakewordWsUrl', wakewordWsUrlInput.value.trim());
             }
 
-            await requestWakewordBridge('restart_wakeword_service');
-            this.addChatMessage('唤醒词配置已保存，唤醒词服务正在重启。', false);
+            // 比较新地址和当前连接地址
+            const newWsUrl = localStorage.getItem('xz_tester_wakewordWsUrl');
+            const currentWsUrl = getWakewordBridgeUrl();
+            const urlChanged = newWsUrl !== currentWsUrl;
+
+            if (urlChanged) {
+                // 地址变了，先确认
+                const shouldRestart = window.confirm('地址已变更，是否继续？（将断开旧连接并重新连接）');
+                if (!shouldRestart) {
+                    // 恢复 localStorage 里的旧地址
+                    localStorage.setItem('xz_tester_wakewordWsUrl', currentWsUrl);
+                    this.addChatMessage('已取消地址变更。', false);
+                    return;
+                }
+
+                // 断开旧连接
+                stopWakewordBridgeListener();
+
+                // 启动新连接（自动用新地址）
+                startWakewordBridgeListener();
+
+                // 等 bridge_connected
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('连接新服务器超时'));
+                    }, 5000);
+
+                    onNextBridgeConnected(() => {
+                        clearTimeout(timeout);
+                        resolve();
+                    });
+                });
+
+                // 发配置和重启
+                await requestWakewordBridge('set_wakeword_config', payload);
+                this.applyWakewordConfig(payload);
+                await requestWakewordBridge('restart_wakeword_service');
+                this.addChatMessage('唤醒词配置已保存，唤醒词服务正在重启。', false);
+            } else {
+                // 地址没变：直接在当前连接操作
+                const response = await requestWakewordBridge('set_wakeword_config', payload);
+                this.applyWakewordConfig(response.payload || payload);
+
+                const shouldRestart = window.confirm('唤醒词已保存。是否现在重启唤醒词服务以立即生效？');
+                if (!shouldRestart) {
+                    this.addChatMessage('唤醒词配置已保存，可稍后手动重启服务后生效。', false);
+                    return;
+                }
+
+                await requestWakewordBridge('restart_wakeword_service');
+                this.addChatMessage('唤醒词配置已保存，唤醒词服务正在重启。', false);
+            }
         } catch (error) {
             this.addChatMessage(`应用唤醒词失败: ${error.message}`, false);
         } finally {

@@ -6,6 +6,7 @@ let reconnectTimer = null;
 let reconnectAttempts = 0;
 let shouldReconnect = true;
 let wakewordRequestSeq = 0;
+let onNextBridgeConnectedCallback = null;
 
 const pendingWakewordRequests = new Map();
 
@@ -53,6 +54,11 @@ function tryConnect() {
 
                 if (message.type === 'bridge_connected') {
                     log('本地唤醒监听已就绪', 'info');
+                    if (onNextBridgeConnectedCallback) {
+                        const cb = onNextBridgeConnectedCallback;
+                        onNextBridgeConnectedCallback = null;
+                        cb(message);
+                    }
                     return;
                 }
 
@@ -125,6 +131,7 @@ export function stopWakewordBridgeListener() {
         return;
     }
 
+    wakewordSocket.onclose = null;
     wakewordSocket.close();
     wakewordSocket = null;
 }
@@ -160,6 +167,17 @@ export function requestWakewordBridge(type, payload = {}, timeout = 5000) {
             reject(new Error('本地唤醒事件桥未连接'));
         }
     });
+}
+
+export function getWakewordBridgeUrl() {
+    if (wakewordSocket && wakewordSocket.url) {
+        return wakewordSocket.url;
+    }
+    return buildWakewordBridgeUrl();
+}
+
+export function onNextBridgeConnected(callback) {
+    onNextBridgeConnectedCallback = callback;
 }
 
 function buildWakewordBridgeUrl() {
