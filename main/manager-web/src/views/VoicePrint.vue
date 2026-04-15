@@ -426,7 +426,7 @@ export default {
 
 
 :deep(.el-checkbox__inner) {
-    background-color: #eeeeee !important;
+    background-color: #ffffff !important;
     border-color: #cccccc !important;
 }
 
