@@ -212,8 +212,8 @@ Websocket-Schnittstellenadresse: wss://2662r3426b.vicp.fun/xiaozhi/v1/
 |:---:|:---:|:---:|
 | ASR (Spracherkennung) | FunASR (Lokal) | 👍XunfeiStreamASR (Xunfei-Streaming) |
 | LLM (Großes Modell) | glm-4-flash (Zhipu) | 👍qwen-flash (Alibaba Bailian) |
-| VLLM (Vision Large Model) | glm-4v-flash (Zhipu) | 👍qwen2.5-vl-3b-instructh (Alibaba Bailian) |
-| TTS (Sprachsynthese) | ✅LinkeraiTTS (Lingxi-Streaming) | 👍HuoshanDoubleStreamTTS (Volcano-Streaming) |
+| VLLM (Vision Large Model) | glm-4v-flash (Zhipu) | 👍qwen3.5-flash (Alibaba Bailian) |
+| TTS (Sprachsynthese) | EdgeTTS (Microsoft) | 👍HuoshanDoubleStreamTTS (Volcano-Streaming) |
 | Intent (Absichtserkennung) | function_call (Funktionsaufruf) | function_call (Funktionsaufruf) |
 | Memory (Gedächtnisfunktion) | mem_local_short (Lokales Kurzzeitgedächtnis) | mem_local_short (Lokales Kurzzeitgedächtnis) |
 
