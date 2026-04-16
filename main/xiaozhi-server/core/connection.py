@@ -37,7 +37,7 @@ from core.auth import AuthenticationError
 from config.config_loader import get_private_config_from_api
 from core.providers.tts.dto.dto import ContentType, TTSMessageDTO, SentenceType
 from config.logger import setup_logging, build_module_string, create_connection_logger
-from config.manage_api_client import DeviceNotFoundException, DeviceBindException
+from config.manage_api_client import DeviceNotFoundException, DeviceBindException, generate_and_save_chat_title
 from core.utils.prompt_manager import PromptManager
 from core.utils.voiceprint_provider import VoiceprintProvider
 from core.utils.util import get_system_error_response
@@ -284,6 +284,26 @@ class ConnectionHandler:
     async def _save_and_close(self, ws):
         """保存记忆并关闭连接"""
         try:
+            # 守护线程1：独立生成标题（不依赖记忆模型）
+            if self.session_id:
+                def generate_title_task():
+                    try:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(
+                            generate_and_save_chat_title(self.session_id)
+                        )
+                    except Exception as e:
+                        self.logger.bind(tag=TAG).error(f"生成标题失败: {e}")
+                    finally:
+                        try:
+                            loop.close()
+                        except Exception:
+                            pass
+
+                threading.Thread(target=generate_title_task, daemon=True).start()
+
+            # 守护线程2：走老流程记忆保存（仅记忆，不含标题）
             if self.memory:
                 # 使用线程池异步保存记忆
                 def save_memory_task():

@@ -150,6 +150,24 @@ public class AgentController {
         }
     }
 
+    @PostMapping("/chat-title/{sessionId}/generate")
+    @Operation(summary = "根据会话ID生成聊天标题（异步执行）")
+    public Result<Void> generateAndSaveChatTitle(@PathVariable String sessionId) {
+        try {
+            new Thread(() -> {
+                try {
+                    agentChatSummaryService.generateAndSaveChatTitle(sessionId);
+                    System.out.println("异步执行会话 " + sessionId + " 的标题生成完成");
+                } catch (Exception e) {
+                    System.err.println("异步执行会话 " + sessionId + " 的标题生成失败: " + e.getMessage());
+                }
+            }).start();
+            return new Result<Void>().ok(null);
+        } catch (Exception e) {
+            return new Result<Void>().error("启动异步标题生成任务失败: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "更新智能体")
     @RequiresPermissions("sys:role:normal")

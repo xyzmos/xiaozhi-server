@@ -3,7 +3,6 @@
 """
 
 from ..base import MemoryProviderBase, logger
-from config.manage_api_client import generate_and_save_chat_summary
 
 TAG = __name__
 
@@ -14,8 +13,6 @@ class MemoryProvider(MemoryProviderBase):
 
     async def save_memory(self, msgs, session_id=None):
         logger.bind(tag=TAG).debug("mem_report_only mode: No memory saving or summarization is performed.")
-        if session_id:
-            await generate_and_save_chat_summary(session_id)
         return None
 
     async def query_memory(self, query: str) -> str:
