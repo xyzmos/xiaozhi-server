@@ -150,6 +150,13 @@ public class AgentController {
         }
     }
 
+    @PostMapping("/chat-title/{sessionId}/generate")
+    @Operation(summary = "根据会话ID生成聊天标题")
+    public Result<Void> generateAndSaveChatTitle(@PathVariable String sessionId) {
+        agentChatSummaryService.generateAndSaveChatTitle(sessionId);
+        return new Result<Void>().ok(null);
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "更新智能体")
     @RequiresPermissions("sys:role:normal")

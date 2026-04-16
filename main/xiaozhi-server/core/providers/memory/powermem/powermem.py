@@ -16,7 +16,6 @@ import traceback
 from typing import Optional, Dict, Any
 
 from ..base import MemoryProviderBase, logger
-from config.manage_api_client import generate_and_save_chat_summary
 
 TAG = __name__
 
@@ -210,11 +209,6 @@ class MemoryProvider(MemoryProviderBase):
         except Exception as e:
             logger.bind(tag=TAG).error(f"Error saving memory: {str(e)}")
             logger.bind(tag=TAG).debug(f"Detailed error: {traceback.format_exc()}")
-
-        # Generate and save chat summary (SLM summarizes session title)
-        # This is independent of PowerMem's memory saving
-        if session_id:
-            await generate_and_save_chat_summary(session_id)
 
         return None
 

@@ -104,7 +104,6 @@ public class AgentChatSummaryServiceImpl implements AgentChatSummaryService {
 
             if (memModelId == null || memModelId.equals(Constant.MEMORY_MEM_REPORT_ONLY)) {
                 log.info("会话 {} 使用仅上报聊天记录模式，跳过记忆总结", sessionId);
-                generateAndSaveChatTitle(sessionId, agentId);
                 return true;
             }
 
@@ -128,7 +127,6 @@ public class AgentChatSummaryServiceImpl implements AgentChatSummaryService {
                 log.info("会话 {} 使用 {} 模式，跳过记忆总结", sessionId, memModelId);
             }
 
-            generateAndSaveChatTitle(sessionId, agentId);
             return true;
 
         } catch (Exception e) {
@@ -137,16 +135,24 @@ public class AgentChatSummaryServiceImpl implements AgentChatSummaryService {
         }
     }
 
-    private void generateAndSaveChatTitle(String sessionId, String agentId) {
+    @Override
+    public boolean generateAndSaveChatTitle(String sessionId) {
         try {
+            // 自动获取agentId
+            String agentId = findAgentIdBySessionId(sessionId);
+            if (StringUtils.isBlank(agentId)) {
+                log.warn("会话 {} 无法获取智能体信息，跳过标题生成", sessionId);
+                return false;
+            }
+
             List<AgentChatHistoryDTO> chatHistory = getChatHistoryBySessionId(sessionId);
             if (chatHistory == null || chatHistory.isEmpty()) {
-                return;
+                return false;
             }
 
             List<String> meaningfulMessages = extractMeaningfulMessages(chatHistory);
             if (meaningfulMessages.isEmpty()) {
-                return;
+                return false;
             }
 
             StringBuilder conversation = new StringBuilder();
@@ -160,9 +166,12 @@ public class AgentChatSummaryServiceImpl implements AgentChatSummaryService {
             if (StringUtils.isNotBlank(title)) {
                 agentChatTitleService.saveOrUpdateTitle(sessionId, title);
                 log.info("成功保存会话 {} 的标题: {}", sessionId, title);
+                return true;
             }
+            return false;
         } catch (Exception e) {
             log.error("生成会话 {} 的标题时发生错误: {}", sessionId, e.getMessage());
+            return false;
         }
     }
 

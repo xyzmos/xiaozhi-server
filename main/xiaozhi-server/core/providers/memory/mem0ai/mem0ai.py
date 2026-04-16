@@ -2,7 +2,6 @@ import json
 import traceback
 
 from ..base import MemoryProviderBase, logger
-from config.manage_api_client import generate_and_save_chat_summary
 from mem0 import MemoryClient
 from core.utils.util import check_model_key
 
@@ -58,11 +57,6 @@ class MemoryProvider(MemoryProviderBase):
                 logger.bind(tag=TAG).debug(f"Save memory result: {result}")
         except Exception as e:
             logger.bind(tag=TAG).error(f"保存记忆失败: {str(e)}")
-
-        # Generate and save chat summary (SLM summarizes session title)
-        # This is independent of Mem0AI's memory saving
-        if session_id:
-            await generate_and_save_chat_summary(session_id)
 
         return None
 
