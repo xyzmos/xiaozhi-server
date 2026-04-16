@@ -2,6 +2,7 @@ import json
 import traceback
 
 from ..base import MemoryProviderBase, logger
+from config.manage_api_client import generate_and_save_chat_summary
 from mem0 import MemoryClient
 from core.utils.util import check_model_key
 
@@ -30,38 +31,40 @@ class MemoryProvider(MemoryProviderBase):
             self.use_mem0 = False
 
     async def save_memory(self, msgs, session_id=None):
-        if not self.use_mem0:
-            return None
-        if len(msgs) < 2:
-            return None
-
         try:
-            # Format the content as a message list for mem0
-            messages = []
-            for message in msgs:
-                if message.role == "system":
-                    continue
+            if self.use_mem0 and len(msgs) >= 2:
+                # Format the content as a message list for mem0
+                messages = []
+                for message in msgs:
+                    if message.role == "system":
+                        continue
 
-                content = message.content
+                    content = message.content
 
-                # Extract content from JSON format if present (for ASR with emotion/language tags)
-                # Same logic as in query_memory method
-                try:
-                    if content and content.strip().startswith("{") and content.strip().endswith("}"):
-                        data = json.loads(content)
-                        if "content" in data:
-                            content = data["content"]
-                except (json.JSONDecodeError, KeyError, TypeError):
-                    # If parsing fails, use original content
-                    pass
+                    # Extract content from JSON format if present (for ASR with emotion/language tags)
+                    # Same logic as in query_memory method
+                    try:
+                        if content and content.strip().startswith("{") and content.strip().endswith("}"):
+                            data = json.loads(content)
+                            if "content" in data:
+                                content = data["content"]
+                    except (json.JSONDecodeError, KeyError, TypeError):
+                        # If parsing fails, use original content
+                        pass
 
-                messages.append({"role": message.role, "content": content})
+                    messages.append({"role": message.role, "content": content})
 
-            result = self.client.add(messages, user_id=self.role_id)
-            logger.bind(tag=TAG).debug(f"Save memory result: {result}")
+                result = self.client.add(messages, user_id=self.role_id)
+                logger.bind(tag=TAG).debug(f"Save memory result: {result}")
         except Exception as e:
             logger.bind(tag=TAG).error(f"保存记忆失败: {str(e)}")
-            return None
+
+        # Generate and save chat summary (SLM summarizes session title)
+        # This is independent of Mem0AI's memory saving
+        if session_id:
+            await generate_and_save_chat_summary(session_id)
+
+        return None
 
     async def query_memory(self, query: str) -> str:
         if not self.use_mem0:
