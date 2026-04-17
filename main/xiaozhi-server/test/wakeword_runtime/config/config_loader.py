@@ -120,10 +120,25 @@ def load_config(runtime_root: Path) -> RuntimeConfig:
     return config
 
 
+DEFAULT_WAKE_WORDS = [
+    "你好小智",
+    "你好小志",
+    "小爱同学",
+    "你好小鑫",
+    "你好小新",
+    "小美同学",
+    "小龙小龙",
+    "喵喵同学",
+    "小滨小滨",
+    "小冰小冰",
+    "嘿你好呀",
+]
+
+
 def _load_wake_words_from_keywords_file(model_dir: Path) -> list[str]:
     keywords_file = model_dir / "keywords.txt"
     if not keywords_file.exists():
-        return []
+        return DEFAULT_WAKE_WORDS.copy()
 
     wake_words: list[str] = []
     for line in keywords_file.read_text(encoding="utf-8").splitlines():
@@ -135,4 +150,4 @@ def _load_wake_words_from_keywords_file(model_dir: Path) -> list[str]:
         if wake_word:
             wake_words.append(wake_word)
 
-    return wake_words
+    return wake_words if wake_words else DEFAULT_WAKE_WORDS.copy()

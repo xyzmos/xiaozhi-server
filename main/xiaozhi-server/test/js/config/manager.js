@@ -1,5 +1,8 @@
 // 配置管理模块
 
+// 默认唤醒词列表
+export const DEFAULT_WAKE_WORDS = '你好小智\n你好小志\n小爱同学\n你好小鑫\n你好小新\n小美同学\n小龙小龙\n喵喵同学\n小滨小滨\n小冰小冰\n嘿你好呀';
+
 // 生成随机MAC地址
 function generateRandomMac() {
     const hexDigits = '0123456789ABCDEF';
@@ -60,6 +63,8 @@ export function loadConfig() {
     const savedWakewordList = localStorage.getItem('xz_tester_wakewordList');
     if (savedWakewordList !== null && wakewordListInput) {
         wakewordListInput.value = savedWakewordList;
+    } else if (wakewordListInput) {
+        wakewordListInput.value = DEFAULT_WAKE_WORDS;
     }
 }
 

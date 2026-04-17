@@ -70,6 +70,28 @@ export class WebSocketHandler {
         }
     }
 
+    _sendWakeupMessages(sessionId) {
+        if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) return;
+
+        // listen detect
+        this.websocket.send(JSON.stringify({
+            session_id: sessionId,
+            type: 'listen',
+            state: 'detect',
+            text: '嘿，你好呀'
+        }));
+        log('发送listen detect消息，唤醒词: 嘿，你好呀', 'info');
+
+        // listen start：开始监听
+        this.websocket.send(JSON.stringify({
+            session_id: sessionId,
+            type: 'listen',
+            state: 'start',
+            mode: 'auto'
+        }));
+        log('发送listen start消息', 'info');
+    }
+
     // 处理文本消息
     handleTextMessage(message) {
         if (message.type === 'hello') {
@@ -77,6 +99,9 @@ export class WebSocketHandler {
             window.cameraAvailable = true;
             log('连接成功，摄像头已可用', 'success');
             uiController.updateDialButton(true);
+
+            this._sendWakeupMessages(message.session_id);
+
             uiController.startAIChatSession();
         } else if (message.type === 'tts') {
             this.handleTTSMessage(message);
