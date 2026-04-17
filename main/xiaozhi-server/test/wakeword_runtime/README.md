@@ -98,15 +98,15 @@ cp tokens.txt ../models/tokens.txt
 
 ### 最终模型文件结构
 
-配置完成后，你的models目录应该包含：
+配置完成后，模型文件应放在 `wakeword_runtime/models/` 目录下（完整路径：`main/xiaozhi-server/test/wakeword_runtime/models/`）：
 
 ```
-models/
+wakeword_runtime/models/
 ├── encoder.onnx      # 编码器模型（重命名后）
-├── decoder.onnx      # 解码器模型（重命名后） 
+├── decoder.onnx      # 解码器模型（重命名后）
 ├── joiner.onnx       # 连接器模型（重命名后）
 ├── tokens.txt        # 拼音Token映射表（228行版本）
-├── keywords.txt      # 关键词配置文件（需创建）
+├── keywords.txt      # 关键词配置文件（首次启动自动生成）
 └── keywords_raw.txt  # 可选，runtime 不依赖
 ```
 
