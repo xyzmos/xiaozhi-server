@@ -35,8 +35,11 @@ def main() -> int:
 
     try:
         with app_lock:
-            app.setup()
-            app.start()
+            try:
+                app.setup()
+                app.start()
+            except Exception as e:
+                print(f"警告: 唤醒词服务启动失败({e})，测试页面仍可正常使用")
         http_server.serve_forever()
     except KeyboardInterrupt:
         print("test runtime stopped")
