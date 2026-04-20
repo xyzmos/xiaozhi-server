@@ -954,7 +954,7 @@ export default {
 
 ::v-deep .el-table__body .el-checkbox__inner {
   display: inline-block !important;
-  background: #e6edfa;
+  background: #ffffff;
 }
 
 ::v-deep .el-table thead th:not(:first-child) .cell {

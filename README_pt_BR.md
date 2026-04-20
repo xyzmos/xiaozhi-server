@@ -212,8 +212,8 @@ Endereço da Interface WebSocket: wss://2662r3426b.vicp.fun/xiaozhi/v1/
 |:---:|:---:|:---:|
 | ASR(Reconhecimento de Fala) | FunASR(Local) | 👍XunfeiStreamASR(Xunfei Streaming) |
 | LLM(Modelo de Linguagem) | glm-4-flash(Zhipu) | 👍qwen-flash(Alibaba Bailian) |
-| VLLM(Modelo de Visão) | glm-4v-flash(Zhipu) | 👍qwen2.5-vl-3b-instructh(Alibaba Bailian) |
-| TTS(Síntese de Voz) | ✅LinkeraiTTS(Lingxi streaming) | 👍HuoshanDoubleStreamTTS(Volcano Streaming) |
+| VLLM(Modelo de Visão) | glm-4v-flash(Zhipu) | 👍qwen3.5-flash(Alibaba Bailian) |
+| TTS(Síntese de Voz) | EdgeTTS(Microsoft) | 👍HuoshanDoubleStreamTTS(Volcano Streaming) |
 | Intent(Reconhecimento de Intenção) | function_call(Chamada de função) | function_call(Chamada de função) |
 | Memory(Função de Memória) | mem_local_short(Memória local de curto prazo) | mem_local_short(Memória local de curto prazo) |
 

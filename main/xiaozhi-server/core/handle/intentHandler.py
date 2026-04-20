@@ -219,8 +219,8 @@ async def process_intent_result(
 
 
 def speak_txt(conn: "ConnectionHandler", text):
-    # 记录文本
-    conn.tts_MessageText = text
+    # 记录文本到 sentence_id 映射
+    conn.tts.store_tts_text(conn.sentence_id, text)
 
     conn.tts.tts_text_queue.put(
         TTSMessageDTO(

@@ -8,7 +8,7 @@
                     :class="{ active: currentSessionId === session.sessionId }" @click="selectSession(session)">
                     <img :src="getUserAvatar(session.sessionId)" class="avatar" />
                     <div class="session-info">
-                        <div class="session-time">{{ formatTime(session.createdAt) }}</div>
+                        <div class="session-time">{{ session.title || formatTime(session.createdAt) }}</div>
                         <div class="message-count">{{ session.chatCount > 99 ? '99' : session.chatCount }}</div>
                     </div>
                 </div>
@@ -139,7 +139,7 @@ export default {
             if (this.messages[0]) {
                 result.push({
                     type: 'time',
-                    content: this.formatTime(this.messages[0].createdAt),
+                    content: this.formatTime(this.messages[this.messages.length - 1].createdAt),
                     id: `time-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
                 });
             }
