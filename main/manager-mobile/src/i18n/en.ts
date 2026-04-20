@@ -472,6 +472,7 @@ export default {
   'deviceConfig.reCheck': 'Re-check',
   'deviceConfig.connectedXiaozhiHotspot': 'Connected to xiaozhi hotspot',
   'deviceConfig.wifiNetwork': 'WiFi Network',
+  'deviceConfig.wifiPassword': 'WiFi Password',
   'deviceConfig.scanning': 'Scanning',
   'deviceConfig.cancel': 'Cancel',
   'deviceConfig.clickRefreshScan': 'Please click Refresh Scan',

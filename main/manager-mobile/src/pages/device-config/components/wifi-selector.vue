@@ -93,6 +93,16 @@ async function scanWifi() {
         wifiNetworks.value = data.networks
         console.log(`${t('deviceConfig.scanSuccess')}，发现 ${data.networks.length} ${t('deviceConfig.networks')}`)
       }
+      else if (data.aps && Array.isArray(data.aps)) {
+        // 兼容 { data: { support_5g, aps } } 格式
+        wifiNetworks.value = data.aps.map((item: any) => ({
+          ssid: item.ssid,
+          rssi: item.rssi,
+          authmode: item.authmode,
+          channel: item.channel || 0,
+        }))
+        console.log(`${t('deviceConfig.scanSuccess')}，发现 ${data.aps.length} ${t('deviceConfig.networks')}`)
+      }
       else if (Array.isArray(response.data)) {
         // 兼容旧格式
         wifiNetworks.value = response.data.map((item: any) => ({
@@ -326,7 +336,7 @@ onMounted(() => {
     <view v-if="selectedNetwork && selectedNetwork.authmode > 0" class="password-section">
       <view class="password-item">
           <text class="password-label">
-            {{ t('deviceConfig.networkPassword') }}
+            {{ t('deviceConfig.wifiPassword') }}
           </text>
           <wd-input
             v-model="password"

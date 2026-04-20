@@ -472,6 +472,7 @@ export default {
     'deviceConfig.reCheck': 'Kiểm tra lại',
     'deviceConfig.connectedXiaozhiHotspot': 'Đã kết nối với điểm phát sóng xiaozhi',
     'deviceConfig.wifiNetwork': 'Mạng WiFi',
+    'deviceConfig.wifiPassword': 'Mật khẩu WiFi',
     'deviceConfig.scanning': 'Đang quét',
     'deviceConfig.cancel': 'Hủy',
     'deviceConfig.clickRefreshScan': 'Vui lòng nhấp Làm mới quét',
