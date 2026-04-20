@@ -1109,11 +1109,12 @@ class ConnectionHandler:
                         f"工具调用统计更新: 当前轮次={current_turn}"
                     )
 
-                # 如需要大模型先处理一轮，添加相关处理后的日志情况
+                # LLM 流式阶段已播报过的文本
+                streamed_text = ""
                 if len(response_message) > 0:
-                    text_buff = "".join(response_message)
-                    self.tts.store_tts_text(current_sentence_id, text_buff)
-                    self.dialogue.put(Message(role="assistant", content=text_buff))
+                    streamed_text = "".join(response_message)
+                    self.tts.store_tts_text(current_sentence_id, streamed_text)
+                    self.dialogue.put(Message(role="assistant", content=streamed_text))
                 response_message.clear()
 
                 # 收集所有工具调用的 Future
@@ -1161,7 +1162,7 @@ class ConnectionHandler:
 
                 # 统一处理工具调用结果
                 if tool_results:
-                    self._handle_function_result(tool_results, depth=depth)
+                    self._handle_function_result(tool_results, depth=depth, streamed_text=streamed_text)
 
         # 存储对话内容
         if len(response_message) > 0:
@@ -1221,7 +1222,7 @@ class ConnectionHandler:
         result = "、".join(datas)
         return result
 
-    def _handle_function_result(self, tool_results, depth):
+    def _handle_function_result(self, tool_results, depth, streamed_text=""):
         need_llm_tools = []
 
         for result, tool_call_data in tool_results:
@@ -1229,10 +1230,15 @@ class ConnectionHandler:
                 Action.RESPONSE,
                 Action.NOTFOUND,
                 Action.ERROR,
-            ]:  # 直接回复前端
+            ]:
                 text = result.response if result.response else result.result
-                self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
-                self.tts.store_tts_text(self.sentence_id, text)
+                if streamed_text and text in streamed_text:
+                    self.logger.bind(tag=TAG).debug(
+                        f"Skipping duplicate TTS for tool {tool_call_data['name']}, already streamed"
+                    )
+                else:
+                    self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
+                    self.tts.store_tts_text(self.sentence_id, text)
                 self.dialogue.put(Message(role="assistant", content=text))
             elif result.action == Action.REQLLM:
                 # 收集需要 LLM 处理的工具
