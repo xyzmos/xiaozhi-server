@@ -187,4 +187,5 @@ public class RedisKeys {
     public static String getOtaUploadCountKey(Long username) {
         return "ota:upload:count:" + username;
     }
+
 }
