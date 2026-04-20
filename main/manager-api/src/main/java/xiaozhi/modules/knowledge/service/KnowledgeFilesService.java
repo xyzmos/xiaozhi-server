@@ -96,7 +96,7 @@ public interface KnowledgeFilesService {
         /**
          * 保存文档影子记录
          */
-        void saveDocumentShadow(String datasetId, KnowledgeFilesDTO result, String originalName, String chunkMethod,
+        boolean saveDocumentShadow(String datasetId, KnowledgeFilesDTO result, String originalName, String chunkMethod,
                         Map<String, Object> parserConfig);
 
         /**

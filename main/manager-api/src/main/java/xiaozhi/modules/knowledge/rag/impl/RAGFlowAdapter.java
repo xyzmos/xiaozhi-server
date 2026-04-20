@@ -486,7 +486,20 @@ public class RAGFlowAdapter extends KnowledgeBaseAdapter {
     @Override
     public Integer getDocumentCount(String datasetId) {
         try {
-            // [Fix] 使用列表过滤接口获取详情 (GET /datasets?id={id})
+            DatasetDTO.InfoVO info = getDatasetInfo(datasetId);
+            if (info != null && info.getDocumentCount() != null) {
+                return info.getDocumentCount().intValue();
+            }
+            return 0;
+        } catch (Exception e) {
+            log.warn("获取文档数量失败: {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    @Override
+    public DatasetDTO.InfoVO getDatasetInfo(String datasetId) {
+        try {
             Map<String, Object> params = new HashMap<>();
             params.put("id", datasetId);
             params.put("page", 1);
@@ -498,20 +511,14 @@ public class RAGFlowAdapter extends KnowledgeBaseAdapter {
             if (dataObj instanceof List) {
                 List<?> list = (List<?>) dataObj;
                 if (!list.isEmpty()) {
-                    Object firstItem = list.get(0);
-                    if (firstItem instanceof Map) {
-                        Object countObj = ((Map<?, ?>) firstItem).get("document_count");
-                        if (countObj instanceof Number) {
-                            return ((Number) countObj).intValue();
-                        }
-                    }
+                    return objectMapper.convertValue(list.get(0), DatasetDTO.InfoVO.class);
                 }
             }
-            // 降级：未找到或结构不匹配
-            return 0;
+            // RAGFlow 端不存在该数据集
+            return null;
         } catch (Exception e) {
-            log.warn("获取文档数量失败: {}", e.getMessage());
-            return 0;
+            log.warn("获取数据集信息失败: datasetId={}, error={}", datasetId, e.getMessage());
+            return null;
         }
     }
 
