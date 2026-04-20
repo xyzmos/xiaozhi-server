@@ -1114,7 +1114,7 @@ class ConnectionHandler:
                 if len(response_message) > 0:
                     streamed_text = "".join(response_message)
                     self.tts.store_tts_text(current_sentence_id, streamed_text)
-                    self.dialogue.put(Message(role="assistant", content=text_buff))
+                    self.dialogue.put(Message(role="assistant", content=streamed_text))
                 response_message.clear()
 
                 # 收集所有工具调用的 Future
@@ -1232,7 +1232,7 @@ class ConnectionHandler:
                 Action.ERROR,
             ]:
                 text = result.response if result.response else result.result
-                if streamed_text:
+                if streamed_text and text in streamed_text:
                     self.logger.bind(tag=TAG).debug(
                         f"Skipping duplicate TTS for tool {tool_call_data['name']}, already streamed"
                     )
