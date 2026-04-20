@@ -187,4 +187,11 @@ public class RedisKeys {
     public static String getOtaUploadCountKey(Long username) {
         return "ota:upload:count:" + username;
     }
+
+    /**
+     * 文档全量同步冷却标记key
+     */
+    public static String getDocumentSyncKey(String datasetId) {
+        return "knowledge:doc:sync:" + datasetId;
+    }
 }

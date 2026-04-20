@@ -120,4 +120,13 @@ public interface KnowledgeFilesService {
          * 同步所有处于 RUNNING 状态的文档 (供定时任务调用)
          */
         void syncRunningDocuments();
+
+        /**
+         * 从RAGFlow全量同步文档到本地影子表
+         * 拉取远端所有文档，与本地影子表对比，插入缺失的记录
+         *
+         * @param datasetId 数据集ID
+         * @return 新同步的文档数量
+         */
+        int syncDocumentsFromRAG(String datasetId);
 }

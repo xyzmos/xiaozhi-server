@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -74,6 +76,27 @@ public class KnowledgeFilesServiceImpl extends BaseServiceImpl<DocumentDao, Docu
         String datasetId = knowledgeFilesDTO.getDatasetId();
         if (StringUtils.isBlank(datasetId)) {
             throw new RenException(ErrorCode.RAG_DATASET_ID_AND_MODEL_ID_NOT_NULL);
+        }
+
+        // 全量对账同步: 从RAGFlow拉取远端文档，补充本地影子表缺失的记录
+        // 当本地影子表为空时，强制同步（无视冷却），避免删除后重新上传无法感知
+        String syncKey = RedisKeys.getDocumentSyncKey(datasetId);
+        boolean cooldownActive = redisUtils.get(syncKey) != null;
+        boolean localEmpty = false;
+        if (cooldownActive) {
+            Long localCount = documentDao.selectCount(
+                    new QueryWrapper<DocumentEntity>().eq("dataset_id", datasetId));
+            localEmpty = localCount == null || localCount == 0;
+        }
+        if (!cooldownActive || localEmpty) {
+            try {
+                self.syncDocumentsFromRAG(datasetId);
+                // 60秒冷却，避免每次翻页都触发远端调用（本地为空时缩短为10秒）
+                int cooldownSec = localEmpty ? 10 : 60;
+                redisUtils.set(syncKey, "1", cooldownSec);
+            } catch (Exception e) {
+                log.warn("从RAGFlow全量同步文档失败(不影响本地查询): datasetId={}, error={}", datasetId, e.getMessage());
+            }
         }
 
         // 1. 获取本地影子表数据 (MyBatis-Plus 分页)
@@ -512,13 +535,19 @@ public class KnowledgeFilesServiceImpl extends BaseServiceImpl<DocumentDao, Docu
         // 4. 原子化清理本地影子记录并同步统计数据
         self.deleteDocumentShadows(documentIds, datasetId, totalChunkDelta, totalTokenDelta);
 
-        // 5. 清理缓存
+        // 5. 清理缓存，并清除同步冷却标记以允许立即感知可能的重新上传
         try {
             String cacheKey = RedisKeys.getKnowledgeBaseCacheKey(datasetId);
             redisUtils.delete(cacheKey);
             log.info("已驱逐数据集缓存: {}", cacheKey);
         } catch (Exception e) {
             log.warn("驱逐 Redis 缓存失败: {}", e.getMessage());
+        }
+        try {
+            String syncKey = RedisKeys.getDocumentSyncKey(datasetId);
+            redisUtils.delete(syncKey);
+        } catch (Exception e) {
+            log.warn("清除同步冷却标记失败: {}", e.getMessage());
         }
 
         log.info("=== 批量文档清理完成 ===");
@@ -739,6 +768,180 @@ public class KnowledgeFilesServiceImpl extends BaseServiceImpl<DocumentDao, Docu
     }
 
     @Override
+    public int syncDocumentsFromRAG(String datasetId) {
+        log.info("=== 开始从RAGFlow全量同步文档到本地影子表: datasetId={} ===", datasetId);
+
+        // 1. 获取适配器
+        Map<String, Object> ragConfig = knowledgeBaseService.getRAGConfigByDatasetId(datasetId);
+        KnowledgeBaseAdapter adapter = KnowledgeBaseAdapterFactory.getAdapter(extractAdapterType(ragConfig), ragConfig);
+
+        // 2. 分页拉取远端所有文档
+        List<KnowledgeFilesDTO> allRemoteDocs = new ArrayList<>();
+        int pageNum = 1;
+        int pageSize = 100;
+        long totalRemote = Long.MAX_VALUE;
+
+        while ((long) (pageNum - 1) * pageSize < totalRemote) {
+            DocumentDTO.ListReq req = DocumentDTO.ListReq.builder()
+                    .page(pageNum)
+                    .pageSize(pageSize)
+                    .build();
+            PageData<KnowledgeFilesDTO> remotePage = adapter.getDocumentList(datasetId, req);
+            if (remotePage == null || remotePage.getList() == null || remotePage.getList().isEmpty()) {
+                break;
+            }
+            allRemoteDocs.addAll(remotePage.getList());
+            totalRemote = remotePage.getTotal();
+            pageNum++;
+        }
+
+        // 3. 获取本地已有文档
+        List<DocumentEntity> localDocs = documentDao.selectList(
+                new QueryWrapper<DocumentEntity>().eq("dataset_id", datasetId));
+        Set<String> localDocIds = localDocs.stream()
+                .map(DocumentEntity::getDocumentId)
+                .collect(Collectors.toSet());
+
+        // 4. 远端文档ID集合
+        Set<String> remoteDocIds = allRemoteDocs.stream()
+                .map(KnowledgeFilesDTO::getDocumentId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
+        // 5. 补充: 插入远端存在但本地缺失的文档
+        List<KnowledgeFilesDTO> newDocs = allRemoteDocs.stream()
+                .filter(doc -> doc.getDocumentId() != null && !localDocIds.contains(doc.getDocumentId()))
+                .collect(Collectors.toList());
+
+        int syncCount = 0;
+        if (!newDocs.isEmpty()) {
+            for (KnowledgeFilesDTO doc : newDocs) {
+                try {
+                    self.saveDocumentShadow(datasetId, doc, doc.getName(), doc.getChunkMethod(), doc.getParserConfig());
+                    // 同步远端已有的 token/chunk 统计
+                    Long tokenCount = doc.getTokenCount() != null ? doc.getTokenCount() : 0L;
+                    long chunkCount = doc.getChunkCount() != null ? doc.getChunkCount().longValue() : 0L;
+                    if (tokenCount > 0 || chunkCount > 0) {
+                        knowledgeBaseService.updateStatistics(datasetId, 0, chunkCount, tokenCount);
+                    }
+                    syncCount++;
+                } catch (Exception e) {
+                    log.warn("同步单个文档影子记录失败: docId={}, error={}", doc.getDocumentId(), e.getMessage());
+                }
+            }
+            log.info("从RAGFlow新增同步 {} 个文档影子记录, datasetId={}", syncCount, datasetId);
+        }
+
+        // 6. 清理: 删除远端已不存在但本地仍保留的影子记录
+        List<DocumentEntity> deletedDocs = localDocs.stream()
+                .filter(entity -> !remoteDocIds.contains(entity.getDocumentId()))
+                .collect(Collectors.toList());
+
+        if (!deletedDocs.isEmpty()) {
+            List<String> deletedDocIds = new ArrayList<>();
+            long totalChunkDelta = 0;
+            long totalTokenDelta = 0;
+
+            for (DocumentEntity entity : deletedDocs) {
+                deletedDocIds.add(entity.getDocumentId());
+                totalChunkDelta += entity.getChunkCount() != null ? entity.getChunkCount() : 0L;
+                totalTokenDelta += entity.getTokenCount() != null ? entity.getTokenCount() : 0L;
+            }
+            try {
+                self.deleteDocumentShadows(deletedDocIds, datasetId, totalChunkDelta, totalTokenDelta);
+                log.info("清理远端已删除的影子记录: {} 个, datasetId={}", deletedDocs.size(), datasetId);
+            } catch (Exception e) {
+                log.warn("清理远端已删除的影子记录失败: datasetId={}, error={}", datasetId, e.getMessage());
+            }
+        }
+
+        // 7. 更新: 远端和本地都存在但状态不一致的文档（处理RAGFlow复用documentId重传场景）
+        // 当文档在RAGFlow被删除后重新上传，RAGFlow可能复用同一个documentId，
+        // 导致本地影子记录仍保留旧的CANCEL/FAIL状态而不会被步骤5/6处理
+        Map<String, KnowledgeFilesDTO> remoteDocMap = allRemoteDocs.stream()
+                .filter(doc -> doc.getDocumentId() != null)
+                .collect(Collectors.toMap(KnowledgeFilesDTO::getDocumentId, doc -> doc, (a, b) -> b));
+
+        Map<String, DocumentEntity> localDocMap = localDocs.stream()
+                .collect(Collectors.toMap(DocumentEntity::getDocumentId, e -> e, (a, b) -> b));
+
+        int updateCount = 0;
+        for (Map.Entry<String, KnowledgeFilesDTO> entry : remoteDocMap.entrySet()) {
+            String docId = entry.getKey();
+            DocumentEntity local = localDocMap.get(docId);
+            if (local == null) {
+                continue; // 不在本地，由步骤5处理
+            }
+            KnowledgeFilesDTO remote = entry.getValue();
+
+            // 判断是否需要更新：run状态或status不同，说明远端有变化
+            boolean runChanged = remote.getRun() != null && !remote.getRun().equals(local.getRun());
+            boolean statusChanged = remote.getStatus() != null && !remote.getStatus().equals(local.getStatus());
+            boolean nameChanged = remote.getName() != null && !remote.getName().equals(local.getName());
+
+            if (runChanged || statusChanged || nameChanged) {
+                log.info("影子更新：检测到远端文档状态变化, docId={}, 本地run={}, 远端run={}, 本地status={}, 远端status={}",
+                        docId, local.getRun(), remote.getRun(), local.getStatus(), remote.getStatus());
+
+                UpdateWrapper<DocumentEntity> updateWrapper = new UpdateWrapper<DocumentEntity>()
+                        .set("run", remote.getRun())
+                        .set("status", remote.getStatus() != null ? remote.getStatus() : local.getStatus())
+                        .set("progress", remote.getProgress())
+                        .set("chunk_count", remote.getChunkCount())
+                        .set("token_count", remote.getTokenCount())
+                        .set("error", remote.getError())
+                        .set("process_duration", remote.getProcessDuration())
+                        .set("updated_at", new Date())
+                        .set("last_sync_at", new Date())
+                        .eq("document_id", docId)
+                        .eq("dataset_id", datasetId);
+
+                if (remote.getName() != null) {
+                    updateWrapper.set("name", remote.getName());
+                }
+                if (remote.getThumbnail() != null) {
+                    updateWrapper.set("thumbnail", remote.getThumbnail());
+                }
+                if (remote.getMetaFields() != null) {
+                    try {
+                        updateWrapper.set("meta_fields", objectMapper.writeValueAsString(remote.getMetaFields()));
+                    } catch (Exception e) {
+                        log.warn("同步更新元数据序列化失败: docId={}, error={}", docId, e.getMessage());
+                    }
+                }
+
+                documentDao.update(null, updateWrapper);
+
+                // 如果状态从终态(CANCEL/FAIL)变为活跃态(UNSTART/RUNNING)，需要同步token统计
+                boolean wasTerminal = "CANCEL".equals(local.getRun()) || "FAIL".equals(local.getRun());
+                boolean isActive = "RUNNING".equals(remote.getRun()) || "UNSTART".equals(remote.getRun());
+                Long remoteTokenCount = remote.getTokenCount() != null ? remote.getTokenCount() : 0L;
+                Long localTokenCount = local.getTokenCount() != null ? local.getTokenCount() : 0L;
+                long remoteChunkCount = remote.getChunkCount() != null ? remote.getChunkCount().longValue() : 0L;
+                long localChunkCount = local.getChunkCount() != null ? local.getChunkCount().longValue() : 0L;
+                if (wasTerminal && isActive) {
+                    long tokenDelta = remoteTokenCount - localTokenCount;
+                    long chunkDelta = remoteChunkCount - localChunkCount;
+                    if (tokenDelta != 0 || chunkDelta != 0) {
+                        knowledgeBaseService.updateStatistics(datasetId, 0, chunkDelta, tokenDelta);
+                        log.info("影子更新: 修正知识库统计, docId={}, chunkDelta={}, tokenDelta={}", docId, chunkDelta, tokenDelta);
+                    }
+                }
+
+                updateCount++;
+            }
+        }
+
+        if (syncCount == 0 && deletedDocs.isEmpty() && updateCount == 0) {
+            log.info("本地影子表已与RAGFlow完全同步, datasetId={}", datasetId);
+        } else {
+            log.info("同步完成: 新增={}, 清理={}, 更新={}, datasetId={}", syncCount, deletedDocs.size(), updateCount, datasetId);
+        }
+
+        return syncCount;
+    }
+
+    @Override
     public void syncRunningDocuments() {
         // 1. 查询所有 RUNNING 状态的文档
         List<DocumentEntity> runningDocs = documentDao.selectList(
@@ -755,7 +958,7 @@ public class KnowledgeFilesServiceImpl extends BaseServiceImpl<DocumentDao, Docu
 
         // 2. 按 DatasetID 分组，复用 Adapter
         Map<String, List<DocumentEntity>> groupedDocs = runningDocs.stream()
-                .collect(java.util.stream.Collectors.groupingBy(DocumentEntity::getDatasetId));
+                .collect(Collectors.groupingBy(DocumentEntity::getDatasetId));
 
         groupedDocs.forEach((datasetId, docs) -> {
             KnowledgeBaseAdapter adapter = null;
