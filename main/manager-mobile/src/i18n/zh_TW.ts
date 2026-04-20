@@ -486,6 +486,7 @@ export default {
   'deviceConfig.wifiConfigFailed': 'WiFi配網失敗',
   'deviceConfig.pleaseCheckNetworkConnection': '請檢查網絡連接',
   'deviceConfig.startWifiConfigButton': '開始配網',
+  'deviceConfig.configuring': '配網中...',
   'deviceConfig.wifiConfigInstructions': 'WiFi配網說明',
   'deviceConfig.phoneConnectXiaozhiHotspot': '手機連接xiaozhi熱點',
   'deviceConfig.selectTargetWifiNetwork': '選擇目標WiFi網絡',

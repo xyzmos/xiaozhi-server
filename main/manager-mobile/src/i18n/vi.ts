@@ -486,6 +486,7 @@ export default {
     'deviceConfig.wifiConfigFailed': 'Cấu hình WiFi thất bại',
     'deviceConfig.pleaseCheckNetworkConnection': 'Vui lòng kiểm tra kết nối mạng',
     'deviceConfig.startWifiConfigButton': 'Bắt đầu cấu hình',
+    'deviceConfig.configuring': 'Đang cấu hình...',
     'deviceConfig.wifiConfigInstructions': 'Hướng dẫn cấu hình WiFi',
     'deviceConfig.phoneConnectXiaozhiHotspot': 'Điện thoại kết nối với điểm phát sóng xiaozhi',
     'deviceConfig.selectTargetWifiNetwork': 'Chọn mạng WiFi mục tiêu',

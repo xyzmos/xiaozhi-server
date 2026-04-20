@@ -486,6 +486,7 @@ export default {
   'deviceConfig.wifiConfigFailed': 'WiFi configuration failed',
   'deviceConfig.pleaseCheckNetworkConnection': 'Please check network connection',
   'deviceConfig.startWifiConfigButton': 'Start Configuration',
+  'deviceConfig.configuring': 'Configuring...',
   'deviceConfig.wifiConfigInstructions': 'WiFi Configuration Instructions',
   'deviceConfig.phoneConnectXiaozhiHotspot': 'Phone connect to xiaozhi hotspot',
   'deviceConfig.selectTargetWifiNetwork': 'Select target WiFi network',
