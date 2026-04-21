@@ -123,6 +123,36 @@ class Dialogue:
 
         return removed_count
 
+    def _ensure_tool_calls_complete(self, messages: List[Message]) -> List[Message]:
+        """
+        确保所有 tool_calls 都有对应的 tool 响应
+        修复被打断导致的悬空 tool_calls，防止大模型 API 报 400 错误
+        """
+        pending_tool_calls = set()
+        result = []
+
+        for msg in messages:
+            result.append(msg)
+
+            if msg.role == "assistant" and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    tc_id = tc.get("id") if isinstance(tc, dict) else getattr(tc, "id", None)
+                    if tc_id:
+                        pending_tool_calls.add(tc_id)
+
+            elif msg.role == "tool" and msg.tool_call_id:
+                pending_tool_calls.discard(msg.tool_call_id)
+
+        for missing_id in pending_tool_calls:
+            dummy_tool_msg = Message(
+                role="tool",
+                content='{"status": "interrupted", "message": "动作已取消/被打断"}',
+                tool_call_id=missing_id
+            )
+            result.append(dummy_tool_msg)
+
+        return result
+
     def get_llm_dialogue_with_memory(
             self, memory_str: str = None, voiceprint_config: dict = None
     ) -> List[Dict[str, str]]:
@@ -175,8 +205,9 @@ class Dialogue:
             dialogue.append({"role": "system", "content": enhanced_system_prompt})
 
         # 添加用户和助手的对话
-        for m in self.dialogue:
-            if m.role != "system":  # 跳过原始的系统消息
-                self.getMessages(m, dialogue)
+        non_system_messages = [m for m in self.dialogue if m.role != "system"]
+        complete_messages = self._ensure_tool_calls_complete(non_system_messages)
+        for m in complete_messages:
+            self.getMessages(m, dialogue)
 
         return dialogue
