@@ -165,49 +165,63 @@ class Dialogue:
         )
 
         if system_message:
-            # 基础系统提示
-            enhanced_system_prompt = system_message.content
-            # 替换时间占位符
-            enhanced_system_prompt = enhanced_system_prompt.replace(
-                "{{current_time}}", datetime.now().strftime("%H:%M")
-            )
+            # 以 <context> 为分界点，拆分静态 system prompt 和动态上下文
+            # 静态部分（规则、身份等）保持不变，可命中前缀缓存
+            # 动态部分（时间、天气、记忆等）放到对话末尾的 user 消息中
+            full_prompt = system_message.content
+            context_match = re.search(r"<context>", full_prompt)
+            if context_match:
+                static_part = full_prompt[:context_match.start()]
+                dynamic_part = full_prompt[context_match.start():]
+            else:
+                static_part = full_prompt
+                dynamic_part = ""
 
-            # 添加说话人个性化描述
-            try:
-                speakers = voiceprint_config.get("speakers", [])
-                if speakers:
-                    enhanced_system_prompt += "\n\n<speakers_info>"
-                    for speaker_str in speakers:
-                        try:
-                            parts = speaker_str.split(",", 2)
-                            if len(parts) >= 2:
-                                name = parts[1].strip()
-                                # 如果描述为空，则为""
-                                description = (
-                                    parts[2].strip() if len(parts) >= 3 else ""
-                                )
-                                enhanced_system_prompt += f"\n- {name}：{description}"
-                        except:
-                            pass
-                    enhanced_system_prompt += "\n\n</speakers_info>"
-            except:
-                # 配置读取失败时忽略错误，不影响其他功能
-                pass
-
-            # 使用正则表达式匹配 <memory> 标签，不管中间有什么内容
-            if memory_str is not None:
-                enhanced_system_prompt = re.sub(
-                    r"<memory>.*?</memory>",
-                    f"<memory>\n{memory_str}\n</memory>",
-                    enhanced_system_prompt,
-                    flags=re.DOTALL,
-                )
-            dialogue.append({"role": "system", "content": enhanced_system_prompt})
+            # 静态 system prompt：不含任何动态内容，前缀缓存可命中
+            dialogue.append({"role": "system", "content": static_part})
 
         # 添加用户和助手的对话
         non_system_messages = [m for m in self.dialogue if m.role != "system"]
         complete_messages = self._ensure_tool_calls_complete(non_system_messages)
         for m in complete_messages:
             self.getMessages(m, dialogue)
+
+        # 动态上下文：时间、记忆、说话人信息，放到对话末尾的 user 消息中
+        if system_message and dynamic_part:
+            # 替换时间占位符
+            dynamic_part = dynamic_part.replace(
+                "{{current_time}}", datetime.now().strftime("%H:%M")
+            )
+
+            # 填充记忆
+            if memory_str is not None:
+                dynamic_part = re.sub(
+                    r"<memory>.*?</memory>",
+                    f"<memory>\n{memory_str}\n</memory>",
+                    dynamic_part,
+                    flags=re.DOTALL,
+                )
+
+            # 追加说话人信息
+            try:
+                speakers = voiceprint_config.get("speakers", [])
+                if speakers:
+                    dynamic_part += "\n<speakers_info>"
+                    for speaker_str in speakers:
+                        try:
+                            parts = speaker_str.split(",", 2)
+                            if len(parts) >= 2:
+                                name = parts[1].strip()
+                                description = (
+                                    parts[2].strip() if len(parts) >= 3 else ""
+                                )
+                                dynamic_part += f"\n- {name}：{description}"
+                        except:
+                            pass
+                    dynamic_part += "\n</speakers_info>"
+            except:
+                pass
+
+            dialogue.append({"role": "user", "content": dynamic_part})
 
         return dialogue
