@@ -34,7 +34,8 @@ export class WebSocketHandler {
                 device_mac: config.deviceMac,
                 token: config.token,
                 features: {
-                    mcp: true
+                    mcp: true,
+                    emoji: config.emojiEnabled
                 }
             };
 

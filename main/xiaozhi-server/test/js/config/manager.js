@@ -66,6 +66,12 @@ export function loadConfig() {
     } else if (wakewordListInput) {
         wakewordListInput.value = DEFAULT_WAKE_WORDS;
     }
+
+    const emojiEnabledInput = document.getElementById('emojiEnabled');
+    const savedEmojiEnabled = localStorage.getItem('xz_tester_emojiEnabled');
+    if (savedEmojiEnabled !== null && emojiEnabledInput) {
+        emojiEnabledInput.value = savedEmojiEnabled;
+    }
 }
 
 // 保存配置
@@ -80,6 +86,10 @@ export function saveConfig() {
     localStorage.setItem('xz_tester_deviceMac', deviceMacInput.value);
     localStorage.setItem('xz_tester_deviceName', deviceNameInput.value);
     localStorage.setItem('xz_tester_clientId', clientIdInput.value);
+    const emojiEnabledInput = document.getElementById('emojiEnabled');
+    if (emojiEnabledInput) {
+        localStorage.setItem('xz_tester_emojiEnabled', emojiEnabledInput.value);
+    }
     if (wakewordEnabledInput) {
         localStorage.setItem('xz_tester_wakewordEnabled', wakewordEnabledInput.value);
     }
@@ -97,12 +107,14 @@ export function getConfig() {
     const deviceMac = document.getElementById('deviceMac')?.value.trim() || '';
     const deviceName = document.getElementById('deviceName')?.value.trim() || '';
     const clientId = document.getElementById('clientId')?.value.trim() || '';
+    const emojiEnabled = document.getElementById('emojiEnabled')?.value !== 'false';
 
     return {
         deviceId: deviceMac,  // 使用MAC地址作为deviceId
         deviceName,
         deviceMac,
-        clientId
+        clientId,
+        emojiEnabled
     };
 }
 
