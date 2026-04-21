@@ -99,6 +99,7 @@ public class ConfigServiceImpl implements ConfigService {
                 null,
                 null,
                 null,
+                null,
                 result,
                 isCache);
 
@@ -113,7 +114,7 @@ public class ConfigServiceImpl implements ConfigService {
         // 检查是否为管理控制台请求
         String redisKey = RedisKeys.getTmpRegisterMacKey(macAddress);
         Object isAdminRequest = redisUtils.get(redisKey);
-        
+
         if (isAdminRequest != null && "true".equals(isAdminRequest)) {
             // 管理控制台请求，返回getConfig的结果
             redisUtils.delete(redisKey); // 使用后清理
@@ -203,10 +204,11 @@ public class ConfigServiceImpl implements ConfigService {
             mcpEndpoint = mcpEndpoint.replace("/mcp/", "/call/");
             result.put("mcp_endpoint", mcpEndpoint);
         }
-        
+
         // 获取上下文源配置
         AgentContextProviderEntity contextProviderEntity = agentContextProviderService.getByAgentId(agent.getId());
-        if (contextProviderEntity != null && contextProviderEntity.getContextProviders() != null && !contextProviderEntity.getContextProviders().isEmpty()) {
+        if (contextProviderEntity != null && contextProviderEntity.getContextProviders() != null
+                && !contextProviderEntity.getContextProviders().isEmpty()) {
             result.put("context_providers", contextProviderEntity.getContextProviders());
         }
 
@@ -229,6 +231,7 @@ public class ConfigServiceImpl implements ConfigService {
                 agent.getAsrModelId(),
                 agent.getLlmModelId(),
                 agent.getVllmModelId(),
+                agent.getSlmModelId(),
                 agent.getTtsModelId(),
                 agent.getMemModelId(),
                 agent.getIntentModelId(),
@@ -410,6 +413,7 @@ public class ConfigServiceImpl implements ConfigService {
             String asrModelId,
             String llmModelId,
             String vllmModelId,
+            String slmModelId,
             String ttsModelId,
             String memModelId,
             String intentModelId,
@@ -418,9 +422,9 @@ public class ConfigServiceImpl implements ConfigService {
             boolean isCache) {
         Map<String, String> selectedModule = new HashMap<>();
 
-        String[] modelTypes = { "VAD", "ASR", "TTS", "Memory", "Intent", "LLM", "VLLM", "RAG" };
+        String[] modelTypes = { "VAD", "ASR", "TTS", "Memory", "Intent", "LLM", "VLLM", "SLM", "RAG" };
         String[] modelIds = { vadModelId, asrModelId, ttsModelId, memModelId, intentModelId, llmModelId, vllmModelId,
-                ragModelId };
+                slmModelId, ragModelId };
         String intentLLMModelId = null;
         String memLocalShortLLMModelId = null;
 
@@ -456,7 +460,7 @@ public class ConfigServiceImpl implements ConfigService {
                     // 火山引擎声音克隆需要替换resource_id
                     Map<String, Object> map = (Map<String, Object>) model.getConfigJson();
                     if (Constant.VOICE_CLONE_HUOSHAN_DOUBLE_STREAM.equals(map.get("type"))) {
-                        // 如果voice是”S_“开头的，使用seed-icl-1.0
+                        // 如果voice是”S_”开头的，使用seed-icl-1.0
                         if (voice != null && voice.startsWith("S_")) {
                             map.put("resource_id", "seed-icl-1.0");
                         }
@@ -474,7 +478,7 @@ public class ConfigServiceImpl implements ConfigService {
                     if (map.get("functions") != null) {
                         String functionStr = (String) map.get("functions");
                         if (StringUtils.isNotBlank(functionStr)) {
-                            String[] functions = functionStr.split("\\;");
+                            String[] functions = functionStr.split(";");
                             map.put("functions", functions);
                         }
                     }
@@ -505,6 +509,15 @@ public class ConfigServiceImpl implements ConfigService {
                             ModelConfigEntity memLocalShortLLM = modelConfigService
                                     .getModelByIdFromCache(memLocalShortLLMModelId);
                             typeConfig.put(memLocalShortLLM.getId(), memLocalShortLLM.getConfigJson());
+                        }
+                    }
+                    // LLM也返回所选的SLM，如果同名id则不重复显示
+                    if (StringUtils.isNotBlank(slmModelId) && !slmModelId.equals(llmModelId)) {
+                        if (!typeConfig.containsKey(slmModelId)) {
+                            ModelConfigEntity slmModel = modelConfigService.getModelByIdFromCache(slmModelId);
+                            if (slmModel != null && slmModel.getConfigJson() != null) {
+                                typeConfig.put(slmModel.getId(), slmModel.getConfigJson());
+                            }
                         }
                     }
                 }
