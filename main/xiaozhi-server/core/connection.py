@@ -148,8 +148,6 @@ class ConnectionHandler:
         self.memory = _memory
         self.intent = _intent
 
-        self.is_exiting = False  # 标记是否正在执行退出流程
-
         # 为每个连接单独管理声纹识别
         self.voiceprint_provider = None
 
@@ -350,10 +348,6 @@ class ConnectionHandler:
 
     async def _route_message(self, message):
         """消息路由"""
-        # 退出状态丢弃所有消息
-        if self.is_exiting:
-           return
-
         # 检查是否已经获取到真实的绑定状态
         if not self.bind_completed_event.is_set():
             # 还没有获取到真实状态，等待直到获取到真实状态或超时

@@ -84,12 +84,6 @@ class ASRProviderBase(ABC):
     async def handle_voice_stop(self, conn: "ConnectionHandler", asr_audio_task: List[bytes]):
         """并行处理ASR和声纹识别"""
         try:
-            # 如果处于退出流程中，直接关闭连接，不处理新消息
-            if conn.close_after_chat or conn.is_exiting:
-                logger.bind(tag=TAG).info("退出流程中收到新消息，直接关闭连接")
-                await conn.close()
-                return
-
             total_start_time = time.monotonic()
 
             # 准备音频数据

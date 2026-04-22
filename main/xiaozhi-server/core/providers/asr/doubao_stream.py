@@ -26,6 +26,7 @@ class ASRProvider(ASRProviderBase):
         self.asr_ws = None
         self.forward_task = None
         self.is_processing = False  # 添加处理状态标志
+        self._is_stopping = False  # 添加停止标志，防止竞态条件
 
         # 配置参数
         self.appid = str(config.get("appid"))
@@ -148,7 +149,7 @@ class ASRProvider(ASRProviderBase):
                 return
 
         # 发送当前音频数据
-        if self.asr_ws and self.is_processing:
+        if self.asr_ws and self.is_processing and not self._is_stopping:
             try:
                 pcm_frame = self.decoder.decode(audio, 960)
                 payload = gzip.compress(pcm_frame)
@@ -256,6 +257,7 @@ class ASRProvider(ASRProviderBase):
                 await self.asr_ws.close()
                 self.asr_ws = None
             self.is_processing = False
+            self._is_stopping = False
             # 重置所有音频相关状态
             conn.reset_audio_states()
 
@@ -264,9 +266,11 @@ class ASRProvider(ASRProviderBase):
             asyncio.create_task(self.asr_ws.close())
             self.asr_ws = None
         self.is_processing = False
+        self._is_stopping = False
 
     async def _send_stop_request(self):
         """发送最后一个音频帧以通知服务器结束"""
+        self._is_stopping = True  # 先标记为停止状态，阻止后续音频发送
         if self.asr_ws:
             try:
                 # 发送结束标记的音频帧（gzip压缩的空数据）
