@@ -10,6 +10,7 @@ import user from './module/user.js'
 import voiceClone from './module/voiceClone.js'
 import voiceResource from './module/voiceResource.js'
 import knowledgeBase from './module/knowledgeBase.js'
+import correctWord from './module/correctWord.js'
 
 
 
@@ -41,5 +42,6 @@ export default {
     dict,
     voiceResource,
     voiceClone,
-    knowledgeBase
+    knowledgeBase,
+    correctWord
   }
