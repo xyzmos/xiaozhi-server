@@ -385,6 +385,7 @@ export default {
   'replacementDialog.invalidOriginalChar': 'Dòng {line} từ gốc chứa ký tự đặc biệt',
   'replacementDialog.invalidReplacementChar': 'Dòng {line} từ thay thế chứa ký tự đặc biệt',
   'replacementDialog.readFileError': 'Không thể đọc tệp',
+  'replacementDialog.maxWordCountExceeded': 'Số lượng từ thay thế không thể vượt quá {max}',
 
   // Trang quản lý từ thay thế
   'replacementWordManagement.getListFailed': 'Không thể lấy danh sách',

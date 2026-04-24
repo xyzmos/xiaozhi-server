@@ -385,6 +385,7 @@ export default {
   'replacementDialog.invalidOriginalChar': 'Line {line} original word contains special characters',
   'replacementDialog.invalidReplacementChar': 'Line {line} replacement word contains special characters',
   'replacementDialog.readFileError': 'Failed to read file',
+  'replacementDialog.maxWordCountExceeded': 'Replacement word count cannot exceed {max}',
 
   // Replacement Word Management page text
   'replacementWordManagement.getListFailed': 'Failed to get list',

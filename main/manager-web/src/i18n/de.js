@@ -385,6 +385,7 @@ export default {
   'replacementDialog.invalidOriginalChar': 'Zeile {line} Originalwort enthält Sonderzeichen',
   'replacementDialog.invalidReplacementChar': 'Zeile {line} Ersetzungswort enthält Sonderzeichen',
   'replacementDialog.readFileError': 'Datei konnte nicht gelesen werden',
+  'replacementDialog.maxWordCountExceeded': 'Die Anzahl der Ersetzungswörter darf {max} nicht überschreiten',
 
   // Ersetzungswortverwaltung Seite Text
   'replacementWordManagement.getListFailed': 'Liste konnte nicht abgerufen werden',

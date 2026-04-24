@@ -385,6 +385,7 @@ export default {
   'replacementDialog.invalidOriginalChar': '第{line}行待替換詞包含特殊符號',
   'replacementDialog.invalidReplacementChar': '第{line}行替換詞包含特殊符號',
   'replacementDialog.readFileError': '讀取檔案失敗',
+  'replacementDialog.maxWordCountExceeded': '替換詞數量不能超過 {max} 個',
 
   // 替換詞管理頁面提示文本
   'replacementWordManagement.getListFailed': '獲取列表失敗',

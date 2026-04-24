@@ -86,11 +86,9 @@ export default {
                 RequestService.clearRequestTime()
                 callback(res)
             })
-            .networkFail((err) => {
-                console.error('更新替换词文件失败:', err)
-                RequestService.reAjaxFun(() => {
-                    this.updateFile(data, callback)
-                })
+            .fail((err) => {
+              RequestService.clearRequestTime()
+              callback(err)
             }).send()
     },
 

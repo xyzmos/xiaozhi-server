@@ -49,7 +49,9 @@
                   </div>
                 </el-button>
               </el-upload>
-              <span class="word-count">{{ wordCount }}{{ $t('replacementDialog.wordCountUnit') }}</span>
+              <span class="word-count" :class="{ 'over-limit': isOverLimit }">
+                {{ wordCountText }}{{ $t('replacementDialog.wordCountUnit') }}
+              </span>
             </div>
           </div>
         </el-form-item>
@@ -88,12 +90,22 @@ export default {
     }
   },
   data() {
+    const MAX_WORD_COUNT = 4000;
+
     const validateContent = (rule, value, callback) => {
       if (!value || !value.trim()) {
         callback(new Error(this.$t('replacementDialog.requiredContent')));
         return;
       }
+
       const lines = this.getValidLines(value);
+      const lineCount = lines.length;
+
+      if (lineCount > MAX_WORD_COUNT) {
+        callback(new Error(this.$t('replacementDialog.maxWordCountExceeded', { max: MAX_WORD_COUNT })));
+        return;
+      }
+
       for (let i = 0; i < lines.length; i++) {
         const pipeCount = (lines[i].match(/\|/g) || []).length;
         if (pipeCount !== 1) {
@@ -130,6 +142,7 @@ export default {
         fileName: '',
         content: ''
       },
+      maxWordCount: MAX_WORD_COUNT,
       rules: {
         fileName: [
           { required: true, message: this.$t('replacementDialog.requiredFileName'), trigger: "blur" }
@@ -143,14 +156,22 @@ export default {
   computed: {
     wordCount() {
       if (!this.localForm.content) return 0;
-      const contentStr = Array.isArray(this.localForm.content) 
-        ? this.localForm.content.join('\n') 
+      const contentStr = Array.isArray(this.localForm.content)
+        ? this.localForm.content.join('\n')
         : this.localForm.content;
       if (!contentStr.trim()) {
         return 0;
       }
       const lines = this.getValidLines();
       return lines.filter(line => line.includes('|')).length;
+    },
+
+    isOverLimit() {
+      return this.wordCount > this.maxWordCount;
+    },
+
+    wordCountText() {
+      return `${this.wordCount} / ${this.maxWordCount}`;
     }
   },
   methods: {
@@ -170,7 +191,7 @@ export default {
 
     handleFileChange(file) {
       if (!file) return;
-      
+
       const rawFile = file.raw;
       if (!rawFile) return;
 
@@ -178,6 +199,14 @@ export default {
       reader.onload = (e) => {
         const content = e.target.result;
         this.localForm.content = content;
+
+        const lines = this.getValidLines(content);
+        if (lines.length > this.maxWordCount) {
+          this.$message.warning(
+            this.$t('replacementDialog.maxWordCountExceeded', { max: this.maxWordCount })
+          );
+        }
+
         this.$nextTick(() => {
           if (this.$refs.form) {
             this.$refs.form.clearValidate('content');
@@ -193,6 +222,13 @@ export default {
     submit() {
       this.$refs.form.validate((valid) => {
         if (valid) {
+          if (this.isOverLimit) {
+            this.$message.error(
+              this.$t('replacementDialog.maxWordCountExceeded', { max: this.maxWordCount })
+            );
+            return;
+          }
+
           const submitData = {
             id: this.localForm.id,
             fileName: this.localForm.fileName,
@@ -428,6 +464,12 @@ export default {
       font-size: 13px;
       color: #64748b;
       font-weight: 500;
+      transition: color 0.3s ease;
+
+      &.over-limit {
+        color: #ef4444;
+        font-weight: 600;
+      }
     }
   }
 

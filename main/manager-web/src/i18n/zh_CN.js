@@ -383,6 +383,7 @@ export default {
   'replacementDialog.invalidOriginalChar': '第{line}行待替换词包含特殊符号',
   'replacementDialog.invalidReplacementChar': '第{line}行替换词包含特殊符号',
   'replacementDialog.readFileError': '读取文件失败',
+  'replacementDialog.maxWordCountExceeded': '替换词数量不能超过 {max} 个',
 
   // 替换词管理页面提示文本
   'replacementWordManagement.getListFailed': '获取列表失败',
