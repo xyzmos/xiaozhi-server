@@ -295,6 +295,8 @@ class TTSProvider(TTSProviderBase):
                 logger.bind(tag=TAG).warning(f"WebSocket连接不存在，终止发送文本")
                 return
             filtered_text = MarkdownCleaner.clean_markdown(text)
+            if self._correct_words_pattern:
+                filtered_text = self._correct_words_pattern.sub(lambda m: self.correct_words[m.group(0)], filtered_text)
             if filtered_text:
                 run_request = {
                     "header": {
@@ -564,6 +566,8 @@ class TTSProvider(TTSProviderBase):
 
                     # 发送文本合成请求
                     filtered_text = MarkdownCleaner.clean_markdown(text)
+                    if self._correct_words_pattern:
+                        filtered_text = self._correct_words_pattern.sub(lambda m: self.correct_words[m.group(0)], filtered_text)
                     run_request = {
                         "header": {
                             "message_id": uuid.uuid4().hex,
