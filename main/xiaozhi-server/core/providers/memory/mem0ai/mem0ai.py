@@ -38,7 +38,13 @@ class MemoryProvider(MemoryProviderBase):
                     if message.role == "system":
                         continue
 
+                    if message.role == "tool":
+                        continue
+
                     content = message.content
+
+                    if content is None:
+                        continue
 
                     # Extract content from JSON format if present (for ASR with emotion/language tags)
                     # Same logic as in query_memory method
