@@ -508,6 +508,8 @@ class ConnectionHandler:
             self._init_report_threads()
             """更新系统提示词"""
             self._init_prompt_enhancement()
+            """注入工具调用few-shot示例（仅function_call模式）"""
+            self._inject_tool_call_fewshot()
 
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"实例化组件失败: {e}")
@@ -522,6 +524,82 @@ class ConnectionHandler:
         if enhanced_prompt:
             self.change_system_prompt(enhanced_prompt)
             self.logger.bind(tag=TAG).debug("系统提示词已增强更新")
+
+    def _inject_tool_call_fewshot(self):
+        """注入工具调用 few-shot 示例到对话历史，帮助模型建立正确的工具调用三段式模式。
+        参考 Action.RECORD 的 assistant(tool_calls) → tool(result) → assistant(response) 模式，
+        让模型从第一轮对话就能看到正确的工具调用行为，避免上下文污染导致工具调用退化。
+        """
+        if self.intent_type != "function_call":
+            return
+        if not hasattr(self, "func_handler") or self.func_handler is None:
+            return
+
+        tools = self.func_handler.get_functions()
+        if not tools:
+            return
+
+        # 根据可用工具动态构建 few-shot 示例
+        tool_names = {t.get("function", {}).get("name") for t in tools}
+
+        if "handle_exit_intent" in tool_names:
+            tc_id = "fewshot_exit_001"
+            self.dialogue.put(Message(role="user", content="拜拜", is_temporary=True))
+            self.dialogue.put(Message(
+                role="assistant",
+                tool_calls=[{
+                    "id": tc_id,
+                    "function": {"arguments": '{"say_goodbye": "再见，下次再聊~"}', "name": "handle_exit_intent"},
+                    "type": "function", "index": 0,
+                }],
+                is_temporary=True,
+            ))
+            self.dialogue.put(Message(
+                role="tool", tool_call_id=tc_id,
+                content="退出意图已处理", is_temporary=True,
+            ))
+            self.dialogue.put(Message(
+                role="assistant", content="再见，下次再聊~", is_temporary=True,
+            ))
+
+        if "play_music" in tool_names:
+            tc_id = "fewshot_music_001"
+            self.dialogue.put(Message(role="user", content="放首歌", is_temporary=True))
+            self.dialogue.put(Message(
+                role="assistant",
+                tool_calls=[{
+                    "id": tc_id,
+                    "function": {"arguments": '{"song_name": "random"}', "name": "play_music"},
+                    "type": "function", "index": 0,
+                }],
+                is_temporary=True,
+            ))
+            self.dialogue.put(Message(
+                role="tool", tool_call_id=tc_id,
+                content="正在为您播放音乐", is_temporary=True,
+            ))
+            self.dialogue.put(Message(
+                role="assistant", content="好嘞，给你安排上~", is_temporary=True,
+            ))
+
+        # 负向示例：用户请求普通对话内容时，直接回答，不调用任何工具
+        # 帮助弱模型建立"该调才调、不该调不调"的判断能力
+        # 注意：示例回复不能包含具体的创作内容（故事、诗歌等），
+        # 否则弱模型会直接复述示例内容，而无法泛化出正确的行为模式
+        self.dialogue.put(Message(role="user", content="给我讲个故事吧", is_temporary=True))
+        self.dialogue.put(Message(
+            role="assistant",
+            content="好呀，你想听什么类型的呀？童话、冒险还是搞笑的？选一个我给你开讲~",
+            is_temporary=True,
+        ))
+        self.dialogue.put(Message(role="user", content="你知道为什么天空是蓝色的吗", is_temporary=True))
+        self.dialogue.put(Message(
+            role="assistant",
+            content="天空看起来是蓝色，是因为阳光穿过大气层的时候，蓝色光波长短，被空气分子散射得最厉害，所以我们抬头一看就是满眼蓝色啦。",
+            is_temporary=True,
+        ))
+
+        self.logger.bind(tag=TAG).debug("已注入工具调用 few-shot 示例")
 
     def _init_report_threads(self):
         """初始化ASR和TTS上报线程"""
