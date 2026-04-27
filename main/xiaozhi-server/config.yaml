@@ -396,7 +396,28 @@ ASR:
     type: doubao_stream
     appid: 你的火山引擎语音合成服务appid
     access_token: 你的火山引擎语音合成服务access_token
-    cluster: volcengine_input_common
+    # 资源ID：小时版 volc.bigasr.sauc.duration，并发版 volc.bigasr.sauc.concurrent
+    resource_id: volc.bigasr.sauc.duration
+    # 热词、替换词使用流程：https://www.volcengine.com/docs/6561/155738
+    boosting_table_name: （选填）你的热词文件名称
+    correct_table_name: （选填）你的替换词文件名称
+    # 是否开启多语种识别模式
+    enable_multilingual: False
+    # 多语种识别当该键为空时，该模型支持中英文、上海话、闽南语，四川、陕西、粤语识别。当将其设置为特定键时，它可以识别指定语言。
+    # 详细语言列表参考 https://www.volcengine.com/docs/6561/1354869
+    # language: zh-cn
+    # 静音判定时长(ms)，默认200ms
+    end_window_size: 200
+    output_dir: tmp/
+  DoubaoStreamASRV2:
+    # 豆包语音识别模型2.0（基于火山引擎seed-asr）
+    # 开通地址：https://console.volcengine.com/speech/service/10038
+    # 价格更为便宜，建议在高并发场景下使用
+    type: doubao_stream
+    appid: 你的火山引擎语音合成服务appid
+    access_token: 你的火山引擎语音合成服务access_token
+    # 资源ID：小时版 volc.seedasr.sauc.duration，并发版 volc.seedasr.sauc.concurrent
+    resource_id: volc.seedasr.sauc.duration
     # 热词、替换词使用流程：https://www.volcengine.com/docs/6561/155738
     boosting_table_name: （选填）你的热词文件名称
     correct_table_name: （选填）你的替换词文件名称
@@ -795,6 +816,31 @@ TTS:
     #       mix_factor: 0.3
     #     - source_speaker: zh_male_ahu_conversation_wvae_bigtts
     #       mix_factor: 0.4
+    # language: "中文"  # 指定输出语种,如:中文、英语、日语、韩语等,请根据所选音色支持的语言进行设置,不填则默认为中文
+  #豆包语音合成模型2.0，支持双向流式tts（基于seed-tts-2.0资源）
+  HuoshanDoubleStreamTTSV2:
+    type: huoshan_double_stream
+    # 访问 https://console.volcengine.com/speech/service/10035 开通语音合成大模型，购买音色
+    # 在页面底部获取appid和access_token
+    # 资源ID固定为：seed-tts-2.0（豆包语音合成模型2.0）
+    # 如果是机智云，把接口地址换成wss://bytedance.gizwitsapi.com/api/v3/tts/bidirection
+    # 机智云不需要天填 appid
+    ws_url: wss://openspeech.bytedance.com/api/v3/tts/bidirection
+    appid: 你的火山引擎语音合成服务appid
+    access_token: 你的火山引擎语音合成服务access_token
+    resource_id: seed-tts-2.0
+    speaker: zh_female_xiaohe_uranus_bigtts
+    # 开启WebSocket连接复用，默认复用（注意：复用后设备处于聆听状态时空闲链接会占并发数）
+    enable_ws_reuse: True
+    # 相关参数文档：https://www.volcengine.com/docs/6561/1329505
+    # 音频输出配置（audio_params）- 用户可自定义添加火山引擎支持的任何音频参数
+    audio_params:
+      speech_rate: 0  # 语速(-50~100)
+      loudness_rate: 0  # 音量(-50~100)
+    # 高级文本处理配置（additions）- 用户可自定义添加火山引擎支持的任何高级参数
+    additions:
+      post_process:
+        pitch: 0  # 音高(-12~12)
     # language: "中文"  # 指定输出语种,如:中文、英语、日语、韩语等,请根据所选音色支持的语言进行设置,不填则默认为中文
   CosyVoiceSiliconflow:
     type: siliconflow

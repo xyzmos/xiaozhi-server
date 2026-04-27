@@ -26,11 +26,14 @@ class ASRProvider(ASRProviderBase):
         self.asr_ws = None
         self.forward_task = None
         self.is_processing = False  # 添加处理状态标志
+        self._is_stopping = False  # 添加停止标志，防止竞态条件
 
         # 配置参数
         self.appid = str(config.get("appid"))
-        self.cluster = config.get("cluster")
         self.access_token = config.get("access_token")
+        # 资源ID，用于区分不同的ASR模型（默认1.0模型小时版，v2版本使用seed-asr）
+        self.resource_id = config.get("resource_id", "volc.bigasr.sauc.duration")
+
         self.boosting_table_name = config.get("boosting_table_name", "")
         self.correct_table_name = config.get("correct_table_name", "")
         self.output_dir = config.get("output_dir", "tmp/")
@@ -44,7 +47,7 @@ class ASRProvider(ASRProviderBase):
         if self.enable_multilingual:
             self.ws_url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream"
         else:
-            self.ws_url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel"
+            self.ws_url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async"
         self.uid = config.get("uid", "streaming_asr_service")
         self.workflow = config.get(
             "workflow", "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate"
@@ -146,7 +149,7 @@ class ASRProvider(ASRProviderBase):
                 return
 
         # 发送当前音频数据
-        if self.asr_ws and self.is_processing:
+        if self.asr_ws and self.is_processing and not self._is_stopping:
             try:
                 pcm_frame = self.decoder.decode(audio, 960)
                 payload = gzip.compress(pcm_frame)
@@ -254,6 +257,7 @@ class ASRProvider(ASRProviderBase):
                 await self.asr_ws.close()
                 self.asr_ws = None
             self.is_processing = False
+            self._is_stopping = False
             # 重置所有音频相关状态
             conn.reset_audio_states()
 
@@ -262,9 +266,11 @@ class ASRProvider(ASRProviderBase):
             asyncio.create_task(self.asr_ws.close())
             self.asr_ws = None
         self.is_processing = False
+        self._is_stopping = False
 
     async def _send_stop_request(self):
         """发送最后一个音频帧以通知服务器结束"""
+        self._is_stopping = True  # 先标记为停止状态，阻止后续音频发送
         if self.asr_ws:
             try:
                 # 发送结束标记的音频帧（gzip压缩的空数据）
@@ -283,7 +289,6 @@ class ASRProvider(ASRProviderBase):
         req = {
             "app": {
                 "appid": self.appid,
-                "cluster": self.cluster,
                 "token": self.access_token,
             },
             "user": {"uid": self.uid},
@@ -322,7 +327,7 @@ class ASRProvider(ASRProviderBase):
         return {
             "X-Api-App-Key": self.appid,
             "X-Api-Access-Key": self.access_token,
-            "X-Api-Resource-Id": "volc.bigasr.sauc.duration",
+            "X-Api-Resource-Id": self.resource_id,
             "X-Api-Connect-Id": str(uuid.uuid4()),
         }
 
@@ -385,9 +390,17 @@ class ASRProvider(ASRProviderBase):
                     "payload_msg": error_msg,
                 }
 
-            # 获取JSON数据（跳过12字节头部）
+            # 获取JSON数据
             try:
-                json_data = res[12:].decode("utf-8")
+                # 检查字节8-11是否为有效的JSON长度字段
+                # 格式：4字节头 + 4字节序列号 + 4字节长度 + JSON数据
+                length = int.from_bytes(res[8:12], "big")
+                if length > 0 and length <= len(res) - 12:
+                    # 有长度字段，从字节12开始读取指定长度的JSON
+                    json_data = res[12:12 + length].decode("utf-8")
+                else:
+                    # 无长度字段或长度无效，尝试直接解析
+                    json_data = res[8:].decode("utf-8")
                 result = json.loads(json_data)
                 logger.bind(tag=TAG).debug(f"成功解析JSON响应: {result}")
                 return {"payload_msg": result}
