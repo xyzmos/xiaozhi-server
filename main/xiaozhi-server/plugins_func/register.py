@@ -28,6 +28,7 @@ class Action(Enum):
     NONE = (1, "啥也不干")
     RESPONSE = (2, "直接回复")
     REQLLM = (3, "调用函数后再请求llm生成回复")
+    RECORD = (4, "记录工具调用到对话历史，不调用LLM")
 
     def __init__(self, code, message):
         self.code = code
