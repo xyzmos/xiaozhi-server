@@ -245,6 +245,8 @@ class TTSProvider(TTSProviderBase):
                 return
 
             filtered_text = MarkdownCleaner.clean_markdown(text)
+            if self._correct_words_pattern:
+                filtered_text = self._correct_words_pattern.sub(lambda m: self.correct_words[m.group(0)], filtered_text)
             if filtered_text:
                 # 发送文本合成请求
                 run_request = self._build_base_request(status=1,text=filtered_text)
@@ -441,6 +443,8 @@ class TTSProvider(TTSProviderBase):
 
                 try:
                     filtered_text = MarkdownCleaner.clean_markdown(text)
+                    if self._correct_words_pattern:
+                        filtered_text = self._correct_words_pattern.sub(lambda m: self.correct_words[m.group(0)], filtered_text)
 
                     text_request = self._build_base_request(status=2,text=filtered_text)
 

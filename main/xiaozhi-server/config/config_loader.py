@@ -1,7 +1,8 @@
 import os
+import asyncio
 import yaml
 from collections.abc import Mapping
-from config.manage_api_client import init_service, get_server_config, get_agent_models
+from config.manage_api_client import init_service, get_server_config, get_agent_models, get_correct_words
 
 
 def get_project_dir():
@@ -87,7 +88,16 @@ async def get_config_from_api_async(config):
 
 async def get_private_config_from_api(config, device_id, client_id):
     """从Java API获取私有配置"""
-    return await get_agent_models(device_id, client_id, config["selected_module"])
+    results = await asyncio.gather(
+        get_agent_models(device_id, client_id, config["selected_module"]),
+        get_correct_words(device_id),
+        return_exceptions=True
+    )
+    private_config = results[0] if not isinstance(results[0], Exception) else {}
+    correct_words = results[1] if not isinstance(results[1], Exception) else None
+    if correct_words:
+        private_config["correct_words"] = correct_words
+    return private_config
 
 
 def ensure_directories(config):
