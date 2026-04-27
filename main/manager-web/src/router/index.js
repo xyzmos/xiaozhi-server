@@ -196,6 +196,18 @@ const routes = [
       title: '功能配置'
     }
   },
+  // 替换词管理
+  {
+    path: '/replacement-word-management',
+    name: 'ReplacementWordManagement',
+    component: function () {
+      return import('../views/ReplacementWordManagement.vue')
+    },
+    meta: {
+      requiresAuth: true,
+      title: '替换词管理'
+    }
+  },
 ]
 const router = new VueRouter({
   base: process.env.VUE_APP_PUBLIC_PATH || '/',

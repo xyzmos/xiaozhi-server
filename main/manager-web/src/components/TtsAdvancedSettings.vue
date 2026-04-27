@@ -57,9 +57,32 @@
               class="tts-slider"
             />
             <span class="slider-hint">{{ $t('roleConfig.pitchHint') }}</span>
-          </div>
+        </div>
         </el-form-item>
+
       </el-form>
+      <!-- 关联替换词 -->
+      <div>
+        <h4 class="replacement-label">
+          {{ $t('roleConfig.replacementWordLabel') }}
+          <el-tooltip popper-class="tts-tooltip" :content="$t('roleConfig.replacementWordTip')" effect="light" placement="top">
+            <i class="el-icon-question"></i>
+          </el-tooltip>
+        </h4>
+        <el-select
+          v-model="replacementWordIds"
+          multiple
+          :placeholder="$t('replacementDialog.selectPlaceholder')"
+          class="replacement-word-select"
+        >
+          <el-option
+            v-for="item in replacementWordList"
+            :key="item.id"
+            :label="item.fileName"
+            :value="item.id"
+          />
+        </el-select>
+      </div>
     </div>
 
     <div class="drawer-footer">
@@ -70,6 +93,8 @@
 </template>
 
 <script>
+import correctWord from '@/apis/module/correctWord';
+
 export default {
   name: 'TtsAdvancedSettings',
   props: {
@@ -84,15 +109,21 @@ export default {
         speed: 0,
         pitch: 0
       })
-    }
+    },
+    checkedReplacementWordIds: {
+      type: Array,
+      default: () => []
+    },
   },
   data() {
     return {
       localSettings: {
         volume: 0,
         speed: 0,
-        pitch: 0
-      }
+        pitch: 0,
+      },
+      replacementWordIds: [],
+      replacementWordList: []
     };
   },
   computed: {
@@ -110,6 +141,8 @@ export default {
       if (newVal) {
         // 当抽屉打开时，复制当前设置到本地
         this.localSettings = { ...this.settings };
+        this.replacementWordIds = [...this.checkedReplacementWordIds];
+        this.fetchReplacementWordList();
       }
     }
   },
@@ -123,11 +156,22 @@ export default {
     },
     handleSave() {
       // 保存设置并关闭
-      this.$emit('save', { ...this.localSettings });
+      this.$emit('save', { ...this.localSettings, replacementWordIds: this.replacementWordIds });
       this.handleClose();
     },
     formatTooltip(val) {
       return `${val}%`;
+    },
+    fetchReplacementWordList() {
+      correctWord.selectAll(({ data }) => {
+        if (data.code === 0) {
+          this.replacementWordList = data.data;
+        }
+      });
+    },
+    getTagName(id) {
+      const item = this.replacementWordList.find(item => item.id === id);
+      return item ? item.fileName : '';
     }
   }
 };
@@ -224,6 +268,30 @@ export default {
 ::v-deep .el-form-item {
   margin-bottom: 24px;
 }
+.replacement-label i {
+  margin-left: 4px;
+  color: #909399;
+  cursor: pointer;
+  font-size: 14px;
+}
+.replacement-label i:hover {
+  color: #409eff;
+}
+.replacement-word-select ::v-deep .el-tag {
+  background: #e6ebff;
+  color: #5778ff;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: normal;
+  border: none;
+}
+
+.replacement-word-select ::v-deep .el-tag__close {
+  color: #5778ff;
+}
+.replacement-word-select ::v-deep .el-icon-close {
+  background: #fff;
+}
 </style>
 
 <style>
@@ -236,5 +304,46 @@ export default {
   display: flex;
   flex-direction: column;
   padding: 0;
+}
+
+.replacement-word-select {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.replacement-label {
+  text-align: left;
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.replacement-tag {
+  background-color: #409eff;
+  border-color: #409eff;
+  color: #fff;
+}
+
+.tts-tooltip {
+  max-height: 60vh !important;
+  max-width: 400px !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  word-break: break-word;
+}
+
+.tts-tooltip .popper__arrow {
+  display: none !important;
+}
+
+.tts-tooltip[x-placement^="top"] .popper__arrow {
+  border-top-color: transparent !important;
+}
+
+.tts-tooltip[x-placement^="bottom"] .popper__arrow {
+  border-bottom-color: transparent !important;
 }
 </style>

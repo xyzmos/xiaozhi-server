@@ -454,6 +454,7 @@
     <tts-advanced-settings
       :visible.sync="showTtsAdvancedDialog"
       :settings="ttsSettings"
+      :checked-replacement-word-ids="checkedReplacementWordIds"
       @save="handleTtsSettingsSave"
     />
     <el-footer>
@@ -546,7 +547,8 @@ export default {
       },
       dynamicTags: [],
       inputVisible: false,
-      inputValue: ''
+      inputValue: '',
+      checkedReplacementWordIds: []
     };
   },
   methods: {
@@ -587,6 +589,7 @@ export default {
           };
         }),
         contextProviders: this.currentContextProviders,
+        correctWordFileIds: this.checkedReplacementWordIds,
       };
 
       // 只在用户设置了TTS参数时才传递（不为null/undefined）
@@ -725,6 +728,8 @@ export default {
             speed: this.form.ttsRate || 0,
             pitch: this.form.ttsPitch || 0
           };
+          // 同步替换词到checkedReplacementWordIds
+          this.checkedReplacementWordIds = data.data.correctWordFileIds || [];
 
           // 后端只给了最小映射：[{ id, agentId, pluginId }, ...]
           const savedMappings = data.data.functions || [];
@@ -975,11 +980,13 @@ export default {
       this.showTtsAdvancedDialog = true;
     },
     handleTtsSettingsSave(settings) {
+      const { replacementWordIds, ...ttsSettings } = settings;
+      this.checkedReplacementWordIds = replacementWordIds;
       // 保存TTS设置
-      this.ttsSettings = { ...settings };
-      this.form.ttsVolume = settings.volume;
-      this.form.ttsRate = settings.speed;
-      this.form.ttsPitch = settings.pitch;
+      this.ttsSettings = ttsSettings;
+      this.form.ttsVolume = ttsSettings.volume;
+      this.form.ttsRate = ttsSettings.speed;
+      this.form.ttsPitch = ttsSettings.pitch;
     },
     handleUpdateContext(providers) {
       this.currentContextProviders = providers;
