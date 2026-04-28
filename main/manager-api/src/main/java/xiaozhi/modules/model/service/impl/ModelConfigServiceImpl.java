@@ -371,6 +371,13 @@ public class ModelConfigServiceImpl extends BaseServiceImpl<ModelConfigDao, Mode
                 }
             }
 
+            // 删除在新JSON中不存在的非敏感字段
+            for (String oldKey : originalJson.keySet().toArray(new String[0])) {
+                if (!modelConfigBodyDTO.getConfigJson().containsKey(oldKey) && !SensitiveDataUtils.isSensitiveField(oldKey)) {
+                    updatedJson.remove(oldKey);
+                }
+            }
+
             modelConfigEntity.setConfigJson(updatedJson);
         }
 
@@ -401,6 +408,13 @@ public class ModelConfigServiceImpl extends BaseServiceImpl<ModelConfigDao, Mode
                         (childValue instanceof String && !isMaskedValue((String) childValue))) {
                     originalChild.put(childKey, childValue);
                 }
+            }
+        }
+
+        // 删除在新JSON中不存在的非敏感子字段
+        for (String oldChildKey : originalChild.keySet().toArray(new String[0])) {
+            if (!updated.containsKey(oldChildKey) && !SensitiveDataUtils.isSensitiveField(oldChildKey)) {
+                originalChild.remove(oldChildKey);
             }
         }
     }
