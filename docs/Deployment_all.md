@@ -418,7 +418,7 @@ manager-api:
   secret: 12345678-xxxx-xxxx-xxxx-123456789000
 ```
 
-## 5.运行项目
+## 9.运行项目
 
 ```
 # 确保在xiaozhi-server目录下执行
