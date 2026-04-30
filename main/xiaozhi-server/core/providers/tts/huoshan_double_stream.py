@@ -321,8 +321,6 @@ class TTSProvider(TTSProviderBase):
                 elif ContentType.TEXT == message.content_type:
                     if message.content_detail:
                         try:
-                            # 保存原始文本用于流式响应时显示/上报
-                            self.store_tts_text(self.conn.sentence_id, message.content_detail)
                             logger.bind(tag=TAG).debug(
                                 f"开始发送TTS文本: {message.content_detail}"
                             )
@@ -513,14 +511,11 @@ class TTSProvider(TTSProviderBase):
                         logger.bind(tag=TAG).debug(f"释放服务端资源成功～～")
                         self.activate_session = False
                     elif not self.resource_type and res.optional.event == EVENT_TTSSentenceStart:
-                        # 使用保存的原始文本用于显示/上报（而不是服务端返回的替换后文本）
-                        tts_text = self.get_tts_text(self.conn.sentence_id)
-                        if not tts_text:
-                            json_data = json.loads(res.payload.decode("utf-8"))
-                            tts_text = json_data.get("text", "")
-                        logger.bind(tag=TAG).debug(f"句子语音生成开始: {tts_text}")
+                        json_data = json.loads(res.payload.decode("utf-8"))
+                        self.tts_text = json_data.get("text", "")
+                        logger.bind(tag=TAG).debug(f"句子语音生成开始: {self.tts_text}")
                         self.tts_audio_queue.put(
-                            (SentenceType.FIRST, [], tts_text)
+                            (SentenceType.FIRST, [], self.tts_text)
                         )
                     elif (
                         res.optional.event == EVENT_TTSResponse

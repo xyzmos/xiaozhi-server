@@ -97,7 +97,7 @@ class TTSProvider(TTSProviderBase):
             if self._correct_words_pattern:
                 text = self._correct_words_pattern.sub(lambda m: self.correct_words[m.group(0)], text)
             try:
-                asyncio.run(self.text_to_speak(text, original_text, is_last))
+                asyncio.run(self.text_to_speak(text, is_last))
             except Exception as e:
                 logger.bind(tag=TAG).warning(
                     f"语音生成失败{5 - max_repeat_time + 1}次: {original_text}，错误: {e}"
@@ -117,7 +117,7 @@ class TTSProvider(TTSProviderBase):
         finally:
             return None
 
-    async def text_to_speak(self, text, original_text, is_last):
+    async def text_to_speak(self, text, is_last):
         """流式处理TTS音频，每句只推送一次音频列表"""
         payload = {"text": text, "character": self.voice}
 
@@ -140,7 +140,7 @@ class TTSProvider(TTSProviderBase):
                         return
 
                     self.pcm_buffer.clear()
-                    self.tts_audio_queue.put((SentenceType.FIRST, [], original_text))
+                    self.tts_audio_queue.put((SentenceType.FIRST, [], text))
 
                     # 处理音频流数据
                     async for chunk in resp.content.iter_any():
