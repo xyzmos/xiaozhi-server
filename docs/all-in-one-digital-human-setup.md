@@ -71,7 +71,7 @@ sudo systemctl enable NetworkManager
 Bash
 
 ```
-sudo nmcli device wifi connect "MERCURY_1812" password "buzhidao"
+sudo nmcli device wifi connect "MERCURY_1812" password "12345678"
 
 sudo nmcli connection modify "MERCURY_1812" ipv4.addresses "192.168.0.86/24" ipv4.gateway "192.168.0.1" ipv4.dns "8.8.8.8,114.114.114.114" ipv4.method "manual"
 
