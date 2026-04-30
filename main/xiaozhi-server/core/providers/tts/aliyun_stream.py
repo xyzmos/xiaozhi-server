@@ -251,6 +251,8 @@ class TTSProvider(TTSProviderBase):
                 elif ContentType.TEXT == message.content_type:
                     if message.content_detail:
                         try:
+                            # 保存原始文本用于流式响应时显示/上报
+                            self.store_tts_text(self.conn.sentence_id, message.content_detail)
                             logger.bind(tag=TAG).debug(
                                 f"开始发送TTS文本: {message.content_detail}"
                             )
