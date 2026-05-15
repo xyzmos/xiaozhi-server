@@ -134,6 +134,7 @@ class ConnectionHandler:
         self._asr = _asr
         self._vad = _vad
         self.llm = _llm
+        self.slm = None  # 小参数模型，用于唤醒词等轻量级任务
         self.memory = _memory
         self.intent = _intent
 
@@ -480,10 +481,12 @@ class ConnectionHandler:
         try:
             if self.tts is None:
                 self.tts = self._initialize_tts()
-            # 打开语音合成通道
-            asyncio.run_coroutine_threadsafe(
-                self.tts.open_audio_channels(self), self.loop
-            )
+            # 打开语音合成通道（无论 TTS 是谁创建的都需要打开）
+            tts_thread = getattr(self.tts, 'tts_priority_thread', None)
+            if self.tts is not None and (tts_thread is None or not tts_thread.is_alive()):
+                asyncio.run_coroutine_threadsafe(
+                    self.tts.open_audio_channels(self), self.loop
+                )
             if self.need_bind:
                 self.bind_completed_event.set()
                 return
@@ -493,7 +496,7 @@ class ConnectionHandler:
             self.logger = create_connection_logger(self.selected_module_str)
 
             """初始化组件"""
-            if self.config.get("prompt") is not None:
+            if self.config.get("prompt") is not None and self.prompt is None:
                 user_prompt = self.config["prompt"]
                 # 使用快速提示词进行初始化
                 prompt = self.prompt_manager.get_quick_prompt(user_prompt)
@@ -735,6 +738,10 @@ class ConnectionHandler:
             self.config["selected_module"]["VLLM"] = private_config["selected_module"][
                 "VLLM"
             ]
+        # SLM 配置：selected_module.SLM 指向 LLM 节点下的某个模型 ID
+        slm_model_id = private_config.get("selected_module", {}).get("SLM")
+        if slm_model_id:
+            self.config["selected_module"]["SLM"] = slm_model_id
         if private_config.get("Memory", None) is not None:
             init_memory = True
             self.config["Memory"] = private_config["Memory"]
@@ -898,6 +905,31 @@ class ConnectionHandler:
         # 异步初始化工具处理器
         if hasattr(self, "loop") and self.loop:
             asyncio.run_coroutine_threadsafe(self.func_handler._initialize(), self.loop)
+
+    def _initialize_slm(self):
+        """初始化小参数模型(SLM)，用于唤醒词等轻量级任务"""
+        slm_model_id = self.config.get("selected_module", {}).get("SLM")
+        if not slm_model_id:
+            self.logger.bind(tag=TAG).info("未配置SLM模型，唤醒词回复将使用固定短语")
+            return
+
+        llm_configs = self.config.get("LLM", {})
+        slm_config = llm_configs.get(slm_model_id)
+        if not slm_config:
+            self.logger.bind(tag=TAG).warning(f"SLM模型配置未找到: {slm_model_id}")
+            return
+
+        try:
+            from core.utils import llm as llm_utils
+
+            slm_type = slm_config.get("type", slm_model_id)
+            self.slm = llm_utils.create_instance(slm_type, slm_config)
+            self.logger.bind(tag=TAG).info(
+                f"初始化SLM模型成功: {slm_model_id}, 类型: {slm_type}"
+            )
+        except Exception as e:
+            self.logger.bind(tag=TAG).error(f"初始化SLM模型失败: {e}")
+            self.slm = None
 
     def change_system_prompt(self, prompt):
         self.prompt = prompt
