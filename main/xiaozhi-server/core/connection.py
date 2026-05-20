@@ -952,7 +952,7 @@ class ConnectionHandler:
                 and hasattr(self, "func_handler")
                 and not force_final_answer
         ):
-            functions = self.func_handler.get_functions()
+            functions = list(self.func_handler.get_functions())
             # 仅在第一层调用时注入 direct_answer 虚拟工具
             # 递归调用（depth>0）不注入，避免模型在生成文本回复时再次调 direct_answer 导致循环
             if functions is not None and depth == 0:
