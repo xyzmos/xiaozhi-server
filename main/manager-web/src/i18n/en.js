@@ -1416,4 +1416,39 @@ export default {
   'feature.asr.name': 'Speech Recognition',
   'feature.asr.description': 'Convert speech to text to enable natural language interaction functionality',
 
+  // Address Book Management page
+  'addressBookManagement.mainTitle': 'Address Book Management',
+  'addressBookManagement.subTitle': 'Manage device address book, set device names and call permissions',
+  'addressBookManagement.online': 'Online',
+  'addressBookManagement.offline': 'Offline',
+  'addressBookManagement.macAddress': 'MAC Address',
+  'addressBookManagement.status': 'Status',
+  'addressBookManagement.deviceGroup': 'Device Group',
+  'addressBookManagement.addTime': 'Added Time',
+  'addressBookManagement.lastOnline': 'Last Online',
+  'addressBookManagement.deviceCallPermission': 'Device Call Permission',
+  'addressBookManagement.setPermissionDesc': 'Set which devices the current device can call',
+  'addressBookManagement.selectAll': 'Select All',
+  'addressBookManagement.deselectAll': 'Deselect All',
+
+  // Address Book Management page - operation messages
+  'addressBookManagement.aliasSaved': 'Alias saved',
+  'addressBookManagement.saveFailed': 'Save failed',
+  'addressBookManagement.noChanges': 'No changes',
+  'addressBookManagement.permissionSaved': 'Permission saved',
+  'addressBookManagement.partialSaveFailed': 'Some permissions failed to save',
+  'addressBookManagement.agentNameUpdated': 'Agent name updated',
+  'addressBookManagement.updateFailed': 'Update failed',
+
+  // Time format
+  'addressBookManagement.justNow': 'Just now',
+  'addressBookManagement.minutesAgo': '{minutes} minutes ago',
+  'addressBookManagement.hoursAgo': '{hours} hours ago',
+  'addressBookManagement.daysAgo': '{days} days ago',
+  'addressBookManagement.monthsAgo': '{months} months ago',
+  'addressBookManagement.yearsAgo': '{years} years ago',
+
+  // Header navigation
+  'header.addressBook': 'Address Book',
+
 }

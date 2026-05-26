@@ -81,6 +81,15 @@
           }" />
           <span class="nav-text">{{ $t("header.knowledgeBase") }}</span>
         </div>
+        <div v-if="featureStatus.addressBook" class="equipment-management"
+          :class="{ 'active-tab': $route.path === '/address-book-management' }"
+          @click="handleRouter('addressBookManagement')">
+          <img loading="lazy" alt="" src="@/assets/header/knowledge_base.png" :style="{
+            filter:
+              $route.path === '/address-book-management' ? 'brightness(0) invert(1)' : 'None',
+          }" />
+          <span class="nav-text">{{ $t("header.addressBook") }}</span>
+        </div>
         <el-dropdown v-if="userInfo.superAdmin" trigger="click" class="equipment-management more-dropdown" :class="{
           'active-tab':
             $route.path === '/dict-management' ||
@@ -228,6 +237,7 @@ export default {
         home: "/home",
         modelConfig: "/model-config",
         knowledgeBaseManagement: "/knowledge-base-management",
+        addressBookManagement: "/address-book-management",
         voiceCloneManagement: "/voice-clone-management",
         voiceResourceManagement: "/voice-resource-management",
         paramManagement: "/params-management",
@@ -247,6 +257,7 @@ export default {
       featureStatus: (state) => ({
         voiceClone: state.pubConfig.systemWebMenu?.features?.voiceClone?.enabled, // 音色克隆功能状态
         knowledgeBase: state.pubConfig.systemWebMenu?.features?.knowledgeBase?.enabled, // 知识库功能状态
+        addressBook: state.pubConfig.systemWebMenu?.features?.addressBook?.enabled, // 通讯录功能状态
       }),
       userInfo: (state) => state.userInfo,
     }),

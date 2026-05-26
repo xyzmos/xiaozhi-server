@@ -1416,4 +1416,39 @@ export default {
   'feature.asr.name': 'Reconhecimento de Fala',
   'feature.asr.description': 'Converter fala em texto para habilitar a funcionalidade de interação por linguagem natural',
 
+  // Address Book Management page
+  'addressBookManagement.mainTitle': 'Gerenciamento de Lista de Contatos',
+  'addressBookManagement.subTitle': 'Gerenciar lista de contatos do dispositivo, definir nomes e permissões de chamada',
+  'addressBookManagement.online': 'Online',
+  'addressBookManagement.offline': 'Offline',
+  'addressBookManagement.macAddress': 'Endereço MAC',
+  'addressBookManagement.status': 'Status',
+  'addressBookManagement.deviceGroup': 'Grupo de Dispositivos',
+  'addressBookManagement.addTime': 'Hora de Adição',
+  'addressBookManagement.lastOnline': 'Última Conexão',
+  'addressBookManagement.deviceCallPermission': 'Permissão de Chamada do Dispositivo',
+  'addressBookManagement.setPermissionDesc': 'Definir quais dispositivos o dispositivo atual pode chamar',
+  'addressBookManagement.selectAll': 'Selecionar Todos',
+  'addressBookManagement.deselectAll': 'Desmarcar Todos',
+
+  // Address Book Management page - operation messages
+  'addressBookManagement.aliasSaved': 'Apelido salvo',
+  'addressBookManagement.saveFailed': 'Falha ao salvar',
+  'addressBookManagement.noChanges': 'Sem alterações',
+  'addressBookManagement.permissionSaved': 'Permissão salva',
+  'addressBookManagement.partialSaveFailed': 'Algumas permissões não puderam ser salvas',
+  'addressBookManagement.agentNameUpdated': 'Nome do agente atualizado',
+  'addressBookManagement.updateFailed': 'Falha na atualização',
+
+  // Time format
+  'addressBookManagement.justNow': 'Agora mesmo',
+  'addressBookManagement.minutesAgo': 'há {minutes} minutos',
+  'addressBookManagement.hoursAgo': 'há {hours} horas',
+  'addressBookManagement.daysAgo': 'há {days} dias',
+  'addressBookManagement.monthsAgo': 'há {months} meses',
+  'addressBookManagement.yearsAgo': 'há {years} anos',
+
+  // Header navigation
+  'header.addressBook': 'Lista de Contatos',
+
 }

@@ -22,12 +22,15 @@ import xiaozhi.common.redis.RedisKeys;
 import xiaozhi.common.redis.RedisUtils;
 import xiaozhi.common.user.UserDetail;
 import xiaozhi.common.utils.Result;
+import xiaozhi.modules.device.dto.DeviceAddressBookAliasDTO;
+import xiaozhi.modules.device.dto.DeviceAddressBookPermissionDTO;
 import xiaozhi.modules.device.dto.DeviceManualAddDTO;
 import xiaozhi.modules.device.dto.DeviceRegisterDTO;
 import xiaozhi.modules.device.dto.DeviceToolsCallReqDTO;
 import xiaozhi.modules.device.dto.DeviceUnBindDTO;
 import xiaozhi.modules.device.dto.DeviceUpdateDTO;
 import xiaozhi.modules.device.entity.DeviceEntity;
+import xiaozhi.modules.device.service.DeviceAddressBookService;
 import xiaozhi.modules.device.service.DeviceService;
 import xiaozhi.modules.security.user.SecurityUser;
 import xiaozhi.modules.sys.service.SysParamsService;
@@ -37,11 +40,13 @@ import xiaozhi.modules.sys.service.SysParamsService;
 @RequestMapping("/device")
 public class DeviceController {
     private final DeviceService deviceService;
+    private final DeviceAddressBookService deviceAddressBookService;
     private final RedisUtils redisUtils;
     private final SysParamsService sysParamsService;
 
-    public DeviceController(DeviceService deviceService, RedisUtils redisUtils, SysParamsService sysParamsService) {
+    public DeviceController(DeviceService deviceService, DeviceAddressBookService deviceAddressBookService, RedisUtils redisUtils, SysParamsService sysParamsService) {
         this.deviceService = deviceService;
+        this.deviceAddressBookService = deviceAddressBookService;
         this.redisUtils = redisUtils;
         this.sysParamsService = sysParamsService;
     }
@@ -158,5 +163,38 @@ public class DeviceController {
         Result<Object> response = new Result<Object>();
         response.setMsg("Tools called successfully");
         return response.ok(result);
+    }
+
+    @GetMapping("/address-book/{macAddress}")
+    @Operation(summary = "获取设备通讯录")
+    @RequiresPermissions("sys:role:normal")
+    public Result<Object> getAddressBook(@PathVariable String macAddress) {
+        return new Result<Object>().ok(deviceAddressBookService.getAddressBookList(macAddress));
+    }
+
+    @GetMapping("/address-book/lookup")
+    @Operation(summary = "根据昵称查找目标设备")
+    public Result<Map<String, String>> lookupByNickname(String callerMac, String nickname) {
+        Map<String, String> result = deviceAddressBookService.lookupByNickname(callerMac, nickname);
+        if (result == null) {
+            return new Result<Map<String, String>>().error("未找到对应设备");
+        }
+        return new Result<Map<String, String>>().ok(result);
+    }
+
+    @PutMapping("/address-book/alias")
+    @Operation(summary = "更新设备通讯录别名")
+    @RequiresPermissions("sys:role:normal")
+    public Result<Void> updateAlias(@Valid @RequestBody DeviceAddressBookAliasDTO dto) {
+        deviceAddressBookService.saveOrUpdate(dto.getMacAddress(), dto.getTargetMac(), dto.getAlias(), null);
+        return new Result<Void>();
+    }
+
+    @PutMapping("/address-book/permission")
+    @Operation(summary = "更新设备通讯录权限")
+    @RequiresPermissions("sys:role:normal")
+    public Result<Void> updatePermission(@Valid @RequestBody DeviceAddressBookPermissionDTO dto) {
+        deviceAddressBookService.saveOrUpdate(dto.getMacAddress(), dto.getTargetMac(), null, dto.getHasPermission());
+        return new Result<Void>();
     }
 }

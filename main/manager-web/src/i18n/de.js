@@ -1416,4 +1416,39 @@ export default {
   'feature.asr.name': 'Spracherkennung',
   'feature.asr.description': 'Sprache in Text umwandeln, um natürliche Sprachinteraktionsfunktionalität zu ermöglichen',
 
+  // Address Book Management page
+  'addressBookManagement.mainTitle': 'Adressbuchverwaltung',
+  'addressBookManagement.subTitle': 'Geräteadressbuch verwalten, Gerätenamen und Anrufpermissions festlegen',
+  'addressBookManagement.online': 'Online',
+  'addressBookManagement.offline': 'Offline',
+  'addressBookManagement.macAddress': 'MAC-Adresse',
+  'addressBookManagement.status': 'Status',
+  'addressBookManagement.deviceGroup': 'Gerätegruppe',
+  'addressBookManagement.addTime': 'Hinzugefügt Zeit',
+  'addressBookManagement.lastOnline': 'Zuletzt Online',
+  'addressBookManagement.deviceCallPermission': 'Geräteanrufpermission',
+  'addressBookManagement.setPermissionDesc': 'Festlegen welche Geräte das aktuelle Gerät anrufen kann',
+  'addressBookManagement.selectAll': 'Alle auswählen',
+  'addressBookManagement.deselectAll': 'Alle abwählen',
+
+  // Address Book Management page - operation messages
+  'addressBookManagement.aliasSaved': 'Alias gespeichert',
+  'addressBookManagement.saveFailed': 'Speichern fehlgeschlagen',
+  'addressBookManagement.noChanges': 'Keine Änderungen',
+  'addressBookManagement.permissionSaved': 'Permission gespeichert',
+  'addressBookManagement.partialSaveFailed': 'Einige Permissions konnten nicht gespeichert werden',
+  'addressBookManagement.agentNameUpdated': 'Agentname aktualisiert',
+  'addressBookManagement.updateFailed': 'Aktualisierung fehlgeschlagen',
+
+  // Time format
+  'addressBookManagement.justNow': 'Gerade eben',
+  'addressBookManagement.minutesAgo': 'vor {minutes} Minuten',
+  'addressBookManagement.hoursAgo': 'vor {hours} Stunden',
+  'addressBookManagement.daysAgo': 'vor {days} Tagen',
+  'addressBookManagement.monthsAgo': 'vor {months} Monaten',
+  'addressBookManagement.yearsAgo': 'vor {years} Jahren',
+
+  // Header navigation
+  'header.addressBook': 'Adressbuch',
+
 }

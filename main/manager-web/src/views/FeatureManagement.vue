@@ -183,7 +183,7 @@ export default {
       })
       
       // 重新加载配置
-      this.featureManagementFeatures = await this.getFeaturesByIds(['voiceprintRecognition', 'voiceClone', 'knowledgeBase', 'mcpAccessPoint'])
+      this.featureManagementFeatures = await this.getFeaturesByIds(['voiceprintRecognition', 'voiceClone', 'knowledgeBase', 'mcpAccessPoint', 'addressBook'])
       this.voiceManagementFeatures = await this.getFeaturesByIds(['vad', 'asr'])
       
       // 恢复用户的选择状态（如果存在）

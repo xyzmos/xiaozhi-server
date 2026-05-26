@@ -188,4 +188,11 @@ public class RedisKeys {
         return "ota:upload:count:" + username;
     }
 
+    /**
+     * 设备通讯录缓存Key
+     */
+    public static String getAddressBookKey() {
+        return "device:address_book:all";
+    }
+
 }

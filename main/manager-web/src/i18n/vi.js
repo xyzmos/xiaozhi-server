@@ -1416,4 +1416,39 @@ export default {
   'feature.asr.name': 'Nhận dạng giọng nói',
   'feature.asr.description': 'Chuyển đổi giọng nói thành văn bản, thực hiện chức năng tương tác ngôn ngữ tự nhiên',
 
+  // Address Book Management page
+  'addressBookManagement.mainTitle': 'Quản lý danh bạ',
+  'addressBookManagement.subTitle': 'Quản lý danh bạ thiết bị, đặt tên thiết bị và quyền gọi',
+  'addressBookManagement.online': 'Trực tuyến',
+  'addressBookManagement.offline': 'Ngoại tuyến',
+  'addressBookManagement.macAddress': 'Địa chỉ MAC',
+  'addressBookManagement.status': 'Trạng thái',
+  'addressBookManagement.deviceGroup': 'Nhóm thiết bị',
+  'addressBookManagement.addTime': 'Thời gian thêm',
+  'addressBookManagement.lastOnline': 'Hoạt động lần cuối',
+  'addressBookManagement.deviceCallPermission': 'Quyền gọi thiết bị',
+  'addressBookManagement.setPermissionDesc': 'Đặt thiết bị nào thiết bị hiện tại có thể gọi',
+  'addressBookManagement.selectAll': 'Chọn tất cả',
+  'addressBookManagement.deselectAll': 'Bỏ chọn tất cả',
+
+  // Address Book Management page - operation messages
+  'addressBookManagement.aliasSaved': 'Bí danh đã lưu',
+  'addressBookManagement.saveFailed': 'Lưu thất bại',
+  'addressBookManagement.noChanges': 'Không có thay đổi',
+  'addressBookManagement.permissionSaved': 'Quyền đã lưu',
+  'addressBookManagement.partialSaveFailed': 'Một số quyền không thể lưu',
+  'addressBookManagement.agentNameUpdated': 'Tên tác tử đã cập nhật',
+  'addressBookManagement.updateFailed': 'Cập nhật thất bại',
+
+  // Time format
+  'addressBookManagement.justNow': 'Vừa xong',
+  'addressBookManagement.minutesAgo': '{minutes} phút trước',
+  'addressBookManagement.hoursAgo': '{hours} giờ trước',
+  'addressBookManagement.daysAgo': '{days} ngày trước',
+  'addressBookManagement.monthsAgo': '{months} tháng trước',
+  'addressBookManagement.yearsAgo': '{years} năm trước',
+
+  // Header navigation
+  'header.addressBook': 'Danh bạ',
+
 }
