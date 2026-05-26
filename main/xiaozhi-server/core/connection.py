@@ -534,7 +534,10 @@ class ConnectionHandler:
         # 更新上下文信息
         self.prompt_manager.update_context_info(self, self.client_ip)
         enhanced_prompt = self.prompt_manager.build_enhanced_prompt(
-            self.config["prompt"], self.device_id, self.client_ip
+            self.config["prompt"],
+            self.device_id,
+            self.client_ip,
+            emoji_enabled=(self.features or {}).get("emoji", True),
         )
         if enhanced_prompt:
             self.change_system_prompt(enhanced_prompt)
