@@ -1415,6 +1415,8 @@ export default {
   'feature.vad.description': 'Detectar automaticamente atividade de voz para otimizar a eficiência de resposta da interação por voz',
   'feature.asr.name': 'Reconhecimento de Fala',
   'feature.asr.description': 'Converter fala em texto para habilitar a funcionalidade de interação por linguagem natural',
+  'feature.addressBook.name': 'Lista de Contatos',
+  'feature.addressBook.description': 'Gerenciar e manter lista de contatos para fornecer suporte de informações de contato para assistente de IA',
 
   // Address Book Management page
   'addressBookManagement.mainTitle': 'Gerenciamento de Lista de Contatos',

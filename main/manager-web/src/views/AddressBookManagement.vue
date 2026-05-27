@@ -221,7 +221,8 @@ export default {
       isEditingAgentName: false,
       editAgentNameValue: '',
       editingDeviceId: null,
-      editingDeviceName: ''
+      editingDeviceName: '',
+      mqttServiceAvailable: false
     };
   },
   created() {
@@ -272,9 +273,10 @@ export default {
                   type: device.board,
                   deviceId: device.macAddress,
                   remarks: device.alias || '',
-                  online: device.deviceStatus === 'online',
+                  online: false,
                   createDate: device.createDate,
-                  lastConnectedAt: device.lastConnectedAt
+                  lastConnectedAt: device.lastConnectedAt,
+                  deviceStatus: 'offline'
                 }));
                 resolve();
               });
@@ -283,10 +285,58 @@ export default {
           Promise.all(agentPromises).then(() => {
             this.agentDeviceOptions = agentList;
             this.filteredAgents = agentList;
+            // 获取设备状态
+            this.fetchDeviceStatus();
           });
         } else {
           this.agentDeviceOptions = [];
           this.filteredAgents = [];
+        }
+      });
+    },
+    fetchDeviceStatus() {
+      // 为每个智能体获取设备状态
+      this.agentDeviceOptions.forEach(agent => {
+        if (!agent.id) return;
+        Api.device.getDeviceStatus(agent.id, (statusRes) => {
+          if (statusRes.data?.code === 0) {
+            try {
+              const statusData = JSON.parse(statusRes.data.data);
+              if (statusData && typeof statusData === 'object') {
+                this.mqttServiceAvailable = true;
+                this.updateDeviceStatusFromResponse(agent, statusData);
+              }
+            } catch (e) {
+              console.error('Parse device status error:', e);
+            }
+          }
+        });
+      });
+    },
+    updateDeviceStatusFromResponse(agent, statusData) {
+      if (!agent.devices) return;
+      agent.devices.forEach(device => {
+        const macAddress = device.deviceId ? device.deviceId.replace(/:/g, '_') : 'unknown';
+        const groupId = device.type ? device.type.replace(/:/g, '_') : 'GID_default';
+        const mqttClientId = `${groupId}@@@${macAddress}@@@${macAddress}`;
+
+        if (statusData[mqttClientId]) {
+          const statusInfo = statusData[mqttClientId];
+          let isOnline = false;
+          if (statusInfo.isAlive === true) {
+            isOnline = true;
+          } else if (statusInfo.isAlive === false) {
+            isOnline = false;
+          } else if (statusInfo.isAlive === null && statusInfo.exists === true) {
+            isOnline = true;
+          } else {
+            isOnline = false;
+          }
+          device.online = isOnline;
+          device.deviceStatus = isOnline ? 'online' : 'offline';
+        } else {
+          device.online = false;
+          device.deviceStatus = 'offline';
         }
       });
     },

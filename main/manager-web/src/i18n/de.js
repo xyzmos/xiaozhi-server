@@ -1415,6 +1415,8 @@ export default {
   'feature.vad.description': 'Sprachaktivität automatisch erkennen, um die Effizienz der Sprachiinteraktion zu optimieren',
   'feature.asr.name': 'Spracherkennung',
   'feature.asr.description': 'Sprache in Text umwandeln, um natürliche Sprachinteraktionsfunktionalität zu ermöglichen',
+  'feature.addressBook.name': 'Adressbuch',
+  'feature.addressBook.description': 'Kontakt-Adressbuch verwalten und pflegen, um Kontaktinformationen für KI-Assistenten bereitzustellen',
 
   // Address Book Management page
   'addressBookManagement.mainTitle': 'Adressbuchverwaltung',

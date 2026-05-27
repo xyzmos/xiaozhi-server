@@ -1415,6 +1415,8 @@ export default {
   'feature.vad.description': 'Automatically detect voice activity to optimize voice interaction response efficiency',
   'feature.asr.name': 'Speech Recognition',
   'feature.asr.description': 'Convert speech to text to enable natural language interaction functionality',
+  'feature.addressBook.name': 'Address Book',
+  'feature.addressBook.description': 'Manage and maintain contact address book to provide contact information support for AI assistant',
 
   // Address Book Management page
   'addressBookManagement.mainTitle': 'Address Book Management',

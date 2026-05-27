@@ -1415,6 +1415,8 @@ export default {
   'feature.vad.description': 'Tự động phát hiện hoạt động giọng nói, tối ưu hóa hiệu suất phản hồi tương tác giọng nói',
   'feature.asr.name': 'Nhận dạng giọng nói',
   'feature.asr.description': 'Chuyển đổi giọng nói thành văn bản, thực hiện chức năng tương tác ngôn ngữ tự nhiên',
+  'feature.addressBook.name': 'Danh bạ',
+  'feature.addressBook.description': 'Quản lý và duy trì danh bạ liên lạc để cung cấp hỗ trợ thông tin liên lạc cho trợ lý AI',
 
   // Address Book Management page
   'addressBookManagement.mainTitle': 'Quản lý danh bạ',
