@@ -369,11 +369,13 @@ export default {
           this.deviceList = data.data.map(device => {
             return {
               device_id: device.id,
-              model: device.board,
+              model: device.deviceType,
               firmwareVersion: device.appVersion,
               macAddress: device.macAddress,
               bindTime: device.createDate,
-              lastConversation: device.lastConnectedAt,
+              lastConversation: device.lastConnectedAtTimestamp
+                ? this.formatRelativeTime(device.lastConnectedAtTimestamp)
+                : '-',
               remark: device.alias,
               _originalRemark: device.alias,
               isEdit: false,
@@ -488,6 +490,14 @@ export default {
     isGenerate(row) {
       const version = row.firmwareVersion.replace(/\./g, '');
       return Number(version) >= 200;
+    },
+    formatRelativeTime(timestamp) {
+      if (!timestamp) return '-';
+      const ts = Number(timestamp);
+      if (isNaN(ts)) return '-';
+      const date = new Date(ts);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleString();  // 自动适配本地时区
     },
   }
 };

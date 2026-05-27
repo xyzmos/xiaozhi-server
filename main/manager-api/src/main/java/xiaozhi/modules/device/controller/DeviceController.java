@@ -29,6 +29,7 @@ import xiaozhi.modules.device.dto.DeviceUnBindDTO;
 import xiaozhi.modules.device.dto.DeviceUpdateDTO;
 import xiaozhi.modules.device.entity.DeviceEntity;
 import xiaozhi.modules.device.service.DeviceService;
+import xiaozhi.modules.device.vo.UserShowDeviceListVO;
 import xiaozhi.modules.security.user.SecurityUser;
 import xiaozhi.modules.sys.service.SysParamsService;
 
@@ -78,10 +79,10 @@ public class DeviceController {
     @GetMapping("/bind/{agentId}")
     @Operation(summary = "获取已绑定设备")
     @RequiresPermissions("sys:role:normal")
-    public Result<List<DeviceEntity>> getUserDevices(@PathVariable String agentId) {
+    public Result<List<UserShowDeviceListVO>> getUserDevices(@PathVariable String agentId) {
         UserDetail user = SecurityUser.getUser();
-        List<DeviceEntity> devices = deviceService.getUserDevices(user.getId(), agentId);
-        return new Result<List<DeviceEntity>>().ok(devices);
+        List<UserShowDeviceListVO> devices = deviceService.getUserDeviceList(user.getId(), agentId);
+        return new Result<List<UserShowDeviceListVO>>().ok(devices);
     }
 
     @PostMapping("/bind/{agentId}")

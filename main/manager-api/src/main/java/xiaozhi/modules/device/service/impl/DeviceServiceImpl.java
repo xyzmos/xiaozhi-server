@@ -299,6 +299,21 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
     }
 
     @Override
+    public List<UserShowDeviceListVO> getUserDeviceList(Long userId, String agentId) {
+        List<DeviceEntity> devices = getUserDevices(userId, agentId);
+        return devices.stream().map(device -> {
+            UserShowDeviceListVO vo = ConvertUtils.sourceToTarget(device, UserShowDeviceListVO.class);
+            // 手动设置deviceType（ConvertUtils按字段名匹配，board无法直接映射到deviceType）
+            vo.setDeviceType(device.getBoard());
+            // 设置UTC时间戳供前端使用时区转换
+            if (device.getLastConnectedAt() != null) {
+                vo.setLastConnectedAtTimestamp(device.getLastConnectedAt().getTime());
+            }
+            return vo;
+        }).toList();
+    }
+
+    @Override
     public void unbindDevice(Long userId, String deviceId) {
         // 先查询设备信息，获取agentId
         DeviceEntity device = baseDao.selectById(deviceId);
@@ -356,6 +371,10 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
             sysUserUtilService.assignUsername(device.getUserId(),
                     vo::setBindUserName);
             vo.setDeviceType(device.getBoard());
+            // 设置UTC时间戳供前端使用时区转换
+            if (device.getLastConnectedAt() != null) {
+                vo.setLastConnectedAtTimestamp(device.getLastConnectedAt().getTime());
+            }
             return vo;
         }).toList();
         // 计算页数
