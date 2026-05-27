@@ -2,8 +2,7 @@
 SET @data_exists = (SELECT COUNT(*) FROM ai_model_provider WHERE id = 'SYSTEM_PLUGIN_CALL_DEVICE');                                                   
 SET @sql = IF(@data_exists = 0,
     'INSERT INTO `ai_model_provider` (`id`, `model_type`, `provider_code`, `name`, `fields`, `sort`, `creator`, `create_date`, `updater`,
-`update_date`) VALUES (''SYSTEM_PLUGIN_CALL_DEVICE'', ''Plugin'', ''call_device'', ''呼叫设备'', ''[{"key":"gateway_url","label":"网关地址","type":
-"string","default":"http://127.0.0.1:8007"},{"key":"gateway_secret","label":"网关密钥","type":"string"}]'', 85, 1988490863118454785, ''2026-05-18     
+`update_date`) VALUES (''SYSTEM_PLUGIN_CALL_DEVICE'', ''Plugin'', ''call_device'', ''呼叫设备'', ''[]'', 85, 1988490863118454785, ''2026-05-18     
 12:00:00'', 1988490863118454785, ''2026-05-18 12:00:00'')',
     'SELECT ''data already exists, skip'' AS msg');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

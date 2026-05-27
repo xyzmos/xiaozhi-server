@@ -197,4 +197,11 @@ public class DeviceController {
         deviceAddressBookService.saveOrUpdate(dto.getMacAddress(), dto.getTargetMac(), null, dto.getHasPermission());
         return new Result<Void>();
     }
+
+    @GetMapping("/call/forward")
+    @Operation(summary = "转发呼叫请求到网关")
+    public Result<Map<String, Object>> forwardCallRequest(String callerMac, String targetMac, String callerNickname) {
+        Map<String, Object> result = deviceService.forwardCallRequest(callerMac, targetMac, callerNickname);
+        return new Result<Map<String, Object>>().ok(result);
+    }
 }
