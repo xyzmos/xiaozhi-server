@@ -362,6 +362,8 @@ export default {
   'replacementWordManagement.edit': '编辑',
   'replacementWordManagement.download': '下载',
   'replacementWordManagement.delete': '删除',
+
+  // 替换词对话框相关
   'replacementDialog.fileName': '文件名称',
   'replacementDialog.fileNamePlaceholder': '请输入文件名称',
   'replacementDialog.content': '替换词内容',
