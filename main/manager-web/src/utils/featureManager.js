@@ -332,6 +332,9 @@ class FeatureManager {
         Object.keys(featureUpdates).forEach(featureKey => {
             if (features[featureKey]) {
                 features[featureKey].enabled = featureUpdates[featureKey];
+            } else if (this.defaultFeatures[featureKey]) {
+                features[featureKey] = { ...this.defaultFeatures[featureKey] };
+                features[featureKey].enabled = featureUpdates[featureKey];
             }
         });
         this.saveConfig(features);
