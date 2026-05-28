@@ -1497,11 +1497,11 @@ export default {
   'addressBookManagement.offline': '离线',
   'addressBookManagement.macAddress': 'MAC地址',
   'addressBookManagement.status': '状态',
-  'addressBookManagement.deviceGroup': '设备分组',
+  'addressBookManagement.deviceGroup': '所属智能体',
   'addressBookManagement.addTime': '添加时间',
   'addressBookManagement.lastOnline': '最后在线',
   'addressBookManagement.deviceCallPermission': '设备呼叫权限',
-  'addressBookManagement.setPermissionDesc': '设置当前设备可以呼叫的设备',
+  'addressBookManagement.setPermissionDesc': '设置当前设备可以呼叫的设备（{count}台）',
   'addressBookManagement.selectAll': '全选',
   'addressBookManagement.deselectAll': '全不选',
 

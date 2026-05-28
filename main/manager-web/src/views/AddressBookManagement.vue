@@ -138,7 +138,7 @@
             <div class="section-header">
               <div class="section-title">
                 <h3>{{ $t('addressBookManagement.deviceCallPermission') }}</h3>
-                <p class="section-desc">{{ $t('addressBookManagement.setPermissionDesc') }}</p>
+                <p class="section-desc">{{ $t('addressBookManagement.setPermissionDesc', { count: selectedPermissions.length }) }}</p>
               </div>
               <div class="section-actions">
                 <el-button size="small" @click="handleToggleSelectAll">

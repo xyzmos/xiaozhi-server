@@ -1494,11 +1494,11 @@ export default {
   'addressBookManagement.offline': 'Ngoại tuyến',
   'addressBookManagement.macAddress': 'Địa chỉ MAC',
   'addressBookManagement.status': 'Trạng thái',
-  'addressBookManagement.deviceGroup': 'Nhóm thiết bị',
+  'addressBookManagement.deviceGroup': 'Tác tử sở hữu',
   'addressBookManagement.addTime': 'Thời gian thêm',
   'addressBookManagement.lastOnline': 'Hoạt động lần cuối',
   'addressBookManagement.deviceCallPermission': 'Quyền gọi thiết bị',
-  'addressBookManagement.setPermissionDesc': 'Đặt thiết bị nào thiết bị hiện tại có thể gọi',
+  'addressBookManagement.setPermissionDesc': 'Đặt thiết bị nào thiết bị hiện tại có thể gọi ({count} đã chọn)',
   'addressBookManagement.selectAll': 'Chọn tất cả',
   'addressBookManagement.deselectAll': 'Bỏ chọn tất cả',
 

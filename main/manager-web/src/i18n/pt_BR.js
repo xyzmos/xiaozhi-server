@@ -1494,11 +1494,11 @@ export default {
   'addressBookManagement.offline': 'Offline',
   'addressBookManagement.macAddress': 'Endereço MAC',
   'addressBookManagement.status': 'Status',
-  'addressBookManagement.deviceGroup': 'Grupo de Dispositivos',
+  'addressBookManagement.deviceGroup': 'Agente Vinculado',
   'addressBookManagement.addTime': 'Hora de Adição',
   'addressBookManagement.lastOnline': 'Última Conexão',
   'addressBookManagement.deviceCallPermission': 'Permissão de Chamada do Dispositivo',
-  'addressBookManagement.setPermissionDesc': 'Definir quais dispositivos o dispositivo atual pode chamar',
+  'addressBookManagement.setPermissionDesc': 'Definir quais dispositivos o dispositivo atual pode chamar ({count} selecionados)',
   'addressBookManagement.selectAll': 'Selecionar Todos',
   'addressBookManagement.deselectAll': 'Desmarcar Todos',
 

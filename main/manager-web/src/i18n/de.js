@@ -362,6 +362,8 @@ export default {
   'replacementWordManagement.edit': 'Bearbeiten',
   'replacementWordManagement.download': 'Herunterladen',
   'replacementWordManagement.delete': 'Löschen',
+
+  // Replacement word dialog related
   'replacementDialog.fileName': 'Dateiname',
   'replacementDialog.fileNamePlaceholder': 'Bitte Dateiname eingeben',
   'replacementDialog.content': 'Ersetzungsinhalt',
@@ -1492,11 +1494,11 @@ export default {
   'addressBookManagement.offline': 'Offline',
   'addressBookManagement.macAddress': 'MAC-Adresse',
   'addressBookManagement.status': 'Status',
-  'addressBookManagement.deviceGroup': 'Gerätegruppe',
+  'addressBookManagement.deviceGroup': 'Zugeordneter Agent',
   'addressBookManagement.addTime': 'Hinzugefügt Zeit',
   'addressBookManagement.lastOnline': 'Zuletzt Online',
   'addressBookManagement.deviceCallPermission': 'Geräteanrufpermission',
-  'addressBookManagement.setPermissionDesc': 'Festlegen welche Geräte das aktuelle Gerät anrufen kann',
+  'addressBookManagement.setPermissionDesc': 'Festlegen welche Geräte das aktuelle Gerät anrufen kann ({count} ausgewählt)',
   'addressBookManagement.selectAll': 'Alle auswählen',
   'addressBookManagement.deselectAll': 'Alle abwählen',
 
