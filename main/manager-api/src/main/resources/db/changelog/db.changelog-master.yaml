@@ -670,9 +670,9 @@ databaseChangeLog:
             encoding: utf8
             path: classpath:db/changelog/202605121509.sql
   - changeSet:
-      id: 202605251425
+      id: 202605251426
       author: RanChen
       changes:
         - sqlFile:
             encoding: utf8
-            path: classpath:db/changelog/202605251425.sql
+            path: classpath:db/changelog/202605251426.sql
