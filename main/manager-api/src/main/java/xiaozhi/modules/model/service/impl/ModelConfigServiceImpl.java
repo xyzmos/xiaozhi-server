@@ -39,9 +39,11 @@ import xiaozhi.modules.model.dto.ModelProviderDTO;
 import xiaozhi.modules.model.entity.ModelConfigEntity;
 import xiaozhi.modules.model.service.ModelConfigService;
 import xiaozhi.modules.model.service.ModelProviderService;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class ModelConfigServiceImpl extends BaseServiceImpl<ModelConfigDao, ModelConfigEntity>
         implements ModelConfigService {
 
@@ -373,7 +375,8 @@ public class ModelConfigServiceImpl extends BaseServiceImpl<ModelConfigDao, Mode
 
             // 删除在新JSON中不存在的非敏感字段
             for (String oldKey : originalJson.keySet().toArray(new String[0])) {
-                if (!modelConfigBodyDTO.getConfigJson().containsKey(oldKey) && !SensitiveDataUtils.isSensitiveField(oldKey)) {
+                if (!modelConfigBodyDTO.getConfigJson().containsKey(oldKey)
+                        && !SensitiveDataUtils.isSensitiveField(oldKey)) {
                     updatedJson.remove(oldKey);
                 }
             }
@@ -392,12 +395,33 @@ public class ModelConfigServiceImpl extends BaseServiceImpl<ModelConfigDao, Mode
         return value.contains("***");
     }
 
-    // 辅助方法：递归合并JSON，保留原始敏感字段
+    // 辅助方法：递归合并 JSON，保留原始敏感字段
     private void mergeJson(JSONObject original, String key, JSONObject updated) {
+        // 空值检查
+        if (original == null || updated == null) {
+            log.warn("mergeJson: original 或 updated 为 null");
+            return;
+        }
+
+        // 如果 original 中不存在 key，创建一个新的 JSON 对象
         if (!original.containsKey(key)) {
             original.put(key, new JSONObject());
         }
-        JSONObject originalChild = original.getJSONObject(key);
+
+        // 获取 original 中的子对象
+        Object originalValue = original.get(key);
+        JSONObject originalChild;
+
+        // 检查 originalValue 是否是 JSONObject 类型
+        if (originalValue instanceof JSONObject) {
+            originalChild = (JSONObject) originalValue;
+        } else {
+            // 如果不是 JSONObject 类型，记录警告并创建新的 JSON 对象
+            log.warn("mergeJson: key '{}' 的值不是 JSONObject 类型 (实际类型：{})，将创建新对象",
+                    key, originalValue != null ? originalValue.getClass().getSimpleName() : "null");
+            originalChild = new JSONObject();
+            original.put(key, originalChild);
+        }
 
         for (String childKey : updated.keySet()) {
             Object childValue = updated.get(childKey);
@@ -411,7 +435,7 @@ public class ModelConfigServiceImpl extends BaseServiceImpl<ModelConfigDao, Mode
             }
         }
 
-        // 删除在新JSON中不存在的非敏感子字段
+        // 删除在新 JSON 中不存在的非敏感子字段
         for (String oldChildKey : originalChild.keySet().toArray(new String[0])) {
             if (!updated.containsKey(oldChildKey) && !SensitiveDataUtils.isSensitiveField(oldChildKey)) {
                 originalChild.remove(oldChildKey);
