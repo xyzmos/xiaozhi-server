@@ -104,4 +104,11 @@ public class AgentPluginMappingServiceImpl extends ServiceImpl<AgentPluginMappin
         agentPluginMappingMapper.delete(updateWrapper);
     }
 
+    @Override
+    public void deleteByPluginId(String pluginId) {
+        UpdateWrapper<AgentPluginMapping> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("plugin_id", pluginId);
+        agentPluginMappingMapper.delete(updateWrapper);
+    }
+
 }
