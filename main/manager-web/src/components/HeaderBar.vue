@@ -669,7 +669,7 @@ export default {
   gap: 25px;
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% - 80px));
 }
 
 .header-right {
