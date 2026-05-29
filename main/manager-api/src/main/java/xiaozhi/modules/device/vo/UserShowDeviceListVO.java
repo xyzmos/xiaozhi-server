@@ -19,6 +19,9 @@ public class UserShowDeviceListVO {
     @Schema(description = "设备型号")
     private String deviceType;
 
+    @Schema(description = "设备型号(board)")
+    private String board;
+
     @Schema(description = "设备唯一标识符")
     private String id;
 

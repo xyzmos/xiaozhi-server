@@ -303,8 +303,8 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
         List<DeviceEntity> devices = getUserDevices(userId, agentId);
         return devices.stream().map(device -> {
             UserShowDeviceListVO vo = ConvertUtils.sourceToTarget(device, UserShowDeviceListVO.class);
-            // 手动设置deviceType（ConvertUtils按字段名匹配，board无法直接映射到deviceType）
             vo.setDeviceType(device.getBoard());
+            vo.setBoard(device.getBoard());
             // 设置UTC时间戳供前端使用时区转换
             if (device.getLastConnectedAt() != null) {
                 vo.setLastConnectedAtTimestamp(device.getLastConnectedAt().getTime());
@@ -371,6 +371,7 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
             sysUserUtilService.assignUsername(device.getUserId(),
                     vo::setBindUserName);
             vo.setDeviceType(device.getBoard());
+            vo.setBoard(device.getBoard());
             // 设置UTC时间戳供前端使用时区转换
             if (device.getLastConnectedAt() != null) {
                 vo.setLastConnectedAtTimestamp(device.getLastConnectedAt().getTime());

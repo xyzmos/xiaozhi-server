@@ -369,7 +369,7 @@ export default {
           this.deviceList = data.data.map(device => {
             return {
               device_id: device.id,
-              model: device.deviceType,
+              model: device.board,
               firmwareVersion: device.appVersion,
               macAddress: device.macAddress,
               bindTime: device.createDate,
