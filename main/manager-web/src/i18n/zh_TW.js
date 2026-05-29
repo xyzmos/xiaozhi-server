@@ -1464,7 +1464,7 @@ export default {
   'addressBookManagement.addressBookDescPlaceholder': '請輸入通訊錄描述',
   'addressBookManagement.remarksPlaceholder': '請輸入備註信息',
   'addressBookManagement.selectDevice': '請選擇一個設備查看通訊錄詳情',
-  'addressBookManagement.save': '儲存',
+  'addressBookManagement.save': '保存權限',
   'addressBookManagement.saveSuccess': '儲存成功',
   'addressBookManagement.saveFailed': '儲存失敗',
   'addressBookManagement.deviceNotSelected': '請先選擇一個設備',
