@@ -1432,6 +1432,7 @@ export default {
   'addressBookManagement.setPermissionDesc': 'Đặt thiết bị nào thiết bị hiện tại có thể gọi',
   'addressBookManagement.selectAll': 'Chọn tất cả',
   'addressBookManagement.deselectAll': 'Bỏ chọn tất cả',
+  'addressBookManagement.save': 'Lưu quyền',
 
   // Address Book Management page - operation messages
   'addressBookManagement.aliasSaved': 'Bí danh đã lưu',

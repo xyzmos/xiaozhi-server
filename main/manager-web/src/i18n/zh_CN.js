@@ -1462,7 +1462,7 @@ export default {
   'addressBookManagement.addressBookDescPlaceholder': '请输入通讯录描述',
   'addressBookManagement.remarksPlaceholder': '请输入备注信息',
   'addressBookManagement.selectDevice': '请选择一个设备查看通讯录详情',
-  'addressBookManagement.save': '保存',
+  'addressBookManagement.save': '保存权限',
   'addressBookManagement.saveSuccess': '保存成功',
   'addressBookManagement.saveFailed': '保存失败',
   'addressBookManagement.deviceNotSelected': '请先选择一个设备',

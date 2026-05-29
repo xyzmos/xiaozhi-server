@@ -1432,6 +1432,7 @@ export default {
   'addressBookManagement.setPermissionDesc': 'Festlegen welche Geräte das aktuelle Gerät anrufen kann',
   'addressBookManagement.selectAll': 'Alle auswählen',
   'addressBookManagement.deselectAll': 'Alle abwählen',
+  'addressBookManagement.save': 'Berechtigungen speichern',
 
   // Address Book Management page - operation messages
   'addressBookManagement.aliasSaved': 'Alias gespeichert',
