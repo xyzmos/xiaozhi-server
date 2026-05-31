@@ -147,6 +147,11 @@ public interface Constant {
     String SERVER_AUTH_ENABLED = "server.auth.enabled";
 
     /**
+     * 系统功能菜单配置
+     */
+    String SYSTEM_WEB_MENU = "system-web.menu";
+
+    /**
      * 无记忆
      */
     String MEMORY_NO_MEM = "Memory_nomem";

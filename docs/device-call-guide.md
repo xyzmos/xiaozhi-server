@@ -35,19 +35,87 @@
 - 在设备A的配置中勾选设备B → 设备A可与设备B通信
 - 在设备B的配置中勾选设备A → 设备B可与设备A通信
 
-### 第三步：固件端添加远程唤醒工具
+### 第三步：在智能体配置添加呼叫工具
 
-1. 在虾哥代码的基础上增加远程唤醒工具MCP：[xiaozhi-esp32](https://github.com/78/xiaozhi-esp32/pull/1244/changes)
-2. 按照 [固件编译烧录指南](firmware-build.md) 完成固件烧录
+1. 在智控台顶部菜单点击 **智能体管理**
+2. 在刚刚配置设备联系人的相关智能体中点击 **编辑角色**
+3. 在右侧详情面板中，点击 **编辑功能**
+4. 勾选 **设备呼叫设备** 工具
+5. 点击 **保存配置** 确认
+6. 在外侧再次点击 **保存配置** ，随即重启设备
 
-### 第四步：配置MQTT网关服务
+### 第四步：固件端添加远程唤醒工具
+
+1. 在[xiaozhi-esp32](https://github.com/78/xiaozhi-esp32) 代码的基础上增加远程唤醒工具MCP，版本支持为2.1.0至2.2.6（2026年5月29日的版本）
+2. 在application.h文件中添加远程唤醒函数声明
+    ```cpp
+    void RemoteWakeup(const std::string& reason);
+    ```
+3. 在application.cc文件中添加远程唤醒函数
+    ```cpp
+    void Application::RemoteWakeup(const std::string& reason){
+        if (!protocol_) {
+            return;
+        }
+
+        auto state = GetDeviceState();
+        
+        if (state == kDeviceStateIdle) {
+            audio_service_.EncodeWakeWord();
+
+            if (!protocol_->IsAudioChannelOpened()) {
+                SetDeviceState(kDeviceStateConnecting);
+                if (!protocol_->OpenAudioChannel()) {
+                    audio_service_.EnableWakeWordDetection(true);
+                    return;
+                }
+            }
+            std::string wake_word = reason;
+    #if CONFIG_USE_AFE_WAKE_WORD || CONFIG_USE_CUSTOM_WAKE_WORD
+            // Encode and send the wake word data to the server
+            while (auto packet = audio_service_.PopWakeWordPacket()) {
+                protocol_->SendAudio(std::move(packet));
+            }
+            // Set the chat state to wake word detected
+            protocol_->SendWakeWordDetected(wake_word);
+            SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop : kListeningModeRealtime);
+    #else
+            // Set flag to play popup sound after state changes to listening
+            // (PlaySound here would be cleared by ResetDecoder in EnableVoiceProcessing)
+            play_popup_on_listening_ = true;
+            SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop : kListeningModeRealtime);
+    #endif
+        } else if (state == kDeviceStateSpeaking) {
+            AbortSpeaking(kAbortReasonWakeWordDetected);
+            SetDeviceState(kDeviceStateIdle);
+        } else if (state == kDeviceStateActivating) {
+            SetDeviceState(kDeviceStateIdle);
+        }
+    }
+    ```
+4. 在mcp_server.cc文件中添加远程唤醒工具
+    ```cpp
+    AddUserOnlyTool("self.remote_wakeup", "Remote wakeup function with configurable parameters",
+        PropertyList({
+            Property("reason", kPropertyTypeString, "Wakeup reason"),
+        }),
+        [this](const PropertyList& properties) -> ReturnValue {
+            std::string reason = properties["reason"].value<std::string>();
+            ESP_LOGI(TAG, "Wakeup reason=%s", reason.c_str());
+            auto& app = Application::GetInstance();
+            app.RemoteWakeup(reason);
+            return true;
+    ```
+5. 按照 [固件编译烧录指南](firmware-build.md) 完成固件烧录
+
+### 第五步：配置MQTT网关服务
 
 1. 部署MQTT网关服务，参考 [MQTT网关集成文档](mqtt-gateway-integration.md)
 2. 如果已经部署请确认代码的版本是2026年5月27日的版本
 
 ## 呼叫流程说明
 
-准备两个设备，在智控台上面配置好通讯权限之后，在其中一个小智对话那里对他说：”呼叫XXX“,观察设备B是否响应。
+准备两个设备，在智控台上面配置好通讯权限和在智能体中添加呼叫工具之后，在其中一个小智对话那里对他说：”呼叫XXX“，观察设备B是否响应。
 
 ## 常见问题
 

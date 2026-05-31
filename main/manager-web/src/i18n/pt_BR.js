@@ -1501,6 +1501,7 @@ export default {
   'addressBookManagement.setPermissionDesc': 'Definir quais dispositivos o dispositivo atual pode chamar ({count} selecionados)',
   'addressBookManagement.selectAll': 'Selecionar Todos',
   'addressBookManagement.deselectAll': 'Desmarcar Todos',
+  'addressBookManagement.save': 'Salvar Permissões',
 
   // Address Book Management page - operation messages
   'addressBookManagement.aliasSaved': 'Apelido salvo',

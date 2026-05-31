@@ -22,32 +22,21 @@
         </div>
 
         <!-- 智能体列表 -->
-        <div class="agent-list">
-          <div
-            v-for="agent in filteredAgents"
-            :key="agent.id"
-            class="agent-item"
-          >
-            <div
-            class="agent-card"
-            :class="{ active: selectedAgent && selectedAgent.id === agent.id, expanded: expandedAgentId === agent.id }"
-            @click="handleAgentClick(agent)"
-          >
-              <div class="agent-icon">
-                <i class="el-icon-arrow-right"></i>
-              </div>
-              <div class="agent-info">
-                <div class="agent-name">{{ agent.agentName }} <span class="device-count">({{ agent.deviceCount || 0 }})</span></div>
-              </div>
-            </div>
-            <!-- 设备列表 - 展开时显示在该智能体下方 -->
-            <div class="device-list" v-if="expandedAgentId === agent.id">
+        <el-collapse accordion class="agent-collapse" v-model="expandedAgentId">
+          <el-collapse-item v-for="agent in filteredAgents" :key="agent.id" :name="agent.id">
+            <template slot="title">
+              <svg class="agent-triangle" width="8" height="12" viewBox="0 0 10 14" fill="#c8cafb">
+                <path d="M2 2L8 7L2 12L2 2Z" stroke="#c8cafb" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+              </svg>
+              <span class="agent-name">{{ agent.agentName }} ({{ agent.deviceCount || 0 }})</span>
+            </template>
+            <div class="device-list">
               <div
                 v-for="device in agent.devices"
                 :key="device.id"
                 class="device-item"
                 :class="{ active: selectedDevice && selectedDevice.id === device.id }"
-                @click="handleDeviceClick(device)"
+                @click="handleDeviceClick(device, agent)"
               >
                 <div class="device-avatar">
                   <img :src="getDeviceAvatar(device.id)" alt="avatar" />
@@ -63,8 +52,8 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </el-collapse-item>
+        </el-collapse>
       </div>
 
       <!-- 右侧通讯录详情 -->
@@ -92,13 +81,16 @@
                 </div>
                 <div class="device-mac">{{ $t('addressBookManagement.macAddress') }}：{{ selectedDevice.deviceId }}</div>
                 <div class="device-status">
-                  {{ $t('addressBookManagement.status') }}：<span :class="selectedDevice.online ? 'online' : 'offline'"><i class="status-dot"></i>{{ selectedDevice.online ? $t('addressBookManagement.online') : $t('addressBookManagement.offline') }}</span>
+                  <span>{{ $t('addressBookManagement.status') }}：</span>
+                  <span :class="selectedDevice.online ? 'online' : 'offline'">
+                  <i class="status-dot"></i>
+                  <span>{{ selectedDevice.online ? $t('addressBookManagement.online') : $t('addressBookManagement.offline') }}</span></span>
                 </div>
               </div>
             </div>
             <div class="device-stats">
               <div class="stat-item">
-                <i class="el-icon-document"></i>
+                <i class="el-icon-folder"></i>
                 <div class="stat-content">
                   <div class="stat-label">{{ $t('addressBookManagement.deviceGroup') }}</div>
                   <div class="stat-value-row">
@@ -124,7 +116,7 @@
                 </div>
               </div>
               <div class="stat-item">
-                <i class="el-icon-connection"></i>
+                <i class="el-icon-link"></i>
                 <div class="stat-content">
                   <div class="stat-label">{{ $t('addressBookManagement.lastOnline') }}</div>
                   <div class="stat-value">{{ getTimeAgo(selectedDevice.lastConnectedAt) }}</div>
@@ -141,10 +133,10 @@
                 <p class="section-desc">{{ $t('addressBookManagement.setPermissionDesc', { count: selectedPermissions.length }) }}</p>
               </div>
               <div class="section-actions">
+                <el-button size="small" @click="handleCancel">{{ $t('common.cancel') }}</el-button>
                 <el-button size="small" @click="handleToggleSelectAll">
                   {{ isAllSelected ? $t('addressBookManagement.deselectAll') : $t('addressBookManagement.selectAll') }}
                 </el-button>
-                <el-button size="small" @click="handleCancel">{{ $t('common.cancel') }}</el-button>
                 <el-button type="primary" size="small" @click="handleSavePermissions">{{ $t('addressBookManagement.save') }}</el-button>
               </div>
             </div>
@@ -155,8 +147,12 @@
                 :key="device.id"
                 class="permission-item"
                 :class="{ active: selectedPermissions.includes(device.id) }"
-                @click="handlePermissionToggle(device.id)"
               >
+                <el-checkbox
+                  class="permission-checkbox"
+                  :value="selectedPermissions.includes(device.id)"
+                  @change="(checked) => handlePermissionToggle(device.id, checked)"
+                ></el-checkbox>
                 <div class="permission-avatar">
                   <img :src="getDeviceAvatar(device.id)" alt="avatar" />
                 </div>
@@ -183,10 +179,8 @@
           </div>
         </div>
 
-        <div class="empty-detail" v-else>
-          <i class="el-icon-document-delete empty-icon"></i>
-          <p>{{ $t('addressBookManagement.selectDevice') }}</p>
-        </div>
+        <el-empty :description="$t('addressBookManagement.selectDevice')" v-else>
+        </el-empty>
       </div>
     </div>
 
@@ -351,7 +345,9 @@ export default {
         this.selectedDevice = null;
       }
     },
-    handleDeviceClick(device) {
+    handleDeviceClick(device, agent) {
+      this.expandedAgentId = agent.id;
+      this.selectedAgent = agent;
       this.selectedDevice = device;
       // 加载所有设备用于权限选择（排除当前设备）
       this.allDevices = this.agentDeviceOptions
@@ -410,12 +406,16 @@ export default {
       this.editingDeviceId = null;
       this.editingDeviceName = '';
     },
-    handlePermissionToggle(deviceId) {
-      const index = this.selectedPermissions.indexOf(deviceId);
-      if (index > -1) {
-        this.selectedPermissions.splice(index, 1);
+    handlePermissionToggle(deviceId, checked) {
+      if (checked) {
+        if (!this.selectedPermissions.includes(deviceId)) {
+          this.selectedPermissions.push(deviceId);
+        }
       } else {
-        this.selectedPermissions.push(deviceId);
+        const index = this.selectedPermissions.indexOf(deviceId);
+        if (index > -1) {
+          this.selectedPermissions.splice(index, 1);
+        }
       }
     },
     handleToggleSelectAll() {
@@ -590,16 +590,113 @@ export default {
     display: flex;
     flex: 1;
     margin: 20px 22px 0 22px;
-    gap: 20px;
+    gap: 8px;
     min-height: 0;
+  }
+}
+.agent-collapse {
+  flex: 1;
+  padding-right: 10px;
+  padding-left: 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  .agent-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #686f85;
+    text-align: left;
+  }
+  
+  .device-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 8px;
+    .device-item {
+      padding: 4px 15px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: none;
+
+      &:hover {
+        background: #ebf1fe;
+      }
+
+      &.active {
+        .device-name {
+          color: #7297fd !important;
+        }
+        border-color: #b3c0fc;
+        background: #ebf1fe;
+      }
+
+      .device-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      .device-content {
+        flex: 1;
+        min-width: 0;
+        .device-name {
+          font-size: 14px;
+          color: #686f85;
+          text-align: left;
+          line-height: 16px;
+          // margin-bottom: 4px;
+        }
+      }
+
+
+      .device-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .device-id {
+          font-size: 12px;
+          line-height: 16px;
+          color: #909399;
+        }
+
+        .device-status {
+          font-size: 12px;
+          line-height: 16px;
+          padding: 2px 8px;
+          border-radius: 4px;
+
+          &.online {
+            color: #4fbe80;
+          }
+
+          &.offline {
+            color: #9ea3b0;
+          }
+        }
+      }
+    }
   }
 }
 
 .left-panel {
-  width: 20%;
+  width: 19%;
   background: white;
   border-radius: 15px;
-  padding: 20px;
+  padding: 20px 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -662,16 +759,17 @@ export default {
     margin-bottom: 6px;
 
     .device-name-text {
+      line-height: 34px;
       font-size: 24px;
-      font-weight: 600;
-      color: #303133;
+      color: #3d4566;
       cursor: pointer;
     }
 
     .alias-input {
+      height: 28px;
       font-size: 24px;
       font-weight: 600;
-      color: #303133;
+      color: #3d4566;
       border: 1px solid #6b8cff;
       border-radius: 4px;
       padding: 2px 8px;
@@ -692,27 +790,32 @@ export default {
 
   .device-mac {
     font-size: 12px;
-    color: #606266;
+    color: #686f85;
     margin-bottom: 4px;
     text-align: left;
   }
 
   .device-status {
+    display: flex;
+    margin-top: 4px;
     font-size: 12px;
-    color: #606266;
+    color: #686f85;
     text-align: left;
 
     .online {
-      color: #52c41a;
+      margin-left: 4px;
+      color: #686f85;
       display: inline-flex;
       align-items: center;
       gap: 4px;
 
       .status-dot {
-        width: 8px;
-        height: 8px;
+        margin-top: -3px;
+        margin-right: 4px;
+        width: 9px;
+        height: 9px;
         border-radius: 50%;
-        background: #52c41a;
+        background: #4eb36c;
       }
     }
 
@@ -723,8 +826,10 @@ export default {
       gap: 4px;
 
       .status-dot {
-        width: 8px;
-        height: 8px;
+        margin-top: -3px;
+        margin-right: 4px;
+        width: 9px;
+        height: 9px;
         border-radius: 50%;
         background: #999;
       }
@@ -744,9 +849,9 @@ export default {
     align-items: center;
     gap: 10px;
     padding: 12px 15px;
-    background: #f5f7fa;
     border-radius: 8px;
     min-width: 140px;
+    border: 1px solid #eaedf4;
 
     i {
       font-size: 28px;
@@ -765,7 +870,7 @@ export default {
 
       .stat-value {
         font-size: 14px;
-        color: #303133;
+        color: #3d4566;
         font-weight: 500;
       }
 
@@ -790,7 +895,7 @@ export default {
 
       .stat-edit-input {
         font-size: 14px;
-        color: #303133;
+        color: #3d4566;
         font-weight: 500;
         border: 1px solid #6b8cff;
         border-radius: 4px;
@@ -821,10 +926,10 @@ export default {
       text-align: left;
 
       h3 {
-        font-size: 16px;
-        font-weight: 600;
-        color: #303133;
-        margin: 0 0 4px 0;
+        font-size: 24px;
+        font-weight: 500;
+        color: #3d4566;
+        margin: 0 0 10px 0;
       }
 
       .section-desc {
@@ -843,7 +948,8 @@ export default {
 
 .permission-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
   gap: 12px;
   overflow-y: auto;
   flex: 1;
@@ -851,25 +957,51 @@ export default {
 
 .permission-item {
   padding: 12px;
-  background: #f5f7fa;
+  background: linear-gradient(135deg, #f8fafd 0%, #ffffff 100%);
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.3s ease;
-  border: 2px solid transparent;
+  border: 2px solid #eaedf4;
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
 
-  &:hover {
-    background: #e6f0ff;
-  }
 
   &.active {
-    border-color: #6b8cff;
-    background: #e6f0ff;
+    border-color: #c6d1fd;
 
     .permission-name {
-      color: #6b8cff;
+      color: #3765f8;
+    }
+  }
+
+  .permission-checkbox {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+
+    ::v-deep(.el-checkbox__inner) {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border-color: #dcdfe6;
+      background-color: #ffffff;
+
+      &::after {
+        width: 4px;
+        height: 8px;
+        left: 5px;
+        top: 2px;
+      }
+    }
+
+    ::v-deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+      background-color: #3765f8;
+      border-color: #3765f8;
+    }
+
+    ::v-deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+      color: #3765f8;
     }
   }
 
@@ -894,17 +1026,18 @@ export default {
 
     .permission-name {
       font-size: 14px;
-      color: #303133;
+      color: #3d4566;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .permission-name-row {
+      line-height: 22px;
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
 
       .permission-name {
         flex: 1;
@@ -912,6 +1045,7 @@ export default {
       }
 
       .permission-edit-btn {
+        margin-right: 24px;
         font-size: 14px;
         color: #909399;
         cursor: pointer;
@@ -947,29 +1081,30 @@ export default {
 
 .permission-edit-input {
   font-size: 14px;
-  color: #303133;
+  color: #3d4566;
   border: 1px solid #6b8cff;
   border-radius: 4px;
   padding: 2px 6px;
   outline: none;
-  width: 80px;
+  width: calc(100% - 40px);
 }
 
 .left-header {
   margin-bottom: 20px;
   text-align: left;
+  padding: 0 20px;
 }
 
 .main-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #303133;
+  font-size: 24px;
+  font-weight: 500;
+  color: #3d4566;
   margin: 0 0 8px 0;
 }
 
 .sub-title {
   font-size: 14px;
-  color: #909399;
+  color: #a6aebe;
   margin: 0;
 }
 
@@ -977,6 +1112,12 @@ export default {
   display: flex;
   gap: 10px;
   margin-bottom: 15px;
+  padding: 0 20px;
+}
+
+.agent-triangle {
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .search-input {
@@ -984,31 +1125,17 @@ export default {
 }
 
 .btn-search {
+  padding: 10px 20px;
   background: linear-gradient(135deg, #6b8cff, #a966ff);
   border: none;
   color: white;
   width: 80px;
 }
 
-.agent-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-  padding-right: 5px;
-}
-
-.agent-item {
-  display: flex;
-  flex-direction: column;
-}
-
 .agent-card {
   width: 100%;
-  padding: 12px 15px;
-  background: #f5f7fa;
+  padding: 12px 0px;
+  // background: #f5f7fa;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
@@ -1033,7 +1160,7 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #606266;
+    color: #686f85;
     transition: transform 0.3s ease;
 
     i {
@@ -1051,98 +1178,13 @@ export default {
     .agent-name {
       font-size: 14px;
       font-weight: 600;
-      color: #303133;
+      color: #3d4566;
       text-align: left;
     }
 
     .device-count {
       font-weight: normal;
       color: #909399;
-    }
-  }
-}
-
-.device-list {
-  display: flex;
-  flex-direction: column;
-  padding-left: 20px;
-  margin-top: 8px;
-}
-
-.device-item {
-  padding: 10px 15px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  &:hover {
-    background: #e6f0ff;
-  }
-
-  &.active {
-    .device-name {
-      color: #6b8cff;
-    }
-    border-color: #6b8cff;
-    background: #e6f0ff;
-  }
-
-  .device-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    overflow: hidden;
-    flex-shrink: 0;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-
-  .device-content {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .device-name {
-    font-size: 14px;
-    color: #606266;
-    text-align: left;
-    margin-bottom: 4px;
-  }
-
-  .device-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .device-id {
-      font-size: 12px;
-      color: #909399;
-    }
-
-    .device-status {
-      font-size: 12px;
-      padding: 2px 8px;
-      border-radius: 4px;
-
-      &.online {
-        background: #e6f7ff;
-        color: #52c41a;
-      }
-
-      &.offline {
-        background: #f5f5f5;
-        color: #999;
-      }
     }
   }
 }
@@ -1192,10 +1234,26 @@ export default {
 }
 
 ::v-deep(.el-input__inner) {
-  border-radius: 4px;
+  height: 36px;
+  border-radius: 6px;
 }
 
 ::v-deep(.el-textarea__inner) {
   border-radius: 4px;
+}
+::v-deep(.el-collapse) {
+  border: none !important;
+}
+::v-deep(.el-collapse-item__header) {
+  border: none !important;
+}
+::v-deep(.el-collapse-item__wrap) {
+  border: none !important;
+}
+::v-deep(.el-collapse-item__content) {
+  padding-bottom: 0 !important;
+}
+::v-deep(.el-empty) {
+  height: 100%;
 }
 </style>
