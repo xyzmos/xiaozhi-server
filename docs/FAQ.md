@@ -84,6 +84,7 @@ VAD:
 10、[如何部署上下文源](./context-provider-integration.md)<br/>
 11、[如何集成PowerMem智能记忆](./powermem-integration.md)<br/>
 12、[如何配置天气插件查询天气](./weather-integration.md)<br/>
+13、[如何开启设备呼叫插件](./device-call-guide.md)<br/>
 
 ### 10、数字人相关教程
 1、[数字人digital-human启动方法](./digital-human-wakeword.md)<br/>

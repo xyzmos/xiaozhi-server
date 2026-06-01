@@ -87,6 +87,8 @@ public class ShiroConfig {
         filterMap.put("/user/retrieve-password", "anon");
         // 将config路径使用server服务过滤器
         filterMap.put("/config/**", "server");
+        filterMap.put("/device/address-book/lookup", "server");
+        filterMap.put("/device/call/forward", "server");
         filterMap.put("/agent/chat-history/report", "server");
         filterMap.put("/agent/chat-history/download/**", "anon");
         filterMap.put("/agent/chat-summary/**", "server");

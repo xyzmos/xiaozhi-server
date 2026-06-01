@@ -14,7 +14,7 @@ public interface AgentPluginMappingService extends IService<AgentPluginMapping> 
 
     /**
      * 根据智能体id获取插件参数
-     * 
+     *
      * @param agentId
      * @return
      */
@@ -22,8 +22,15 @@ public interface AgentPluginMappingService extends IService<AgentPluginMapping> 
 
     /**
      * 根据智能体id删除插件参数
-     * 
+     *
      * @param agentId
      */
     void deleteByAgentId(String agentId);
+
+    /**
+     * 根据插件ID删除所有智能体的插件映射
+     *
+     * @param pluginId 插件ID
+     */
+    void deleteByPluginId(String pluginId);
 }

@@ -7,6 +7,7 @@ from config.manage_api_client import (
     get_server_config,
     get_agent_models,
     get_correct_words,
+    lookup_address_book,
     DeviceNotFoundException,
     DeviceBindException,
 )
