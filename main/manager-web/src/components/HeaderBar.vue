@@ -27,7 +27,8 @@
         </div>
         <!-- 普通用户显示音色克隆 -->
         <div v-if="!userInfo.superAdmin && featureStatus.voiceClone" class="equipment-management"
-          :class="{ 'active-tab': $route.path === '/voice-clone-management' }" @click="handleRouter('voiceCloneManagement')">
+          :class="{ 'active-tab': $route.path === '/voice-clone-management' }"
+          @click="handleRouter('voiceCloneManagement')">
           <img loading="lazy" alt="" src="@/assets/header/voice.png" :style="{
             filter:
               $route.path === '/voice-clone-management'
@@ -38,11 +39,12 @@
         </div>
 
         <!-- 超级管理员显示音色克隆下拉菜单 -->
-        <el-dropdown v-if="userInfo.superAdmin && featureStatus.voiceClone" trigger="click" class="equipment-management more-dropdown" :class="{
-          'active-tab':
-            $route.path === '/voice-clone-management' ||
-            $route.path === '/voice-resource-management',
-        }" @visible-change="handleVoiceCloneDropdownVisibleChange">
+        <el-dropdown v-if="userInfo.superAdmin && featureStatus.voiceClone" trigger="click"
+          class="equipment-management more-dropdown" :class="{
+            'active-tab':
+              $route.path === '/voice-clone-management' ||
+              $route.path === '/voice-resource-management',
+          }" @visible-change="handleVoiceCloneDropdownVisibleChange">
           <span class="el-dropdown-link">
             <img loading="lazy" alt="" src="@/assets/header/voice.png" :style="{
               filter:
@@ -64,8 +66,8 @@
           </el-dropdown-menu>
         </el-dropdown>
 
-        <div v-if="userInfo.superAdmin" class="equipment-management" :class="{ 'active-tab': $route.path === '/model-config' }"
-          @click="handleRouter('modelConfig')">
+        <div v-if="userInfo.superAdmin" class="equipment-management"
+          :class="{ 'active-tab': $route.path === '/model-config' }" @click="handleRouter('modelConfig')">
           <img loading="lazy" alt="" src="@/assets/header/model_config.png" :style="{
             filter:
               $route.path === '/model-config' ? 'brightness(0) invert(1)' : 'None',
@@ -84,7 +86,7 @@
         <div v-if="featureStatus.addressBook" class="equipment-management"
           :class="{ 'active-tab': $route.path === '/address-book-management' }"
           @click="handleRouter('addressBookManagement')">
-          <img loading="lazy" alt="" src="@/assets/header/knowledge_base.png" :style="{
+          <img loading="lazy" alt="" src="@/assets/header/address_book.png" :style="{
             filter:
               $route.path === '/address-book-management' ? 'brightness(0) invert(1)' : 'None',
           }" />
@@ -144,8 +146,8 @@
               {{ $t("header.serverSideManagement") }}
             </el-dropdown-item>
             <el-dropdown-item @click.native="handleRouter('featureManagement')">
-                {{ $t("header.featureManagement") }}
-              </el-dropdown-item>
+              {{ $t("header.featureManagement") }}
+            </el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
       </div>
@@ -199,11 +201,10 @@
 </template>
 
 <script>
-import userApi from "@/apis/module/user";
 import i18n, { changeLanguage } from "@/i18n";
+import featureManager from "@/utils/featureManager"; // 引入功能管理工具类
 import { mapActions, mapState } from "vuex";
 import ChangePasswordDialog from "./ChangePasswordDialog.vue"; // 引入修改密码弹窗组件
-import featureManager from "@/utils/featureManager"; // 引入功能管理工具类
 
 export default {
   name: "HeaderBar",
@@ -779,9 +780,11 @@ export default {
   color: #909399;
   visibility: hidden;
 }
+
 .more-dropdown {
   padding: 0;
 }
+
 .more-dropdown .el-dropdown-link {
   display: flex;
   align-items: center;
@@ -829,6 +832,7 @@ export default {
   flex-shrink: 0;
   cursor: pointer;
 }
+
 .el-user-dropdown {
   cursor: pointer;
 }
