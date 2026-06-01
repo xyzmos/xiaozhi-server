@@ -45,7 +45,8 @@ public class DeviceController {
     private final RedisUtils redisUtils;
     private final SysParamsService sysParamsService;
 
-    public DeviceController(DeviceService deviceService, DeviceAddressBookService deviceAddressBookService, RedisUtils redisUtils, SysParamsService sysParamsService) {
+    public DeviceController(DeviceService deviceService, DeviceAddressBookService deviceAddressBookService,
+            RedisUtils redisUtils, SysParamsService sysParamsService) {
         this.deviceService = deviceService;
         this.deviceAddressBookService = deviceAddressBookService;
         this.redisUtils = redisUtils;
