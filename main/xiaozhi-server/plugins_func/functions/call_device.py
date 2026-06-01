@@ -15,7 +15,15 @@ call_device_function_desc = {
     "type": "function",
     "function": {
         "name": "call_device",
-        "description": "主动呼叫其他小智设备进行语音通话。**重要**：只有当用户主动说'我想跟XX通话'、'帮我打电话给XX'时才调用此工具。当收到'来自XX的来电'消息时，不要调用此工具，让设备自然播报即可。",
+        "description": (
+            "用于设备之间建立语音通话连接。"
+            "当用户说出以下意图时调用此工具：\n"
+            "1. 主动呼叫：用户说”呼叫XX/打电话给XX/连线XX/打给XX/帮我呼叫XX”时调用，nickname取XX。"
+            "例如：”呼叫张三”→nickname=”张三”、”帮我连线小陈”→nickname=”小陈”；\n"
+            "2. 接听来电：系统刚提示”您收到来自XX的来电，是否接听？”后，用户说”接听/接通/同意接听/同意连线/同意对话”时调用，"
+            "nickname取提示中的XX。\n"
+            "如果用户输入不是明确接听，也不是明确拒绝，不得调用call_device，必须先追问一次"
+        ),
         "parameters": {
             "type": "object",
             "properties": {

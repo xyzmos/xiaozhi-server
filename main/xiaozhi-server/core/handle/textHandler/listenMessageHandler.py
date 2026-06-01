@@ -74,7 +74,7 @@ class ListenTextMessageHandler(TextMessageHandler):
                     conn.tts.tts_text_queue.put(TTSMessageDTO(sentence_id=conn.sentence_id, sentence_type=SentenceType.LAST, content_type=ContentType.ACTION))
 
                     # 添加到对话历史，让模型理解上下文
-                    conn.dialogue.put(Message(role="user", content=call_text))
+                    conn.dialogue.put(Message(role="assistant", content=call_text))
                     return
 
                 # 识别是否是唤醒词
