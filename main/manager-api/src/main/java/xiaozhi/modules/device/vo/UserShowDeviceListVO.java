@@ -1,10 +1,11 @@
 package xiaozhi.modules.device.vo;
 
+import java.util.Date;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-
-import java.util.Date;
 
 @Data
 @Schema(description = "用户显示设备列表VO")
@@ -27,6 +28,9 @@ public class UserShowDeviceListVO {
 
     @Schema(description = "mac地址")
     private String macAddress;
+
+    @Schema(description = "设备别名")
+    private String alias;
 
     @Schema(description = "开启OTA")
     private Integer otaUpgrade;

@@ -304,7 +304,6 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
         return devices.stream().map(device -> {
             UserShowDeviceListVO vo = ConvertUtils.sourceToTarget(device, UserShowDeviceListVO.class);
             vo.setDeviceType(device.getBoard());
-            vo.setBoard(device.getBoard());
             // 设置UTC时间戳供前端使用时区转换
             if (device.getLastConnectedAt() != null) {
                 vo.setLastConnectedAtTimestamp(device.getLastConnectedAt().getTime());
