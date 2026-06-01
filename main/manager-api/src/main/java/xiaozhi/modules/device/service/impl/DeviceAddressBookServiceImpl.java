@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -13,16 +14,20 @@ import xiaozhi.common.redis.RedisUtils;
 import xiaozhi.modules.device.dao.DeviceAddressBookDao;
 import xiaozhi.modules.device.entity.DeviceAddressBookEntity;
 import xiaozhi.modules.device.service.DeviceAddressBookService;
+import xiaozhi.modules.device.service.DeviceService;
 
 @Service
 public class DeviceAddressBookServiceImpl implements DeviceAddressBookService {
 
     private final DeviceAddressBookDao deviceAddressBookDao;
     private final RedisUtils redisUtils;
+    private final DeviceService deviceService;
 
-    public DeviceAddressBookServiceImpl(DeviceAddressBookDao deviceAddressBookDao, RedisUtils redisUtils) {
+    public DeviceAddressBookServiceImpl(DeviceAddressBookDao deviceAddressBookDao, RedisUtils redisUtils,
+            DeviceService deviceService) {
         this.deviceAddressBookDao = deviceAddressBookDao;
         this.redisUtils = redisUtils;
+        this.deviceService = deviceService;
     }
 
     @Override
@@ -131,6 +136,10 @@ public class DeviceAddressBookServiceImpl implements DeviceAddressBookService {
             DeviceAddressBookEntity entity = new DeviceAddressBookEntity();
             entity.setMacAddress(macAddress);
             entity.setTargetMac(targetMac);
+            // 如果 alias 为空，就用默认使用设备名称
+            if (StringUtils.isBlank(alias)) {
+                alias = deviceService.getDeviceByMacAddress(targetMac).getAlias();
+            }
             entity.setAlias(alias);
             entity.setHasPermission(hasPermission);
             deviceAddressBookDao.insert(entity);
