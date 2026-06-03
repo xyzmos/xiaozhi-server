@@ -31,7 +31,11 @@
               </el-table-column>
               <el-table-column :label="$t('device.firmwareVersion')" prop="firmwareVersion"
                 align="center"></el-table-column>
-              <el-table-column :label="$t('device.macAddress')" prop="macAddress" align="center"></el-table-column>
+              <el-table-column :label="$t('device.macAddress')" prop="macAddress" align="center">
+                <template slot-scope="scope">
+                  <MacAddressMask :macAddress="scope.row.macAddress" />
+                </template>
+              </el-table-column>
               <el-table-column :label="$t('device.bindTime')" prop="bindTime" align="center"></el-table-column>
               <el-table-column :label="$t('device.lastConversation')" prop="lastConversation"
                 align="center"></el-table-column>
@@ -131,13 +135,15 @@ import AddDeviceDialog from "@/components/AddDeviceDialog.vue";
 import HeaderBar from "@/components/HeaderBar.vue";
 import ManualAddDeviceDialog from "@/components/ManualAddDeviceDialog.vue";
 import VersionFooter from "@/components/VersionFooter.vue";
+import MacAddressMask from "@/components/MacAddressMask.vue";
 
 export default {
   components: {
     HeaderBar,
     AddDeviceDialog,
     ManualAddDeviceDialog,
-    VersionFooter
+    VersionFooter,
+    MacAddressMask,
   },
   data() {
     return {
