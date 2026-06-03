@@ -2,6 +2,14 @@
     <el-dialog
         :title="$t('chatHistory.with') + agentName + $t('chatHistory.dialogTitle') + (currentMacAddress ? '[' + currentMacAddress + ']' : '')"
         :visible.sync="dialogVisible" width="80%" :before-close="handleClose" custom-class="chat-history-dialog">
+        <template slot="title">
+            <span style="font-size: 18px;">
+                {{ $t('chatHistory.with') + agentName + $t('chatHistory.dialogTitle') }}
+                <template v-if="currentMacAddress">
+                    [<MacAddressMask :macAddress="currentMacAddress" />]
+                </template>
+            </span>
+        </template>
         <div class="chat-container">
             <div class="session-list" @scroll="handleScroll">
                 <div v-for="session in sessions" :key="session.sessionId" class="session-item"
@@ -75,6 +83,7 @@
 <script>
 import { debounce } from '@/utils'
 import Api from '@/apis/api';
+import MacAddressMask from '@/components/MacAddressMask.vue';
 
 export default {
     name: 'ChatHistoryDialog',
@@ -109,6 +118,9 @@ export default {
             audioElement: null,
             expandedToolResults: {} // 跟踪工具结果的展开状态
         };
+    },
+    components: {
+        MacAddressMask,
     },
     watch: {
         visible(val) {

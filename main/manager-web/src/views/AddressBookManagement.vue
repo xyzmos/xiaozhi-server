@@ -42,9 +42,13 @@
                   <img :src="getDeviceAvatar(device.id)" alt="avatar" />
                 </div>
                 <div class="device-content">
-                  <div class="device-name">{{ device.name }}</div>
+                  <div class="device-name">
+                    <MacAddressMask :macAddress="device.name" />
+                  </div>
                   <div class="device-row">
-                    <span class="device-id">{{ device.deviceId }}</span>
+                    <span class="device-id">
+                      <MacAddressMask :macAddress="device.deviceId" />
+                    </span>
                     <span class="device-status" :class="device.online ? 'online' : 'offline'">
                       {{ device.online ? $t('addressBookManagement.online') : $t('addressBookManagement.offline') }}
                     </span>
@@ -76,10 +80,15 @@
                     @keyup.enter="handleAliasBlur"
                     autofocus
                   />
-                  <span v-else class="device-name-text" @click="handleStartEdit">{{ selectedDevice.name }}</span>
+                  <span v-else class="device-name-text" @click="handleStartEdit">
+                    <MacAddressMask :macAddress="selectedDevice.name" />
+                  </span>
                   <i v-if="!isEditingAlias" class="el-icon-edit" @click="handleStartEdit"></i>
                 </div>
-                <div class="device-mac">{{ $t('addressBookManagement.macAddress') }}：{{ selectedDevice.deviceId }}</div>
+                <div class="device-mac">
+                  {{ $t('addressBookManagement.macAddress') }}：
+                  <MacAddressMask :macAddress="selectedDevice.deviceId" />
+                </div>
                 <div class="device-status">
                   <span>{{ $t('addressBookManagement.status') }}：</span>
                   <span :class="selectedDevice.online ? 'online' : 'offline'">
@@ -166,10 +175,14 @@
                       @keyup.enter="handleEditPermissionBlur(device)"
                       autofocus
                     />
-                    <span v-else class="permission-name" @click.stop="handleStartEditPermission(device)">{{ device.addressBookAlias || device.name }}</span>
+                    <span v-else class="permission-name" @click.stop="handleStartEditPermission(device)">
+                      <MacAddressMask :macAddress="device.addressBookAlias || device.name" />
+                    </span>
                     <i v-if="editingDeviceId !== device.id" class="el-icon-edit permission-edit-btn" @click.stop="handleStartEditPermission(device)"></i>
                   </div>
-                  <div class="permission-id">{{ device.deviceId }}</div>
+                  <div class="permission-id">
+                    <MacAddressMask :macAddress="device.deviceId" />
+                  </div>
                   <div class="permission-status" :class="device.online ? 'online' : 'offline'">
                     {{ device.online ? $t('addressBookManagement.online') : $t('addressBookManagement.offline') }}
                   </div>
@@ -195,10 +208,11 @@ import HeaderBar from "@/components/HeaderBar.vue";
 import VersionFooter from "@/components/VersionFooter.vue";
 import Api from "@/apis/api.js";
 import AddressBookApi from "@/apis/module/addressBook.js";
+import MacAddressMask from "@/components/MacAddressMask.vue";
 
 export default {
   name: "AddressBookManagement",
-  components: { HeaderBar, VersionFooter },
+  components: { HeaderBar, VersionFooter, MacAddressMask },
   data() {
     return {
       searchKeyword: "",
