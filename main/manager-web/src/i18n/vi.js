@@ -1421,7 +1421,6 @@ export default {
   // Trang quản lý danh bạ
   'addressBookManagement.title': 'Quản lý danh bạ',
   'addressBookManagement.searchPlaceholder': 'Tìm kiếm tên thiết bị hoặc địa chỉ MAC',
-  'addressBookManagement.search': 'Tìm kiếm',
   'addressBookManagement.selectAgent': 'Vui lòng chọn tác tử',
   'addressBookManagement.name': 'Tên danh bạ',
   'addressBookManagement.description': 'Mô tả danh bạ',

@@ -64,6 +64,9 @@ class ListenTextMessageHandler(TextMessageHandler):
                     call_text = original_text[len("[device_call]"):].strip()
                     conn.logger.bind(tag=TAG).info(f"收到设备呼叫指令: {call_text}")
 
+                    # 标记为来电接听模式
+                    conn.incoming_call = True
+
                     # 准备开始新会话
                     conn.sentence_id = uuid.uuid4().hex
 
