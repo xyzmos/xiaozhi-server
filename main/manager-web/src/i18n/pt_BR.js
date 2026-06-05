@@ -1384,7 +1384,18 @@ export default {
   'knowledgeFileUpload.comprehensiveSimilarity': 'Similaridade Geral',
   'knowledgeFileUpload.content': 'Conteúdo:',
   'knowledgeFileUpload.testQuestionRequired': 'Por favor, insira a pergunta de teste',
+  'knowledgeFileUpload.parsing': 'Analisando...',
   'knowledgeBaseDialog.descriptionRequired': 'Por favor, insira a descrição da base de conhecimento',
+
+  // Página de gerenciamento de base de conhecimento
+  'knowledgeBaseManagement.loading': 'Carregando...',
+  'knowledgeBaseManagement.noData': 'Sem dados',
+  'knowledgeBaseManagement.switchKnowledgeBase': 'Alternar Base de Conhecimento',
+  'knowledgeBaseManagement.currentKnowledgeBaseDocuments': 'Ativos de Documentos da Base de Conhecimento Atual',
+  'knowledgeBaseManagement.enabled': 'Ativado',
+  'knowledgeBaseManagement.disabled': 'Desativado',
+  'knowledgeBaseManagement.totalDocuments': 'Total de {total} documentos',
+  'knowledgeBaseManagement.getListFailed': 'Falha ao obter lista',
 
   // Página de gerenciamento de funcionalidades
   'featureManagement.selectAll': 'Selecionar Tudo',

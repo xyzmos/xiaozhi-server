@@ -2,47 +2,47 @@
   <div class="doc-section">
     <div class="doc-section-header">
       <div class="doc-section-left">
-        <div class="doc-section-title">{{`当前知识库文档资产（${kb?.name}）`}}</div>
-        <div class="doc-section-count" v-if="kb">共 {{ documents.length }} 个文档</div>
+        <div class="doc-section-title">{{`${$t('knowledgeBaseManagement.currentKnowledgeBaseDocuments')}（${kb?.name}）`}}</div>
+        <div class="doc-section-count" v-if="kb">{{ $t('knowledgeBaseManagement.totalDocuments', { total: documents.length }) }}</div>
       </div>
       <div class="doc-section-actions">
         <el-input
-          placeholder="搜索文档..."
+          :placeholder="$t('knowledgeFileUpload.documentNamePlaceholder')"
           v-model="searchDocName"
           class="doc-search-input"
           size="small"
           prefix-icon="el-icon-search"
           clearable
         />
-        <el-button size="small" @click="handleSearch">查询</el-button>
-        <el-button size="small" @click="handleUpload">新增</el-button>
-        <el-button size="small" @click="handleRetrievalTest">召回测试</el-button>
+        <el-button size="small" @click="handleSearch">{{ $t('knowledgeBaseManagement.search') }}</el-button>
+        <el-button size="small" @click="handleUpload">{{ $t('knowledgeBaseManagement.add') }}</el-button>
+        <el-button size="small" @click="handleRetrievalTest">{{ $t('knowledgeFileUpload.retrievalTest') }}</el-button>
       </div>
     </div>
-    <div class="doc-grid" v-loading="docLoading" element-loading-text="加载中...">
+    <div class="doc-grid" v-loading="docLoading" :element-loading-text="$t('knowledgeBaseManagement.loading')">
       <div v-for="doc in documents" :key="doc.id" class="doc-card">
         <div class="doc-card-top">
-          <div class="doc-file-icon" :class="getFileIconClass(doc.name)">
-            <i :class="getFileIcon(doc.name)"></i>
-          </div>
+          <img class="doc-file-icon" :src="getFileIconSrc(doc.name)" />
           <div class="doc-card-info">
             <div class="doc-card-name" :title="doc.name">{{ doc.name }}</div>
-            <div class="doc-card-meta">上传时间 {{ formatDate(doc.createdAt) }}</div>
+            <div class="doc-card-meta">{{ $t('knowledgeFileUpload.uploadTime') }} {{ formatDate(doc.createdAt) }}</div>
           </div>
         </div>
         <div class="doc-card-bottom">
           <div class="doc-card-progress">
             <div class="progress-ring">
-              <svg viewBox="0 0 36 36">
-                <circle class="bg" cx="18" cy="18" r="14"/>
-                <circle class="fg" :class="getProgressClass(doc)" cx="18" cy="18" r="14"
-                  stroke-dasharray="87.96"
+              <svg viewBox="0 0 44 44">
+                <circle class="bg" cx="22" cy="22" r="17"/>
+                <circle class="fg" :class="getProgressClass(doc)" cx="22" cy="22" r="17"
+                  stroke-dasharray="106.81"
                   :stroke-dashoffset="getProgressOffset(doc)"/>
               </svg>
               <span class="progress-ring-text" :style="{ color: getProgressTextColor(doc) }">{{ getProgressText(doc) }}</span>
             </div>
-            <span class="progress-label" :class="getProgressClass(doc)">{{ getDocStatusText(doc) }}</span>
-            <span class="doc-slice-count" v-if="doc.sliceCount > 0">切片 {{ doc.sliceCount }}</span>
+            <div class="progress-container">
+              <span class="progress-label" :class="getProgressClass(doc)">{{ getDocStatusText(doc) }}</span>
+              <span class="doc-slice-count">{{ $t('knowledgeFileUpload.sliceCount') }} <b>{{ doc.sliceCount }}</b></span>
+            </div>
           </div>
           <div class="doc-card-actions">
             <el-button
@@ -50,7 +50,7 @@
               type="text"
               @click.stop="$emit('view-slices', doc)"
             >
-              查看切片
+              {{ $t('knowledgeFileUpload.viewSlices') }}
             </el-button>
             <el-button
               v-else
@@ -59,16 +59,16 @@
               :loading="doc.parsing"
               @click.stop="handleParse(doc)"
             >
-              解析
+              {{ $t('knowledgeFileUpload.parse') }}
             </el-button>
             <el-button type="text" class="delete-btn" @click.stop="handleDelete(doc)">
-              删除
+              {{ $t('knowledgeBaseManagement.delete') }}
             </el-button>
           </div>
         </div>
       </div>
       <div v-if="documents.length === 0 && !docLoading" class="doc-empty">
-        <el-empty description="暂无文档"></el-empty>
+        <el-empty :description="$t('knowledgeBaseManagement.noData')"></el-empty>
       </div>
     </div>
   </div>
@@ -76,6 +76,18 @@
 
 <script>
 import Api from "@/apis/api";
+
+const iconMap = {
+  pdf: require('@/assets/knowledge-base/pdf.png'),
+  doc: require('@/assets/knowledge-base/docX.png'),
+  docx: require('@/assets/knowledge-base/docX.png'),
+  xls: require('@/assets/knowledge-base/xlsx.png'),
+  xlsx: require('@/assets/knowledge-base/xlsx.png'),
+  csv: require('@/assets/knowledge-base/xlsx.png'),
+  md: require('@/assets/knowledge-base/MD.png'),
+  markdown: require('@/assets/knowledge-base/MD.png'),
+  txt: require('@/assets/knowledge-base/txt.png'),
+};
 
 export default {
   name: 'LibraryItem',
@@ -143,49 +155,41 @@ export default {
     },
 
     handleUpload() {
-      if (!this.kb) {
-        this.$message.warning('请先选择知识库');
-        return;
-      }
       this.$emit('upload');
     },
 
     handleRetrievalTest() {
-      if (!this.kb) {
-        this.$message.warning('请先选择知识库');
-        return;
-      }
       this.$emit('retrieval-test');
     },
 
     handleDelete(doc) {
       if (!this.kb) return;
       this.$confirm(
-        '确定要删除该文档吗？',
-        '警告',
+        this.$t('knowledgeFileUpload.confirmDelete'),
+        this.$t('message.warning'),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: this.$t('knowledgeBaseDialog.confirm'),
+          cancelButtonText: this.$t('knowledgeBaseDialog.cancel'),
           type: 'warning'
         }
       ).then(() => {
         Api.knowledgeBase.deleteDocument(this.kb.datasetId, doc.id, (res) => {
           if (res.data && res.data.code === 0) {
             this.fetchDocuments();
-            this.$message.success('文档删除成功');
+            this.$message.success(this.$t('knowledgeFileUpload.deleteSuccess'));
           } else {
-            this.$message.error(res.data?.msg || '文档删除失败');
+            this.$message.error(res.data?.msg || this.$t('knowledgeFileUpload.deleteFailed'));
           }
         }, () => {
-          this.$message.error('文档删除失败');
+          this.$message.error(this.$t('knowledgeFileUpload.deleteFailed'));
         });
       }).catch(() => {});
     },
 
     handleParse(doc) {
-      this.$confirm('确定要解析该文档吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      this.$confirm(this.$t('knowledgeFileUpload.confirmParse'), this.$t('message.info'), {
+        confirmButtonText: this.$t('knowledgeFileUpload.confirm'),
+        cancelButtonText: this.$t('knowledgeFileUpload.cancel'),
         type: 'info'
       }).then(() => {
         this.$set(doc, 'parsing', true);
@@ -195,19 +199,19 @@ export default {
           doc.id,
           ({ data }) => {
             if (data && data.code === 0) {
-              this.$message.success('解析请求已提交，正在处理中');
+              this.$message.success(this.$t('knowledgeFileUpload.parsing'));
               this.$set(doc, 'parsing', false);
               this.startParsePolling(doc);
             } else {
               this.$set(doc, 'parsing', false);
               doc.parseStatusCode = 0;
-              this.$message.error(data?.msg || '解析失败');
+              this.$message.error(data?.msg || this.$t('knowledgeFileUpload.parseFailed'));
             }
           },
           (err) => {
             this.$set(doc, 'parsing', false);
             doc.parseStatusCode = 0;
-            this.$message.error(err?.data?.msg || '解析失败');
+            this.$message.error(err?.data?.msg || this.$t('knowledgeFileUpload.parseFailed'));
           }
         );
       }).catch(() => {});
@@ -228,10 +232,10 @@ export default {
                 if (updated.parseStatusCode !== 1) {
                   this.$set(doc, 'parsing', false);
                   if (updated.parseStatusCode === 3) {
-                    this.$message.success(`文档「${doc.name}」解析完成`);
+                    this.$message.success(`「${doc.name}」${this.$t('knowledgeFileUpload.parseSuccess')}`);
                     this.fetchSliceCountForSingleDocument(doc);
                   } else if (updated.parseStatusCode === 4) {
-                    this.$message.error(`文档「${doc.name}」解析失败`);
+                    this.$message.error(`「${doc.name}」${this.$t('knowledgeFileUpload.parseFailed')}`);
                   }
                   return;
                 }
@@ -269,26 +273,10 @@ export default {
       );
     },
 
-    getFileIconClass(fileName) {
-      if (!fileName) return 'txt';
+    getFileIconSrc(fileName) {
+      if (!fileName) return require('@/assets/knowledge-base/default.png');
       const ext = fileName.split('.').pop().toLowerCase();
-      if (ext === 'pdf') return 'pdf';
-      if (['doc', 'docx'].includes(ext)) return 'word';
-      if (['xls', 'xlsx', 'csv'].includes(ext)) return 'excel';
-      if (['ppt', 'pptx'].includes(ext)) return 'ppt';
-      if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) return 'img';
-      return 'txt';
-    },
-
-    getFileIcon(fileName) {
-      if (!fileName) return 'el-icon-document';
-      const ext = fileName.split('.').pop().toLowerCase();
-      if (ext === 'pdf') return 'el-icon-document';
-      if (['doc', 'docx'].includes(ext)) return 'el-icon-document';
-      if (['xls', 'xlsx', 'csv'].includes(ext)) return 'el-icon-s-grid';
-      if (['ppt', 'pptx'].includes(ext)) return 'el-icon-data-board';
-      if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) return 'el-icon-picture';
-      return 'el-icon-document';
+      return iconMap[ext] || require('@/assets/knowledge-base/default.png');
     },
 
     getProgressClass(doc) {
@@ -300,7 +288,7 @@ export default {
 
     getProgressOffset(doc) {
       const code = doc.parseStatusCode;
-      const circumference = 87.96;
+      const circumference = 106.81;
       if (code === 3) return 0;
       if (code === 1) {
         const progress = doc.chunkNum && doc.totalChunkNum
@@ -332,12 +320,12 @@ export default {
 
     getDocStatusText(doc) {
       const code = doc.parseStatusCode;
-      if (code === 3) return '已完成';
-      if (code === 1) return '处理中';
-      if (code === 0) return '未开始';
-      if (code === 4) return '失败';
-      if (code === 2) return '已取消';
-      return '未开始';
+      if (code === 3) return this.$t('knowledgeFileUpload.statusCompleted');
+      if (code === 1) return this.$t('knowledgeFileUpload.statusProcessing');
+      if (code === 0) return this.$t('knowledgeFileUpload.statusNotStarted');
+      if (code === 4) return this.$t('knowledgeFileUpload.statusFailed');
+      if (code === 2) return this.$t('knowledgeFileUpload.statusCancelled');
+      return this.$t('knowledgeFileUpload.statusNotStarted');
     },
 
     formatDate(dateString) {
@@ -353,7 +341,7 @@ export default {
 /* ========== Document Section ========== */
 .doc-section {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 10px;
   padding: 16px 20px;
   box-shadow: 0 4px 16px rgba(31, 42, 68, 0.06);
   border: 1px solid #f0f3f9;
@@ -378,7 +366,7 @@ export default {
 
 .doc-section-title {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 500;
   color: #1f2a44;
 }
 
@@ -402,7 +390,7 @@ export default {
 .doc-grid {
   padding: 10px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill,minmax(300px, 1fr));
   gap: 16px 20px;
   flex: 1;
   min-height: 0;
@@ -411,7 +399,7 @@ export default {
 }
 
 .doc-card {
-  height: 110px;
+  height: 120px;
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 18px;
@@ -437,21 +425,11 @@ export default {
 }
 
 .doc-file-icon {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
+  object-fit: contain;
   flex-shrink: 0;
-
-  &.pdf { background: #fff0f0; color: #ff5a5f; }
-  &.word { background: #e8ecff; color: #2f5bff; }
-  &.excel { background: #e8f9ee; color: #34c759; }
-  &.ppt { background: #fff3e0; color: #ff9500; }
-  &.txt { background: #f0f3f9; color: #788ba8; }
-  &.img { background: #f3e8ff; color: #9b59b6; }
 }
 
 .doc-card-info {
@@ -466,7 +444,7 @@ export default {
 
 .doc-card-name {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   color: #1f2a44;
   white-space: nowrap;
   overflow: hidden;
@@ -494,13 +472,13 @@ export default {
 
 /* ========== Progress Ring ========== */
 .progress-ring {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   position: relative;
 
   svg {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     transform: rotate(-90deg);
   }
 
@@ -532,13 +510,29 @@ export default {
   color: #7888a8;
 }
 
-.progress-label {
-  font-size: 12px;
-  color: #7888a8;
+.progress-container {
+  height: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  .progress-label {
+    font-size: 12px;
+    color: #7888a8;
+  
+    &.complete { color: #34c759; }
+    &.processing { color: #2f5bff; }
+  }
 
-  &.complete { color: #34c759; }
-  &.processing { color: #2f5bff; }
+  .doc-slice-count {
+    font-size: 12px;
+    > b {
+      font-weight: bold;
+      font-size: 14px;
+    }
+  }
 }
+
 
 .doc-card-actions {
   display: flex;
@@ -556,15 +550,6 @@ export default {
       color: #f78989 !important;
     }
   }
-}
-
-.doc-slice-count {
-  font-size: 12px;
-  color: #6b80eb;
-  background: #f0f3ff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-left: 4px;
 }
 
 .doc-empty {

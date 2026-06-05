@@ -2,10 +2,10 @@
   <div class="welcome">
     <HeaderBar />
     <div class="operation-bar">
-      <h2 class="page-title">知识库中心</h2>
+      <h2 class="page-title">{{ $t('knowledgeBaseManagement.title') }}</h2>
       <div class="right-operations">
         <el-input
-          placeholder="搜索知识库..."
+          :placeholder="$t('knowledgeBaseManagement.searchPlaceholder')"
           v-model="searchKbName"
           class="search-input"
           @keyup.enter.native="handleSearchKb"
@@ -14,22 +14,22 @@
         />
         <el-button class="btn-upload" @click="handleSearchKb">
           <i class="el-icon-search"></i>
-          查询
+          {{ $t('knowledgeBaseManagement.search') }}
         </el-button>
         <el-button class="btn-new-kb" @click="showAddDialog">
           <i class="el-icon-plus"></i>
-          新建知识库
+          {{ $t('knowledgeBaseManagement.addKnowledgeBase') }}
         </el-button>
       </div>
     </div>
 
     <div class="main-wrapper">
       <div class="content-panel">
-        <div class="content-area" v-loading="loading" element-loading-text="加载中...">
+        <div class="content-area" v-loading="loading" :element-loading-text="$t('knowledgeBaseManagement.loading')">
           <!-- Knowledge Base Cards Section -->
           <div class="kb-section">
             <div class="kb-section-header">
-              <div class="kb-section-title">知识库切换</div>
+              <div class="kb-section-title">{{ $t('knowledgeBaseManagement.switchKnowledgeBase') }}</div>
             </div>
             <div class="kb-cards-wrapper">
               <div class="kb-arrow left" @click="scrollCards(-1)" v-if="filteredKnowledgeBases.length > 0">
@@ -44,16 +44,16 @@
                   @click="selectKnowledgeBase(kb)"
                 >
                   <div class="kb-card-actions-top">
-                    <button class="kb-action-icon" title="编辑" @click.stop="editKnowledgeBase(kb)">
+                    <button class="kb-action-icon" :title="$t('knowledgeBaseManagement.edit')" @click.stop="editKnowledgeBase(kb)">
                       <i class="el-icon-edit"></i>
                     </button>
-                    <button class="kb-action-icon delete" title="删除" @click.stop="deleteKnowledgeBase(kb)">
+                    <button class="kb-action-icon delete" :title="$t('knowledgeBaseManagement.delete')" @click.stop="deleteKnowledgeBase(kb)">
                       <i class="el-icon-delete"></i>
                     </button>
                   </div>
                   <div class="kb-card-top">
                     <div class="kb-card-icon" :class="getCardColorClass(index)">
-                      <i class="el-icon-document"></i>
+                      <ManualIcon :color="getIconColor(index)" />
                     </div>
                     <div class="kb-card-info">
                       <div class="kb-card-name">{{ kb.name }}</div>
@@ -80,7 +80,7 @@
                 </div>
                 <div v-if="filteredKnowledgeBases.length === 0 && !loading" class="kb-empty">
                   <i class="el-icon-folder-opened"></i>
-                  <p>暂无知识库</p>
+                  <p>{{ $t('knowledgeBaseManagement.noData') }}</p>
                 </div>
               </div>
               <div class="kb-arrow right" @click="scrollCards(1)" v-if="filteredKnowledgeBases.length > 0">
@@ -100,7 +100,7 @@
             @refresh="refreshDocuments"
           />
           <div v-else class="doc-empty-placeholder">
-            <el-empty description="请先选择一个知识库"></el-empty>
+            <el-empty :description="$t('knowledgeBaseManagement.noData')"></el-empty>
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@
 
     <!-- Slice Dialog -->
     <el-dialog
-      :title="`切片管理 - ${currentDocumentName}`"
+      :title="`${$t('knowledgeFileUpload.viewSlices')} - ${currentDocumentName}`"
       :visible.sync="sliceDialogVisible"
       width="900px"
       :close-on-click-modal="false"
@@ -128,7 +128,7 @@
           <div v-if="sliceList.length > 0" class="slice-cards-container">
             <div v-for="(slice, index) in sliceList" :key="index" class="slice-card">
               <div class="slice-header-info">
-                <p><strong>切片 {{ (sliceCurrentPage - 1) * slicePageSize + index + 1 }}</strong></p>
+                <p><strong>{{ $t('knowledgeFileUpload.slice') }} {{ (sliceCurrentPage - 1) * slicePageSize + index + 1 }}</strong></p>
               </div>
               <div class="slice-card-content">
                 <div class="content-text">{{ slice.content }}</div>
@@ -136,25 +136,25 @@
             </div>
           </div>
           <div v-else class="no-slice-data">
-            <el-empty description="暂无切片数据"></el-empty>
+            <el-empty :description="$t('knowledgeFileUpload.noSliceData')"></el-empty>
           </div>
         </div>
         <div class="slice-pagination">
           <el-select v-model="slicePageSize" @change="handleSliceSizeChange" class="slice-page-size-select">
-            <el-option v-for="item in [10, 20, 50]" :key="item" :label="`${item}条/页`" :value="item"></el-option>
+            <el-option v-for="item in [10, 20, 50]" :key="item" :label="`${item}${$t('knowledgeFileUpload.itemsPerPage')}`" :value="item"></el-option>
           </el-select>
-          <button class="slice-page-btn" :disabled="sliceCurrentPage === 1" @click="sliceCurrentPage = 1; fetchSlices()">首页</button>
-          <button class="slice-page-btn" :disabled="sliceCurrentPage === 1" @click="sliceCurrentPage--; fetchSlices()">上一页</button>
+          <button class="slice-page-btn" :disabled="sliceCurrentPage === 1" @click="sliceCurrentPage = 1; fetchSlices()">{{ $t('knowledgeBaseManagement.firstPage') }}</button>
+          <button class="slice-page-btn" :disabled="sliceCurrentPage === 1" @click="sliceCurrentPage--; fetchSlices()">{{ $t('knowledgeBaseManagement.prevPage') }}</button>
           <button v-for="page in sliceVisiblePages" :key="page" class="slice-page-btn" :class="{ active: page === sliceCurrentPage }" @click="sliceCurrentPage = page; fetchSlices()">{{ page }}</button>
-          <button class="slice-page-btn" :disabled="sliceCurrentPage >= slicePageCount" @click="sliceCurrentPage++; fetchSlices()">下一页</button>
-          <span class="slice-total-text">共 {{ sliceTotal }} 条</span>
+          <button class="slice-page-btn" :disabled="sliceCurrentPage >= slicePageCount" @click="sliceCurrentPage++; fetchSlices()">{{ $t('knowledgeBaseManagement.nextPage') }}</button>
+          <span class="slice-total-text"> {{ $t('knowledgeBaseManagement.totalRecords', { total: sliceTotal }) }}</span>
         </div>
       </div>
     </el-dialog>
 
     <!-- Upload Dialog -->
     <el-dialog
-      title="上传文档"
+      :title="$t('knowledgeFileUpload.uploadDocument')"
       :visible.sync="uploadDialogVisible"
       width="800px"
       :close-on-click-modal="false"
@@ -170,12 +170,12 @@
         drag
       >
         <i class="el-icon-upload"></i>
-        <div class="el-upload__text">将文件拖到此处，或点击上传</div>
-        <div class="el-upload__tip" slot="tip">支持的文档类型：PDF、DOC、DOCX、TXT、MD、CSV、XLS、XLSX、PPT、PPTX，单次批量上传文件数不超过 32 个</div>
+        <div class="el-upload__text">{{ $t('knowledgeFileUpload.dragOrClick') }}</div>
+        <div class="el-upload__tip" slot="tip">{{ $t('knowledgeFileUpload.uploadTip') }}</div>
       </el-upload>
       <!-- 已选择文件列表 -->
       <div class="selected-files-section" v-if="selectedFilesList.length > 0">
-        <h4>已选择文件 ({{ selectedFilesList.length }})</h4>
+        <h4>{{ $t('knowledgeFileUpload.selectedFiles') }} ({{ selectedFilesList.length }})</h4>
         <div class="selected-files-list">
           <div v-for="(file, index) in selectedFilesList" :key="index" class="selected-file-item">
             <div class="file-info">
@@ -190,41 +190,41 @@
         </div>
       </div>
       <span slot="footer">
-        <el-button @click="uploadDialogVisible = false">取消</el-button>
+        <el-button @click="uploadDialogVisible = false">{{ $t('knowledgeFileUpload.cancel') }}</el-button>
         <el-button type="primary" @click="handleBatchUploadSubmit" :loading="uploading" :disabled="selectedFilesList.length === 0">
-          确认上传 ({{ selectedFilesList.length }})
+          {{ $t('knowledgeFileUpload.confirm') }} ({{ selectedFilesList.length }})
         </el-button>
       </span>
     </el-dialog>
 
     <!-- Retrieval Test Dialog -->
     <el-dialog
-      title="召回测试"
+      :title="$t('knowledgeFileUpload.retrievalTest')"
       :visible.sync="retrievalTestDialogVisible"
       width="900px"
       :close-on-click-modal="false"
     >
       <div class="retrieval-test-form">
         <el-form :model="retrievalTestForm" label-width="100px">
-          <el-form-item label="测试问题" required>
+          <el-form-item :label="$t('knowledgeFileUpload.testQuestion')" required>
             <el-input
               v-model="retrievalTestForm.question"
               type="textarea"
               :rows="3"
-              placeholder="请输入测试问题"
+              :placeholder="$t('knowledgeFileUpload.testQuestionPlaceholder')"
             />
           </el-form-item>
         </el-form>
         <div style="text-align: center; margin-top: 20px;">
-          <el-button type="primary" @click="runRetrievalTest" :loading="retrievalTestLoading">执行测试</el-button>
-          <el-button @click="retrievalTestDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="runRetrievalTest" :loading="retrievalTestLoading">{{ $t('knowledgeFileUpload.executeTest') }}</el-button>
+          <el-button @click="retrievalTestDialogVisible = false">{{ $t('knowledgeFileUpload.cancel') }}</el-button>
         </div>
         <div v-if="retrievalTestResult" class="retrieval-test-result" style="margin-top: 20px;">
-          <h4 style="margin-bottom: 12px;">测试结果</h4>
+          <h4 style="margin-bottom: 12px;">{{ $t('knowledgeFileUpload.testResult') }}</h4>
           <div class="result-chunks">
             <div v-for="(chunk, index) in retrievalTestResult.chunks" :key="index" class="result-chunk">
-              <p><strong>切片 {{ index + 1 }}</strong></p>
-              <div style="margin: 8px 0; font-size: 12px; color: #409eff;">相似度: {{ (chunk.similarity || 0).toFixed(4) }}</div>
+              <p><strong>{{ $t('knowledgeFileUpload.slice') }} {{ index + 1 }}</strong></p>
+              <div style="margin: 8px 0; font-size: 12px; color: #409eff;">{{ $t('knowledgeFileUpload.comprehensiveSimilarity') }}: {{ (chunk.similarity || 0).toFixed(4) }}</div>
               <div class="chunk-content">{{ chunk.content }}</div>
             </div>
           </div>
@@ -244,9 +244,10 @@ import HeaderBar from "@/components/HeaderBar.vue";
 import VersionFooter from "@/components/VersionFooter.vue";
 import KnowledgeBaseDialog from "@/components/KnowledgeBaseDialog.vue";
 import KnowledgeBaseItem from "./KnowledgeBaseItem.vue";
+import ManualIcon from "@/components/ManualIcon.vue";
 
 export default {
-  components: { HeaderBar, VersionFooter, KnowledgeBaseDialog, KnowledgeBaseItem },
+  components: { HeaderBar, VersionFooter, KnowledgeBaseDialog, KnowledgeBaseItem, ManualIcon },
   data() {
     return {
       knowledgeBases: [],
@@ -326,12 +327,12 @@ export default {
               if (updated) this.selectedKb = updated;
             }
           } else {
-            this.$message.error(res.data?.msg || '获取知识库列表失败');
+            this.$message.error(res.data?.msg || this.$t('knowledgeBaseManagement.getListFailed'));
           }
         },
         () => {
           this.loading = false;
-          this.$message.error('获取知识库列表失败');
+          this.$message.error(this.$t('knowledgeBaseManagement.getListFailed'));
         }
       );
     },
@@ -356,7 +357,7 @@ export default {
     },
 
     showAddDialog() {
-      this.dialogTitle = '新增知识库';
+      this.dialogTitle = this.$t('knowledgeBaseManagement.addKnowledgeBase');
       this.knowledgeBaseForm = {
         id: null,
         datasetId: null,
@@ -368,7 +369,7 @@ export default {
     },
 
     editKnowledgeBase(kb) {
-      this.dialogTitle = '编辑知识库';
+      this.dialogTitle = this.$t('knowledgeBaseManagement.editKnowledgeBase');
       this.knowledgeBaseForm = {
         id: kb.id,
         datasetId: kb.datasetId,
@@ -391,50 +392,46 @@ export default {
       Api.knowledgeBase.updateKnowledgeBase(kb.datasetId, updateForm, (res) => {
         if (res.data && res.data.code !== 0) {
           this.fetchKnowledgeBases();
-          this.$message.error(res.data?.msg || '更新失败');
+          this.$message.error(res.data?.msg || this.$t('knowledgeBaseManagement.updateFailed'));
         } else {
-          this.$message.success(kb.status === 1 ? '已启用' : '已停用');
+          this.$message.success(kb.status === 1 ? this.$t('knowledgeBaseManagement.enabled') : this.$t('knowledgeBaseManagement.disabled'));
           if (this.selectedKb && this.selectedKb.datasetId === kb.datasetId) {
             this.selectedKb = { ...kb };
           }
         }
       }, () => {
         this.fetchKnowledgeBases();
-        this.$message.error('更新失败');
+        this.$message.error(this.$t('knowledgeBaseManagement.updateFailed'));
       });
     },
 
     deleteKnowledgeBase(kb) {
       this.$confirm(
-        `确定要删除知识库「${kb.name}」吗？删除后不可恢复。`,
-        '警告',
+        this.$t("knowledgeBaseManagement.confirmBatchDelete", {count: 1}),
+        this.$t('message.warning'),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: this.$t('knowledgeBaseDialog.confirm'),
+          cancelButtonText: this.$t('knowledgeBaseDialog.cancel'),
           type: 'warning'
         }
       ).then(() => {
         Api.knowledgeBase.deleteKnowledgeBase(kb.datasetId, (res) => {
           if (res.data && res.data.code === 0) {
-            this.$message.success('删除成功');
+            this.$message.success(this.$t('knowledgeBaseManagement.batchDeleteSuccess', { count: 1 }));
             if (this.selectedKb && this.selectedKb.datasetId === kb.datasetId) {
               this.selectedKb = null;
             }
             this.fetchKnowledgeBases();
           } else {
-            this.$message.error(res.data?.msg || '删除失败');
+            this.$message.error(res.data?.msg || this.$t('knowledgeBaseManagement.deleteFailed'));
           }
         }, (err) => {
-          this.$message.error(err?.data?.msg || '删除失败');
+          this.$message.error(err?.data?.msg || this.$t('knowledgeBaseManagement.deleteFailed'));
         });
       }).catch(() => {});
     },
 
     showUploadDialog() {
-      if (!this.selectedKb) {
-        this.$message.warning('请先选择知识库');
-        return;
-      }
       this.uploadDialogVisible = true;
     },
 
@@ -444,12 +441,12 @@ export default {
           if (res.data && res.data.code === 0) {
             this.dialogVisible = false;
             this.fetchKnowledgeBases();
-            this.$message.success('修改成功');
+            this.$message.success(this.$t('knowledgeBaseManagement.updateSuccess'));
           } else {
-            this.$message.error(res.data?.msg || '更新失败');
+            this.$message.error(res.data?.msg || this.$t('knowledgeBaseManagement.updateFailed'));
           }
         }, (err) => {
-          this.$message.error(err?.data?.msg || '更新失败');
+          this.$message.error(err?.data?.msg || this.$t('knowledgeBaseManagement.updateFailed'));
         });
       } else {
         const createData = {
@@ -462,12 +459,12 @@ export default {
           if (res.data && res.data.code === 0) {
             this.dialogVisible = false;
             this.fetchKnowledgeBases();
-            this.$message.success('新增成功');
+            this.$message.success(this.$t('knowledgeBaseManagement.addSuccess'));
           } else {
-            this.$message.error(res.data?.msg || '新增失败');
+            this.$message.error(res.data?.msg || this.$t('knowledgeBaseManagement.addFailed'));
           }
         }, (err) => {
-          this.$message.error(err?.data?.msg || '新增失败');
+          this.$message.error(err?.data?.msg || this.$t('knowledgeBaseManagement.addFailed'));
         });
       }
     },
@@ -479,13 +476,8 @@ export default {
       this.selectedFilesList = [];
     },
 
-    handleFileChange(file, fileList) {
+    handleFileChange(file) {
       if (!file || !file.raw) return;
-      const isLt10M = file.size / 1024 / 1024 < 10;
-      if (!isLt10M) {
-        this.$message.error('文件大小不能超过10MB!');
-        return;
-      }
       this.selectedFilesList.push({
         name: file.name,
         size: file.size,
@@ -507,7 +499,7 @@ export default {
 
     handleBatchUploadSubmit() {
       if (this.selectedFilesList.length === 0) {
-        this.$message.error('请选择要上传的文件');
+        this.$message.error(this.$t('knowledgeFileUpload.fileRequired'));
         return;
       }
 
@@ -523,14 +515,14 @@ export default {
               if (data && data.code === 0) {
                 resolve({ success: true, fileName: file.name });
               } else {
-                reject({ success: false, fileName: file.name, error: data?.msg || '上传失败' });
+                reject({ success: false, fileName: file.name, error: data?.msg || this.$t('knowledgeFileUpload.uploadFailed') });
               }
             },
             (err) => {
               if (err && err.data) {
-                reject({ success: false, fileName: file.name, error: err.data.msg || err.msg || '上传失败' });
+                reject({ success: false, fileName: file.name, error: err.data.msg || err.msg || this.$t('knowledgeFileUpload.uploadFailed') });
               } else {
-                reject({ success: false, fileName: file.name, error: '上传失败' });
+                reject({ success: false, fileName: file.name, error: this.$t('knowledgeFileUpload.uploadFailed') });
               }
               console.error('上传文档失败:', err);
             }
@@ -546,12 +538,11 @@ export default {
           const failedCount = results.filter(r => !r.success).length;
 
           if (successCount > 0) {
-            this.$message.success(`成功上传 ${successCount} 个文件`);
+            this.$message.success(this.$t('knowledgeFileUpload.uploadSuccess'));
           }
 
           if (failedCount > 0) {
-            const failedFiles = results.filter(r => !r.success).map(r => r.fileName);
-            this.$message.error(`上传失败 ${failedCount} 个文件: ${failedFiles.join(', ')}`);
+            this.$message.error(this.$t('knowledgeFileUpload.uploadFailed'));
           }
 
           if (successCount > 0) {
@@ -561,16 +552,12 @@ export default {
         })
         .catch(error => {
           this.uploading = false;
-          this.$message.error('批量上传失败');
-          console.error('批量上传失败:', error);
+          this.$message.error(this.$t('knowledgeFileUpload.uploadFailed'));
+          console.error(error);
         });
     },
 
     showRetrievalTestDialog() {
-      if (!this.selectedKb) {
-        this.$message.warning('请先选择知识库');
-        return;
-      }
       this.retrievalTestForm.question = '';
       this.retrievalTestResult = null;
       this.retrievalTestDialogVisible = true;
@@ -578,7 +565,7 @@ export default {
 
     runRetrievalTest() {
       if (!this.retrievalTestForm.question.trim()) {
-        this.$message.error('请输入测试问题');
+        this.$message.error(this.$t('knowledgeFileUpload.testQuestionRequired'));
         return;
       }
       this.retrievalTestLoading = true;
@@ -637,7 +624,7 @@ export default {
               this.sliceTotal = 0;
             }
           } else {
-            this.$message.error(data?.msg || '获取切片列表失败');
+            this.$message.error(data?.msg || this.$t('knowledgeBaseManagement.getListFailed'));
             this.sliceList = [];
             this.sliceTotal = 0;
           }
@@ -645,9 +632,9 @@ export default {
         (err) => {
           this.sliceLoading = false;
           if (err && err.data) {
-            this.$message.error(err.data.msg || err.msg || '获取切片列表失败');
+            this.$message.error(err.data.msg || err.msg || this.$t('knowledgeBaseManagement.getListFailed'));
           } else {
-            this.$message.error('获取切片列表失败');
+            this.$message.error(this.$t('knowledgeBaseManagement.getListFailed'));
           }
           this.sliceList = [];
           this.sliceTotal = 0;
@@ -662,7 +649,12 @@ export default {
     },
 
     getCardColorClass(index) {
-      const colors = ['blue', 'purple', 'green', 'orange'];
+      const colors = ['blue', 'green', 'purple', 'orange', 'pink', 'cyan'];
+      return colors[index % colors.length];
+    },
+
+    getIconColor(index) {
+      const colors = ['#2f5bff', '#34c759', '#6a5cff', '#ff9500', '#f43f7a', '#00c9db'];
       return colors[index % colors.length];
     },
 
@@ -671,7 +663,7 @@ export default {
     },
 
     getStatusText(kb) {
-      return kb.status === 1 ? '已启用' : '未启用';
+      return kb.status === 1 ? this.$t('knowledgeBaseManagement.enabled') : this.$t('knowledgeBaseManagement.disabled');
     },
 
     formatDate(dateString) {
@@ -794,7 +786,7 @@ export default {
 /* ========== Knowledge Base Cards Section ========== */
 .kb-section {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 10px;
   padding: 14px 20px;
   box-shadow: 0 4px 16px rgba(31, 42, 68, 0.06);
   border: 1px solid #f0f3f9;
@@ -809,7 +801,7 @@ export default {
 
 .kb-section-title {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 500;
   color: #1f2a44;
 }
 
@@ -856,7 +848,7 @@ export default {
 }
 
 .kb-card {
-  width: 340px;
+  width: 300px;
   border-radius: 8px;
   padding: 20px;
   border: 1px solid transparent;
@@ -865,7 +857,7 @@ export default {
   transition: all 0.25s;
   display: flex;
   flex-direction: column;
-  flex: 0 0 340px;
+  flex: 0 0 300px;
   position: relative;
   box-shadow: 0 0 10px rgba(47, 91, 255, 0.15);
 
@@ -944,6 +936,14 @@ export default {
     background: linear-gradient(135deg, #fff3e0, #ffe4b8);
     color: #ff9500;
   }
+  &.pink {
+    background: linear-gradient(135deg, #ffe4ed, #ffc8db);
+    color: #f43f7a;
+  }
+  &.cyan {
+    background: linear-gradient(135deg, #dff8fa, #c4f0f4);
+    color: #00c9db;
+  }
 }
 
 .kb-card-info {
@@ -956,7 +956,7 @@ export default {
 
 .kb-card-name {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   color: #1f2a44;
   margin-bottom: 6px;
   white-space: nowrap;

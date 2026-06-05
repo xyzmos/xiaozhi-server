@@ -1384,7 +1384,18 @@ export default {
   'knowledgeFileUpload.comprehensiveSimilarity': 'Độ tương đồng toàn diện',
   'knowledgeFileUpload.content': 'Nội dung:',
   'knowledgeFileUpload.testQuestionRequired': 'Vui lòng nhập câu hỏi kiểm tra',
+  'knowledgeFileUpload.parsing': 'Đang phân tích...',
   'knowledgeBaseDialog.descriptionRequired': 'Vui lòng nhập mô tả cơ sở kiến thức',
+
+  // Knowledge Base Management page text
+  'knowledgeBaseManagement.loading': 'Đang tải...',
+  'knowledgeBaseManagement.noData': 'Không có dữ liệu',
+  'knowledgeBaseManagement.switchKnowledgeBase': 'Chuyển đổi cơ sở kiến thức',
+  'knowledgeBaseManagement.currentKnowledgeBaseDocuments': 'Tài sản tài liệu cơ sở kiến thức hiện tại',
+  'knowledgeBaseManagement.enabled': 'Đã bật',
+  'knowledgeBaseManagement.disabled': 'Đã tắt',
+  'knowledgeBaseManagement.totalDocuments': 'Tổng {total} tài liệu',
+  'knowledgeBaseManagement.getListFailed': 'Lấy danh sách thất bại',
 
   // Feature Management page text
   'featureManagement.selectAll': 'Chọn tất cả',

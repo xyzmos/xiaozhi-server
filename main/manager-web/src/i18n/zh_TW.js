@@ -1384,7 +1384,18 @@ export default {
   'knowledgeFileUpload.comprehensiveSimilarity': '綜合相似度',
   'knowledgeFileUpload.content': '內容:',
   'knowledgeFileUpload.testQuestionRequired': '請輸入測試問題',
+  'knowledgeFileUpload.parsing': '正在解析中...',
   'knowledgeBaseDialog.descriptionRequired': '請輸入知识库描述',
+
+  // 知識庫管理頁面文本
+  'knowledgeBaseManagement.loading': '加載中...',
+  'knowledgeBaseManagement.noData': '暫無數據',
+  'knowledgeBaseManagement.switchKnowledgeBase': '切換知識庫',
+  'knowledgeBaseManagement.currentKnowledgeBaseDocuments': '當前知識庫文檔資產',
+  'knowledgeBaseManagement.enabled': '已啟用',
+  'knowledgeBaseManagement.disabled': '已禁用',
+  'knowledgeBaseManagement.totalDocuments': '共 {total} 個文檔',
+  'knowledgeBaseManagement.getListFailed': '獲取列表失敗',
 
   // 功能管理頁面文本
   'featureManagement.selectAll': '全選',

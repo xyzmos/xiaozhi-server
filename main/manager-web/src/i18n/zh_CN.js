@@ -1385,6 +1385,15 @@ export default {
   'knowledgeFileUpload.content': '内容:',
   'knowledgeFileUpload.testQuestionRequired': '请输入测试问题',
   'knowledgeBaseDialog.descriptionRequired': '请输入知识库描述',
+  'knowledgeFileUpload.parsing': '正在解析中...',
+  'knowledgeBaseManagement.loading': '加载中...',
+  'knowledgeBaseManagement.noData': '暂无数据',
+  'knowledgeBaseManagement.switchKnowledgeBase': '切换知识库',
+  'knowledgeBaseManagement.currentKnowledgeBaseDocuments': '当前知识库文档资产',
+  'knowledgeBaseManagement.enabled': '已启用',
+  'knowledgeBaseManagement.disabled': '已禁用',
+  'knowledgeBaseManagement.totalDocuments': '共 {total} 个文档',
+  'knowledgeBaseManagement.getListFailed': '获取列表失败',
 
   // 系统功能配置页面文本
   'featureManagement.selectAll': '全选',
