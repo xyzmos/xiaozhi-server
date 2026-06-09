@@ -1351,6 +1351,7 @@ export default {
   'knowledgeFileUpload.confirmParse': 'Are you sure you want to parse this document?',
   'knowledgeFileUpload.nameRequired': 'Please enter document name',
   'knowledgeFileUpload.fileRequired': 'Please select a file to upload',
+  'knowledgeFileUpload.fileSizeExceeded': 'File size cannot exceed 10MB!',
   'knowledgeFileUpload.getListFailed': 'Failed to get document list',
   'knowledgeFileUpload.parseCancelled': 'Parse cancelled',
   'knowledgeFileUpload.deleteCancelled': 'Delete cancelled',
@@ -1382,9 +1383,21 @@ export default {
   'knowledgeFileUpload.testResult': 'Test Result:',
   'knowledgeFileUpload.noRelatedSlices': 'No related slices found',
   'knowledgeFileUpload.comprehensiveSimilarity': 'Comprehensive Similarity',
+  'knowledgeFileUpload.sourceDocument': 'Source Document',
   'knowledgeFileUpload.content': 'Content:',
   'knowledgeFileUpload.testQuestionRequired': 'Please enter test question',
+  'knowledgeFileUpload.parsing': 'Parsing...',
   'knowledgeBaseDialog.descriptionRequired': 'Please enter knowledge base description',
+
+  // Knowledge Base Management page text
+  'knowledgeBaseManagement.loading': 'Loading...',
+  'knowledgeBaseManagement.noData': 'No data',
+  'knowledgeBaseManagement.switchKnowledgeBase': 'Switch Knowledge Base',
+  'knowledgeBaseManagement.currentKnowledgeBaseDocuments': 'Current Knowledge Base Document Assets',
+  'knowledgeBaseManagement.enabled': 'Enabled',
+  'knowledgeBaseManagement.disabled': 'Disabled',
+  'knowledgeBaseManagement.totalDocuments': 'Total {total} documents',
+  'knowledgeBaseManagement.getListFailed': 'Failed to get list',
 
   // Feature Management page text
   'featureManagement.selectAll': 'Select All',

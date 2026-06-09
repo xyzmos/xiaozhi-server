@@ -1351,6 +1351,7 @@ export default {
   'knowledgeFileUpload.confirmParse': '確定要解析該文檔嗎？',
   'knowledgeFileUpload.nameRequired': '請輸入文檔名稱',
   'knowledgeFileUpload.fileRequired': '請選擇要上傳的文件',
+  'knowledgeFileUpload.fileSizeExceeded': '文件大小不能超過10MB!',
   'knowledgeFileUpload.getListFailed': '獲取文檔列表失敗',
   'knowledgeFileUpload.parseCancelled': '已取消解析',
   'knowledgeFileUpload.deleteCancelled': '已取消删除',
@@ -1384,7 +1385,19 @@ export default {
   'knowledgeFileUpload.comprehensiveSimilarity': '綜合相似度',
   'knowledgeFileUpload.content': '內容:',
   'knowledgeFileUpload.testQuestionRequired': '請輸入測試問題',
+  'knowledgeFileUpload.sourceDocument': '來源文檔',
+  'knowledgeFileUpload.parsing': '正在解析中...',
   'knowledgeBaseDialog.descriptionRequired': '請輸入知识库描述',
+
+  // 知識庫管理頁面文本
+  'knowledgeBaseManagement.loading': '加載中...',
+  'knowledgeBaseManagement.noData': '暫無數據',
+  'knowledgeBaseManagement.switchKnowledgeBase': '切換知識庫',
+  'knowledgeBaseManagement.currentKnowledgeBaseDocuments': '當前知識庫文檔資產',
+  'knowledgeBaseManagement.enabled': '已啟用',
+  'knowledgeBaseManagement.disabled': '已禁用',
+  'knowledgeBaseManagement.totalDocuments': '共 {total} 個文檔',
+  'knowledgeBaseManagement.getListFailed': '獲取列表失敗',
 
   // 功能管理頁面文本
   'featureManagement.selectAll': '全選',

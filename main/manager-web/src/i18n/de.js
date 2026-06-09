@@ -1351,6 +1351,7 @@ export default {
   'knowledgeFileUpload.confirmParse': 'Sind Sie sicher, dass Sie dieses Dokument parsen möchten?',
   'knowledgeFileUpload.nameRequired': 'Bitte Dokumentnamen eingeben',
   'knowledgeFileUpload.fileRequired': 'Bitte wählen Sie eine Datei zum Hochladen aus',
+  'knowledgeFileUpload.fileSizeExceeded': 'Dateigröße darf 10MB nicht überschreiten!',
   'knowledgeFileUpload.getListFailed': 'Dokumentenliste konnte nicht abgerufen werden',
   'knowledgeFileUpload.parseCancelled': 'Parsen abgebrochen',
   'knowledgeFileUpload.deleteCancelled': 'Löschen abgebrochen',
@@ -1384,7 +1385,19 @@ export default {
   'knowledgeFileUpload.comprehensiveSimilarity': 'Umfassende Ähnlichkeit',
   'knowledgeFileUpload.content': 'Inhalt:',
   'knowledgeFileUpload.testQuestionRequired': 'Bitte Testfrage eingeben',
+  'knowledgeFileUpload.sourceDocument': 'Quelldokument',
+  'knowledgeFileUpload.parsing': 'Analysiere...',
   'knowledgeBaseDialog.descriptionRequired': 'Bitte Wissensbasis-Beschreibung eingeben',
+
+  // Knowledge Base Management page text
+  'knowledgeBaseManagement.loading': 'Laden...',
+  'knowledgeBaseManagement.noData': 'Keine Daten',
+  'knowledgeBaseManagement.switchKnowledgeBase': 'Wissensbasis wechseln',
+  'knowledgeBaseManagement.currentKnowledgeBaseDocuments': 'Aktuelle Wissensbasis-Dokumentassets',
+  'knowledgeBaseManagement.enabled': 'Aktiviert',
+  'knowledgeBaseManagement.disabled': 'Deaktiviert',
+  'knowledgeBaseManagement.totalDocuments': 'Gesamt {total} Dokumente',
+  'knowledgeBaseManagement.getListFailed': 'Liste konnte nicht abgerufen werden',
 
   // Feature Management page text
   'featureManagement.selectAll': 'Alle auswählen',
