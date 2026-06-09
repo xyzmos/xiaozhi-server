@@ -1351,6 +1351,7 @@ export default {
   'knowledgeFileUpload.confirmParse': 'Bạn có chắc chắn muốn phân tích cú pháp tài liệu này?',
   'knowledgeFileUpload.nameRequired': 'Vui lòng nhập tên tài liệu',
   'knowledgeFileUpload.fileRequired': 'Vui lòng chọn tệp để tải lên',
+  'knowledgeFileUpload.fileSizeExceeded': 'Kích thước tệp không được vượt quá 10MB!',
   'knowledgeFileUpload.getListFailed': 'Không thể lấy danh sách tài liệu',
   'knowledgeFileUpload.parseCancelled': 'Đã hủy phân tích cú pháp',
   'knowledgeFileUpload.deleteCancelled': 'Đã hủy xóa',
@@ -1384,6 +1385,7 @@ export default {
   'knowledgeFileUpload.comprehensiveSimilarity': 'Độ tương đồng toàn diện',
   'knowledgeFileUpload.content': 'Nội dung:',
   'knowledgeFileUpload.testQuestionRequired': 'Vui lòng nhập câu hỏi kiểm tra',
+  'knowledgeFileUpload.sourceDocument': 'Tài liệu nguồn',
   'knowledgeFileUpload.parsing': 'Đang phân tích...',
   'knowledgeBaseDialog.descriptionRequired': 'Vui lòng nhập mô tả cơ sở kiến thức',
 

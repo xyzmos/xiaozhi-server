@@ -1351,6 +1351,7 @@ export default {
   'knowledgeFileUpload.confirmParse': 'Tem certeza de que deseja analisar este documento?',
   'knowledgeFileUpload.nameRequired': 'Por favor, insira o nome do documento',
   'knowledgeFileUpload.fileRequired': 'Por favor, selecione um arquivo para enviar',
+  'knowledgeFileUpload.fileSizeExceeded': 'O tamanho do arquivo não pode exceder 10MB!',
   'knowledgeFileUpload.getListFailed': 'Falha ao obter lista de documentos',
   'knowledgeFileUpload.parseCancelled': 'Análise cancelada',
   'knowledgeFileUpload.deleteCancelled': 'Exclusão cancelada',
@@ -1384,6 +1385,7 @@ export default {
   'knowledgeFileUpload.comprehensiveSimilarity': 'Similaridade Geral',
   'knowledgeFileUpload.content': 'Conteúdo:',
   'knowledgeFileUpload.testQuestionRequired': 'Por favor, insira a pergunta de teste',
+  'knowledgeFileUpload.sourceDocument': 'Documento de origem',
   'knowledgeFileUpload.parsing': 'Analisando...',
   'knowledgeBaseDialog.descriptionRequired': 'Por favor, insira a descrição da base de conhecimento',
 

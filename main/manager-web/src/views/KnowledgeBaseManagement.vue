@@ -117,20 +117,18 @@
     />
 
     <!-- Slice Dialog -->
-    <el-dialog
+    <CustomDialog
       :title="`${$t('knowledgeFileUpload.viewSlices')} - ${currentDocumentName}`"
       :visible.sync="sliceDialogVisible"
-      width="900px"
-      :close-on-click-modal="false"
+      width="1200px"
+      :footer="false"
     >
       <div class="slice-management">
         <div v-loading="sliceLoading" class="slice-content-container">
           <div v-if="sliceList.length > 0" class="slice-cards-container">
             <div v-for="(slice, index) in sliceList" :key="index" class="slice-card">
-              <div class="slice-header-info">
-                <p><strong>{{ $t('knowledgeFileUpload.slice') }} {{ (sliceCurrentPage - 1) * slicePageSize + index + 1 }}</strong></p>
-              </div>
               <div class="slice-card-content">
+                <span class="clice-index">{{ $t('knowledgeFileUpload.slice') }} {{ (sliceCurrentPage - 1) * slicePageSize + index + 1 }}</span>
                 <div class="content-text">{{ slice.content }}</div>
               </div>
             </div>
@@ -140,30 +138,31 @@
           </div>
         </div>
         <div class="slice-pagination">
-          <el-select v-model="slicePageSize" @change="handleSliceSizeChange" class="slice-page-size-select">
-            <el-option v-for="item in [10, 20, 50]" :key="item" :label="`${item}${$t('knowledgeFileUpload.itemsPerPage')}`" :value="item"></el-option>
-          </el-select>
-          <button class="slice-page-btn" :disabled="sliceCurrentPage === 1" @click="sliceCurrentPage = 1; fetchSlices()">{{ $t('knowledgeBaseManagement.firstPage') }}</button>
-          <button class="slice-page-btn" :disabled="sliceCurrentPage === 1" @click="sliceCurrentPage--; fetchSlices()">{{ $t('knowledgeBaseManagement.prevPage') }}</button>
-          <button v-for="page in sliceVisiblePages" :key="page" class="slice-page-btn" :class="{ active: page === sliceCurrentPage }" @click="sliceCurrentPage = page; fetchSlices()">{{ page }}</button>
-          <button class="slice-page-btn" :disabled="sliceCurrentPage >= slicePageCount" @click="sliceCurrentPage++; fetchSlices()">{{ $t('knowledgeBaseManagement.nextPage') }}</button>
-          <span class="slice-total-text"> {{ $t('knowledgeBaseManagement.totalRecords', { total: sliceTotal }) }}</span>
+          <CustomPagination
+            :total="parseInt(sliceTotal)"
+            :current-page="sliceCurrentPage"
+            :page-size="slicePageSize"
+            :page-size-options="[10, 20, 50]"
+            @size-change="handleSliceSizeChange"
+            @page-change="handleSlicePageChange"
+          />
         </div>
       </div>
-    </el-dialog>
+    </CustomDialog>
 
     <!-- Upload Dialog -->
-    <el-dialog
+    <CustomDialog
       :title="$t('knowledgeFileUpload.uploadDocument')"
       :visible.sync="uploadDialogVisible"
       width="800px"
-      :close-on-click-modal="false"
       @close="handleUploadDialogClose"
+      @confirm="handleBatchUploadSubmit"
     >
       <el-upload
         ref="uploadRef"
         action="#"
         :auto-upload="false"
+        :show-file-list="false"
         :on-change="handleFileChange"
         multiple
         accept=".doc,.docx,.pdf,.txt,.md,.mdx,.csv,.xls,.xlsx,.ppt,.pptx"
@@ -189,48 +188,61 @@
           </div>
         </div>
       </div>
-      <span slot="footer">
-        <el-button @click="uploadDialogVisible = false">{{ $t('knowledgeFileUpload.cancel') }}</el-button>
-        <el-button type="primary" @click="handleBatchUploadSubmit" :loading="uploading" :disabled="selectedFilesList.length === 0">
-          {{ $t('knowledgeFileUpload.confirm') }} ({{ selectedFilesList.length }})
-        </el-button>
-      </span>
-    </el-dialog>
+    </CustomDialog>
 
     <!-- Retrieval Test Dialog -->
-    <el-dialog
+    <CustomDialog
       :title="$t('knowledgeFileUpload.retrievalTest')"
       :visible.sync="retrievalTestDialogVisible"
       width="900px"
       :close-on-click-modal="false"
+      :confirm-text="$t('knowledgeFileUpload.executeTest')"
+      :confirmLoading="retrievalTestLoading"
+      @confirm="runRetrievalTest"
     >
       <div class="retrieval-test-form">
         <el-form :model="retrievalTestForm" label-width="100px">
           <el-form-item :label="$t('knowledgeFileUpload.testQuestion')" required>
             <el-input
               v-model="retrievalTestForm.question"
-              type="textarea"
-              :rows="3"
+              @keyup.enter.native="runRetrievalTest"
+              clearable
               :placeholder="$t('knowledgeFileUpload.testQuestionPlaceholder')"
             />
           </el-form-item>
         </el-form>
-        <div style="text-align: center; margin-top: 20px;">
-          <el-button type="primary" @click="runRetrievalTest" :loading="retrievalTestLoading">{{ $t('knowledgeFileUpload.executeTest') }}</el-button>
-          <el-button @click="retrievalTestDialogVisible = false">{{ $t('knowledgeFileUpload.cancel') }}</el-button>
-        </div>
         <div v-if="retrievalTestResult" class="retrieval-test-result" style="margin-top: 20px;">
-          <h4 style="margin-bottom: 12px;">{{ $t('knowledgeFileUpload.testResult') }}</h4>
-          <div class="result-chunks">
+          <div class="result-chunks" v-if="retrievalTestResult.chunks.length">
             <div v-for="(chunk, index) in retrievalTestResult.chunks" :key="index" class="result-chunk">
-              <p><strong>{{ $t('knowledgeFileUpload.slice') }} {{ index + 1 }}</strong></p>
-              <div style="margin: 8px 0; font-size: 12px; color: #409eff;">{{ $t('knowledgeFileUpload.comprehensiveSimilarity') }}: {{ (chunk.similarity || 0).toFixed(4) }}</div>
-              <div class="chunk-content">{{ chunk.content }}</div>
+              <div class="chunk-left">
+                <div class="chunk-similarity">
+                  <p class="similarity-label">{{ $t('knowledgeFileUpload.comprehensiveSimilarity') }}</p>
+                  <p class="similarity-value">{{ (chunk.similarity || 0).toFixed(4) }}</p>
+                  <el-progress
+                    :percentage="Math.round((chunk.similarity || 0) * 100)"
+                    :stroke-width="6"
+                    :show-text="false"
+                    class="similarity-progress"
+                  />
+                </div>
+              </div>
+              <el-divider direction="vertical"></el-divider>
+              <div class="chunk-right">
+                
+                <div class="chunk-content">
+                  <div class="chunk-right-header">
+                    <span class="chunk-source">{{ $t('knowledgeFileUpload.sourceDocument') }}：{{ chunk.document_keyword || '-' }}</span>
+                    <span class="chunk-index">{{ $t('knowledgeFileUpload.slice') }} {{ index + 1 }}</span>
+                  </div>
+                  <p>{{ chunk.content }}</p>
+                </div>
+              </div>
             </div>
           </div>
+          <el-empty v-else :description="$t('knowledgeFileUpload.noSliceData')"></el-empty>
         </div>
       </div>
-    </el-dialog>
+    </CustomDialog>
 
     <el-footer>
       <version-footer />
@@ -245,9 +257,11 @@ import VersionFooter from "@/components/VersionFooter.vue";
 import KnowledgeBaseDialog from "@/components/KnowledgeBaseDialog.vue";
 import KnowledgeBaseItem from "./KnowledgeBaseItem.vue";
 import ManualIcon from "@/components/ManualIcon.vue";
+import CustomDialog from "@/components/CustomDialog.vue";
+import CustomPagination from "@/components/CustomPagination.vue";
 
 export default {
-  components: { HeaderBar, VersionFooter, KnowledgeBaseDialog, KnowledgeBaseItem, ManualIcon },
+  components: { HeaderBar, VersionFooter, KnowledgeBaseDialog, KnowledgeBaseItem, ManualIcon, CustomDialog, CustomPagination },
   data() {
     return {
       knowledgeBases: [],
@@ -289,22 +303,6 @@ export default {
       return this.knowledgeBases.filter(kb =>
         kb.name.toLowerCase().includes(keyword)
       );
-    },
-    slicePageCount() {
-      return Math.ceil(this.sliceTotal / this.slicePageSize);
-    },
-    sliceVisiblePages() {
-      const pages = [];
-      const maxVisible = 3;
-      let start = Math.max(1, this.sliceCurrentPage - 1);
-      let end = Math.min(this.slicePageCount, start + maxVisible - 1);
-      if (end - start + 1 < maxVisible) {
-        start = Math.max(1, end - maxVisible + 1);
-      }
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      return pages;
     },
   },
   created() {
@@ -478,6 +476,12 @@ export default {
 
     handleFileChange(file) {
       if (!file || !file.raw) return;
+       // 文件上传前的验证
+      const isLt10M = file.size / 1024 / 1024 < 10;
+      if (!isLt10M) {
+        this.$message.error(this.$t('knowledgeFileUpload.fileSizeExceeded'));
+        return;
+      }
       this.selectedFilesList.push({
         name: file.name,
         size: file.size,
@@ -564,6 +568,7 @@ export default {
     },
 
     runRetrievalTest() {
+      if (this.retrievalTestLoading) return;
       if (!this.retrievalTestForm.question.trim()) {
         this.$message.error(this.$t('knowledgeFileUpload.testQuestionRequired'));
         return;
@@ -645,6 +650,11 @@ export default {
     handleSliceSizeChange(val) {
       this.slicePageSize = val;
       this.sliceCurrentPage = 1;
+      this.fetchSlices();
+    },
+
+    handleSlicePageChange(page) {
+      this.sliceCurrentPage = page;
       this.fetchSlices();
     },
 
@@ -1009,7 +1019,6 @@ export default {
 .slice-management {
   display: flex;
   flex-direction: column;
-  max-height: 65vh;
 }
 
 .slice-content-container {
@@ -1018,7 +1027,7 @@ export default {
 }
 
 .slice-cards-container {
-  max-height: 50vh;
+  max-height: 60vh;
   overflow-y: auto;
   padding-right: 4px;
 
@@ -1033,9 +1042,6 @@ export default {
 
 .slice-card {
   background: #f8f9fa;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 14px;
   margin-bottom: 12px;
 
   &:last-child {
@@ -1057,10 +1063,9 @@ export default {
 .slice-card-content {
   background: #fff;
   border: 1px solid #f0f0f0;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 12px;
-  max-height: 200px;
-  overflow-y: auto;
+  text-align: left;
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -1068,6 +1073,13 @@ export default {
   &::-webkit-scrollbar-thumb {
     background: #e0e0e0;
     border-radius: 2px;
+  }
+  .clice-index {
+    color: #467afe;
+    display: inline-block;
+    padding: 4px 6px;
+    background: #e6f0fe;
+    border-radius: 4px;
   }
 }
 
@@ -1088,51 +1100,9 @@ export default {
 
 .slice-pagination {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
+  justify-content: center;
 }
 
-.slice-page-size-select {
-  width: 100px;
-  margin-right: 8px;
-}
-
-.slice-page-btn {
-  min-width: 32px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #606266;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #f5f7fa;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &.active {
-    background: #6b80eb;
-    color: #fff;
-    border-color: #6b80eb;
-  }
-}
-
-.slice-total-text {
-  margin-left: 8px;
-  color: #9ca3af;
-  font-size: 13px;
-}
 
 /* ========== Selected Files List ========== */
 .selected-files-section {
@@ -1216,28 +1186,92 @@ export default {
   }
 
   .result-chunk {
-    background: #f8f9fa;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     padding: 14px;
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
 
-    p {
-      margin: 0 0 8px 0;
-      font-size: 14px;
+    .chunk-left {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+
+      .chunk-similarity {
+        // font-size: 12px;
+        color: #409eff;
+        white-space: nowrap;
+
+        .similarity-label {
+          // font-size: 12px;
+          color: #333;
+          margin-bottom: 4px;
+        }
+
+        .similarity-value {
+          text-align: left;
+          margin-top: 4px;
+          font-size: 16px;
+          font-weight: 600;
+          margin-bottom: 12px;
+        }
+
+        .similarity-progress {
+          margin-top: 8px;
+
+          ::v-deep(.el-progress-bar__outer) {
+            border-radius: 3px;
+            background-color: rgba(64, 158, 255, 0.1);
+          }
+          ::v-deep(.el-progress-bar__inner) {
+            border-radius: 3px;
+            background: #4a7cfd;
+          }
+        }
+      }
     }
 
-    .chunk-content {
-      background: #fff;
-      border: 1px solid #f0f0f0;
-      border-radius: 4px;
-      padding: 12px;
-      max-height: 150px;
-      overflow-y: auto;
-      font-size: 14px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-word;
+    .chunk-right {
+      flex: 1;
+      min-width: 0;
+
+      .chunk-right-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+
+        .chunk-source {
+          font-size: 14px;
+          font-weight: 600;
+        }
+
+        .chunk-index {
+          color: #467afe;
+          display: inline-block;
+          padding: 4px 6px;
+          background: #e6f0fe;
+          border-radius: 4px;
+        }
+      }
+
+      .chunk-content {
+        text-align: left;
+        white-space: normal;
+        background: #fff;
+        border-radius: 4px;
+        // max-height: 150px;
+        // overflow-y: auto;
+        font-size: 14px;
+        line-height: 1.6;
+        // white-space: pre-wrap;
+        // word-break: break-word;
+        > p {
+          margin: 0;
+        }
+      }
     }
   }
 }

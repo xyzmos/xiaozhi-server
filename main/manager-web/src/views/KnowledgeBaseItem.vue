@@ -3,7 +3,7 @@
     <div class="doc-section-header">
       <div class="doc-section-left">
         <div class="doc-section-title">{{`${$t('knowledgeBaseManagement.currentKnowledgeBaseDocuments')}（${kb?.name}）`}}</div>
-        <div class="doc-section-count" v-if="kb">{{ $t('knowledgeBaseManagement.totalDocuments', { total: documents.length }) }}</div>
+        <div class="doc-section-count" v-if="kb">{{ $t('knowledgeBaseManagement.totalDocuments', { total }) }}</div>
       </div>
       <div class="doc-section-actions">
         <el-input
@@ -61,7 +61,7 @@
             >
               {{ $t('knowledgeFileUpload.parse') }}
             </el-button>
-            <el-button type="text" class="delete-btn" @click.stop="handleDelete(doc)">
+            <el-button type="text" class="delete-btn" :loading="deleteLoadingMap[doc.id]" @click.stop="handleDelete(doc)">
               {{ $t('knowledgeBaseManagement.delete') }}
             </el-button>
           </div>
@@ -71,11 +71,20 @@
         <el-empty :description="$t('knowledgeBaseManagement.noData')"></el-empty>
       </div>
     </div>
+    <CustomPagination
+      :total="total"
+      :current-page="currentPage"
+      :page-size="pageSize"
+      :page-size-options="pageSizeOptions"
+      @page-change="handlePageChange"
+      @size-change="handleSizeChange"
+    />
   </div>
 </template>
 
 <script>
 import Api from "@/apis/api";
+import CustomPagination from "@/components/CustomPagination.vue";
 
 const iconMap = {
   pdf: require('@/assets/knowledge-base/pdf.png'),
@@ -91,6 +100,7 @@ const iconMap = {
 
 export default {
   name: 'LibraryItem',
+  components: { CustomPagination },
   props: {
     kb: {
       type: Object,
@@ -101,16 +111,23 @@ export default {
     return {
       documents: [],
       docLoading: false,
+      deleteLoadingMap: {},
       searchDocName: '',
+      total: 0,
+      currentPage: 1,
+      pageSize: 10,
+      pageSizeOptions: [10, 20, 50, 100],
     };
   },
   watch: {
     kb: {
       handler(newKb) {
         if (newKb && newKb.datasetId) {
+          this.currentPage = 1;
           this.fetchDocuments();
         } else {
           this.documents = [];
+          this.total = 0;
         }
       },
       immediate: true
@@ -121,8 +138,8 @@ export default {
       if (!this.kb || !this.kb.datasetId) return;
       this.docLoading = true;
       const params = {
-        page: 1,
-        page_size: 100,
+        page: this.currentPage,
+        page_size: this.pageSize,
         name: this.searchDocName
       };
       Api.knowledgeBase.getDocumentList(
@@ -132,10 +149,12 @@ export default {
           this.docLoading = false;
           if (data && data.code === 0) {
             this.documents = data.data.list || [];
+            this.total = data.data.total || 0;
             this.fetchSliceCountsForDocuments();
           } else {
             this.$message.error(data?.msg || '获取文档列表失败');
             this.documents = [];
+            this.total = 0;
           }
         },
         (err) => {
@@ -146,11 +165,24 @@ export default {
             this.$message.error('获取文档列表失败');
           }
           this.documents = [];
+          this.total = 0;
         }
       );
     },
 
     handleSearch() {
+      this.currentPage = 1;
+      this.fetchDocuments();
+    },
+
+    handlePageChange(page) {
+      this.currentPage = page;
+      this.fetchDocuments();
+    },
+
+    handleSizeChange(size) {
+      this.pageSize = size;
+      this.currentPage = 1;
       this.fetchDocuments();
     },
 
@@ -173,14 +205,20 @@ export default {
           type: 'warning'
         }
       ).then(() => {
+        this.$set(this.deleteLoadingMap, doc.id, true);
         Api.knowledgeBase.deleteDocument(this.kb.datasetId, doc.id, (res) => {
+          this.$set(this.deleteLoadingMap, doc.id, false);
           if (res.data && res.data.code === 0) {
+            if (this.documents.length === 1 && this.currentPage > 1) {
+              this.currentPage--;
+            }
             this.fetchDocuments();
             this.$message.success(this.$t('knowledgeFileUpload.deleteSuccess'));
           } else {
             this.$message.error(res.data?.msg || this.$t('knowledgeFileUpload.deleteFailed'));
           }
         }, () => {
+          this.$set(this.deleteLoadingMap, doc.id, false);
           this.$message.error(this.$t('knowledgeFileUpload.deleteFailed'));
         });
       }).catch(() => {});
@@ -301,7 +339,7 @@ export default {
 
     getProgressText(doc) {
       const code = doc.parseStatusCode;
-      if (code === 3) return '✓';
+      if (code === 3) return '100%';
       if (code === 1) {
         if (doc.chunkNum && doc.totalChunkNum) {
           return Math.round((doc.chunkNum / doc.totalChunkNum) * 100) + '%';
@@ -377,13 +415,12 @@ export default {
 
 .doc-section-actions {
   display: flex;
-  gap: 8px;
   align-items: center;
 }
 
 .doc-search-input {
   width: 200px;
-  margin-left: 8px;
+  margin-right: 10px;
 }
 
 /* ========== Document Grid ========== */
@@ -399,7 +436,7 @@ export default {
 }
 
 .doc-card {
-  height: 120px;
+  max-height: 120px;
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 18px;
