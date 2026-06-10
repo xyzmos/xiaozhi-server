@@ -107,7 +107,7 @@
     </div>
 
     <!-- Knowledge Base Dialog -->
-    <knowledge-base-dialog
+    <KnowledgeBaseDialog
       ref="knowledgeBaseDialog"
       :title="dialogTitle"
       :visible.sync="dialogVisible"

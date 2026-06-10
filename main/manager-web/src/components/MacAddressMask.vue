@@ -13,7 +13,7 @@ export default {
   },
   computed: {
     isValid() {
-      return /^(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}$/i.test(this.macAddress);
+      return /^(?:[0-9A-Z]{2}[:-]){5}[0-9A-Z]{2}$/i.test(this.macAddress);
     },
     segments() {
       return this.macAddress.split(':');
