@@ -31,10 +31,10 @@
         <div class="doc-card-bottom">
           <div class="doc-card-progress">
             <div class="progress-ring">
-              <svg viewBox="0 0 44 44">
-                <circle class="bg" cx="22" cy="22" r="17"/>
-                <circle class="fg" :class="getProgressClass(doc)" cx="22" cy="22" r="17"
-                  stroke-dasharray="106.81"
+              <svg viewBox="0 0 40 40">
+                <circle class="bg" cx="20" cy="20" r="15"/>
+                <circle class="fg" :class="getProgressClass(doc)" cx="20" cy="20" r="15"
+                  stroke-dasharray="94.25"
                   :stroke-dashoffset="getProgressOffset(doc)"/>
               </svg>
               <span class="progress-ring-text" :style="{ color: getProgressTextColor(doc) }">{{ getProgressText(doc) }}</span>
@@ -326,7 +326,7 @@ export default {
 
     getProgressOffset(doc) {
       const code = doc.parseStatusCode;
-      const circumference = 106.81;
+      const circumference = 94.25;
       if (code === 3) return 0;
       if (code === 1) {
         const progress = doc.chunkNum && doc.totalChunkNum
@@ -403,13 +403,13 @@ export default {
 }
 
 .doc-section-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
   color: #1f2a44;
 }
 
 .doc-section-count {
-  font-size: 14px;
+  font-size: 18px;
   color: #788ba8;
 }
 
@@ -436,13 +436,14 @@ export default {
 }
 
 .doc-card {
-  max-height: 120px;
+  max-height: 110px;
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 18px;
   background: #fff;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.25s;
   position: relative;
@@ -495,7 +496,6 @@ export default {
 }
 
 .doc-card-bottom {
-  margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -509,13 +509,13 @@ export default {
 
 /* ========== Progress Ring ========== */
 .progress-ring {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   position: relative;
 
   svg {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     transform: rotate(-90deg);
   }
 
@@ -548,7 +548,7 @@ export default {
 }
 
 .progress-container {
-  height: 32px;
+  height: 36px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

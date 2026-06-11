@@ -687,7 +687,7 @@ export default {
   background: #deeafe;
   display: flex;
   justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   gap: 7px;
   color: #3d4566;

@@ -27,11 +27,11 @@
       <div class="content-panel">
         <div class="content-area" v-loading="loading" :element-loading-text="$t('knowledgeBaseManagement.loading')">
           <!-- Knowledge Base Cards Section -->
-          <div class="kb-section">
+          <div class="kb-section" :style="{ height: filteredKnowledgeBases.length > 0 ? 'fit-content' : '100%' }">
             <div class="kb-section-header">
               <div class="kb-section-title">{{ $t('knowledgeBaseManagement.switchKnowledgeBase') }}</div>
             </div>
-            <div class="kb-cards-wrapper">
+            <div class="kb-cards-wrapper" :style="{ height: filteredKnowledgeBases.length > 0 ? 'fit-content' : '100%' }">
               <div class="kb-arrow left" @click="scrollCards(-1)" v-if="filteredKnowledgeBases.length > 0">
                 <i class="el-icon-arrow-left"></i>
               </div>
@@ -67,8 +67,8 @@
                             v-model="kb.status"
                             :active-value="1"
                             :inactive-value="0"
-                            active-color="#13ce66"
-                            inactive-color="#ff4949"
+                            active-color="#5778ff"
+                            inactive-color="#DCDFE6"
                             @click.native.stop
                             @change="handleStatusChange(kb)"
                           ></el-switch>
@@ -79,7 +79,6 @@
                   <div class="kb-card-desc">{{ kb.description || '-' }}</div>
                 </div>
                 <div v-if="filteredKnowledgeBases.length === 0 && !loading" class="kb-empty">
-                  <i class="el-icon-folder-opened"></i>
                   <p>{{ $t('knowledgeBaseManagement.noData') }}</p>
                 </div>
               </div>
@@ -99,15 +98,12 @@
             @view-slices="handleViewSlices"
             @refresh="refreshDocuments"
           />
-          <div v-else class="doc-empty-placeholder">
-            <el-empty :description="$t('knowledgeBaseManagement.noData')"></el-empty>
-          </div>
         </div>
       </div>
     </div>
 
     <!-- Knowledge Base Dialog -->
-    <knowledge-base-dialog
+    <KnowledgeBaseDialog
       ref="knowledgeBaseDialog"
       :title="dialogTitle"
       :visible.sync="dialogVisible"
@@ -810,7 +806,7 @@ export default {
 }
 
 .kb-section-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
   color: #1f2a44;
 }
@@ -976,7 +972,6 @@ export default {
 }
 
 .kb-card-desc {
-  margin-top: 10px;
   font-size: 14px;
   text-align: left;
   color: #7888a8;

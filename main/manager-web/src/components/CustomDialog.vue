@@ -123,6 +123,7 @@ export default {
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 15vh !important;
   }
 
   ::v-deep .el-dialog__header {
