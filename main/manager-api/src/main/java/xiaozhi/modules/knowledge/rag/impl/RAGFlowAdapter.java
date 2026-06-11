@@ -485,16 +485,11 @@ public class RAGFlowAdapter extends KnowledgeBaseAdapter {
 
     @Override
     public Integer getDocumentCount(String datasetId) {
-        try {
-            DatasetDTO.InfoVO info = getDatasetInfo(datasetId);
-            if (info != null && info.getDocumentCount() != null) {
-                return info.getDocumentCount().intValue();
-            }
-            return 0;
-        } catch (Exception e) {
-            log.warn("获取文档数量失败: {}", e.getMessage());
-            return 0;
+        DatasetDTO.InfoVO info = getDatasetInfo(datasetId);
+        if (info != null && info.getDocumentCount() != null) {
+            return info.getDocumentCount().intValue();
         }
+        return 0;
     }
 
     @Override
@@ -518,7 +513,7 @@ public class RAGFlowAdapter extends KnowledgeBaseAdapter {
             return null;
         } catch (Exception e) {
             log.warn("获取数据集信息失败: datasetId={}, error={}", datasetId, e.getMessage());
-            return null;
+            throw convertToRenException(e);
         }
     }
 

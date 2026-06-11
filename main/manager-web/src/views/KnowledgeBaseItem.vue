@@ -217,9 +217,9 @@ export default {
           } else {
             this.$message.error(res.data?.msg || this.$t('knowledgeFileUpload.deleteFailed'));
           }
-        }, () => {
+        }, (err) => {
           this.$set(this.deleteLoadingMap, doc.id, false);
-          this.$message.error(this.$t('knowledgeFileUpload.deleteFailed'));
+          this.$message.error(err?.data?.msg ||this.$t('knowledgeFileUpload.deleteFailed'));
         });
       }).catch(() => {});
     },
