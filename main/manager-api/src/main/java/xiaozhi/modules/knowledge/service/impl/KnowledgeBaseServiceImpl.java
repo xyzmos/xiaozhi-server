@@ -145,7 +145,7 @@ public class KnowledgeBaseServiceImpl extends BaseServiceImpl<KnowledgeBaseDao, 
             }
 
         } catch (Exception e) {
-            log.warn("同步数据集信息失败 {}: {}", dto.getName(), e.getMessage());
+            log.error("同步数据集信息失败 {}: {}", dto.getName(), e.getMessage());
             dto.setDocumentCount(0);
             dto.setErrorMessage(e.getMessage());
         }
