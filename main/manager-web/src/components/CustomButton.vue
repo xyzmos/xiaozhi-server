@@ -38,7 +38,7 @@ export default {
     color: #8099fc;
     border-color: #adbdff;
     box-shadow: 0 2px 8px rgba(128, 153, 252, 0.3);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
   }
 
   &.is-disabled,
@@ -57,7 +57,7 @@ export default {
   background: linear-gradient(to right, #4a7cfd, #8154fc);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   transition: all 0.3s ease;
 
   &.el-button--small {
@@ -69,7 +69,7 @@ export default {
     color: white;
     border-color: transparent;
     box-shadow: 0 2px 8px rgba(74, 124, 253, 0.3);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
   }
 
   &.is-disabled,
