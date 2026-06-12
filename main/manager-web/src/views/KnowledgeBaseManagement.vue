@@ -43,6 +43,11 @@
                   :class="{ active: selectedKb && selectedKb.datasetId === kb.datasetId }"
                   @click="selectKnowledgeBase(kb)"
                 >
+                  <el-tooltip v-if="kb.errorMessage" :content="kb.errorMessage" placement="bottom-start" effect="dark">
+                    <div class="kb-card-warning">
+                      <i class="el-icon-warning"></i>
+                    </div>
+                  </el-tooltip>
                   <div class="kb-card-actions-top">
                     <button class="kb-action-icon" :title="$t('knowledgeBaseManagement.edit')" @click.stop="editKnowledgeBase(kb)">
                       <i class="el-icon-edit"></i>
@@ -886,6 +891,22 @@ export default {
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 12px;
+}
+
+.kb-card-warning {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  z-index: 2;
+  color: #e6a23c;
+  font-size: 16px;
+  cursor: pointer;
+  animation: warning-pulse 2s ease-in-out infinite;
+}
+
+@keyframes warning-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .kb-card-actions-top {
