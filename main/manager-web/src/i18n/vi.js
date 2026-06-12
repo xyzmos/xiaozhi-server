@@ -1414,6 +1414,14 @@ export default {
   'featureManagement.cancel': 'Hủy bỏ',
   'featureManagement.resetSuccess': 'Cấu hình tính năng đã được đặt lại thành công',
   'featureManagement.noChanges': 'Không có thay đổi nào để lưu',
+  'featureManagement.saving': 'Đang lưu...',
+  'featureManagement.groupName.featureManagement': 'Công tắc mô-đun tính năng',
+  'featureManagement.groupName.voiceManagement': 'Cấu hình hiển thị Agent',
+  'featureManagement.groupDescription.featureManagement': 'Kiểm soát trạng thái kích hoạt của các mô-đun tính năng cốt lõi',
+  'featureManagement.groupDescription.voiceManagement': 'Cấu hình các tính năng hiển thị và khả dụng cho agent (trợ lý AI)',
+  'featureManagement.moduleCount': 'Tổng cộng {count} mô-đun',
+  'featureManagement.enabled': 'Đã bật',
+  'featureManagement.disabled': 'Chưa bật',
 
   // Feature names and descriptions
   'feature.voiceprintRecognition.name': 'Nhận dạng giọng nói',

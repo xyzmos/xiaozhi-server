@@ -1414,6 +1414,14 @@ export default {
   'featureManagement.cancel': '取消',
   'featureManagement.resetSuccess': '功能配置重置成功',
   'featureManagement.noChanges': '沒有需要儲存的更改',
+  'featureManagement.saving': '儲存中...',
+  'featureManagement.groupName.featureManagement': '功能模組開關',
+  'featureManagement.groupName.voiceManagement': '智能體可見配置',
+  'featureManagement.groupDescription.featureManagement': '控制系統核心功能模組的啟用狀態',
+  'featureManagement.groupDescription.voiceManagement': '配置哪些功能對智能體（AI助手）可見和可用',
+  'featureManagement.moduleCount': '共 {count} 個模組',
+  'featureManagement.enabled': '已啟用',
+  'featureManagement.disabled': '未啟用',
 
   // 功能名稱和描述
   'feature.voiceprintRecognition.name': '聲紋識別',

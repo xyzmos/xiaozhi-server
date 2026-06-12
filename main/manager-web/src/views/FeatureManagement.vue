@@ -20,7 +20,7 @@
               </div>
             </div>
             <div class="divider"></div>
-            
+
             <!-- 功能分组容器 - 左右布局 -->
             <div class="feature-groups-container">
               <!-- 功能管理分组 -->
@@ -28,11 +28,11 @@
                 <div class="group-title">
                   <img src="@/assets/setting/menu.png" alt="" width="28" height="28">
                   <div class="group-header">
-                    <span class="group-name">功能模块开关</span>
-                    <span class="module-count">{{ `共 ${featureManagementFeatures.length} 个模块` }}</span>
+                    <span class="group-name">{{ $t('featureManagement.groupName.featureManagement') }}</span>
+                    <span class="module-count">{{ $t('featureManagement.moduleCount', { count: featureManagementFeatures.length }) }}</span>
                   </div>
                 </div>
-                <p class="group-description">控制系统核心功能模块的启用状态</p>
+                <p class="group-description">{{ $t('featureManagement.groupDescription.featureManagement') }}</p>
                 <div class="features-grid">
                   <div
                     v-for="feature in featureManagementFeatures"
@@ -45,8 +45,8 @@
                     <div class="feature-content">
                       <div class="feature-header">
                         <h3 class="feature-name">{{ $t(`feature.${feature.id}.name`) }}</h3>
-                        <span v-if="feature.enabled" class="feature-enabled-tag">已启用</span>
-                        <span v-else class="feature-disabled-tag">未启用</span>
+                        <span v-if="feature.enabled" class="feature-enabled-tag">{{ $t('featureManagement.enabled') }}</span>
+                        <span v-else class="feature-disabled-tag">{{ $t('featureManagement.disabled') }}</span>
                       </div>
                       <p class="feature-description">{{ $t(`feature.${feature.id}.description`) }}</p>
                     </div>
@@ -61,18 +61,17 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- 语音管理分组 -->
               <div v-if="voiceManagementFeatures.length > 0" class="feature-group">
                 <div class="group-title">
                   <img src="@/assets/setting/agent.png" alt="" width="28" height="28">
                   <div class="group-header">
-                    <span class="group-name">智能体可见配置</span>
-                    <span class="module-count">{{ `共 ${voiceManagementFeatures.length} 个模块` }}</span>
+                    <span class="group-name">{{ $t('featureManagement.groupName.voiceManagement') }}</span>
+                    <span class="module-count">{{ $t('featureManagement.moduleCount', { count: voiceManagementFeatures.length }) }}</span>
                   </div>
                 </div>
-                <p class="group-description">配置哪些功能对智能体（AI助手）可见和可用</p>
-                <!-- <h3 class="group-title">{{ $t('featureManagement.group.voiceManagement') }}</h3> -->
+                <p class="group-description">{{ $t('featureManagement.groupDescription.voiceManagement') }}</p>
                 <div class="features-grid">
                   <div
                     v-for="feature in voiceManagementFeatures"
@@ -85,8 +84,8 @@
                     <div class="feature-content">
                       <div class="feature-header">
                         <h3 class="feature-name">{{ $t(`feature.${feature.id}.name`) }}</h3>
-                        <span v-if="feature.enabled" class="feature-enabled-tag">已启用</span>
-                        <span v-else class="feature-disabled-tag">未启用</span>
+                        <span v-if="feature.enabled" class="feature-enabled-tag">{{ $t('featureManagement.enabled') }}</span>
+                        <span v-else class="feature-disabled-tag">{{ $t('featureManagement.disabled') }}</span>
                       </div>
                       <p class="feature-description">{{ $t(`feature.${feature.id}.description`) }}</p>
                     </div>
