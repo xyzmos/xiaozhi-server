@@ -40,7 +40,7 @@
                   v-for="(kb, index) in filteredKnowledgeBases"
                   :key="kb.datasetId"
                   class="kb-card"
-                  :class="{ active: selectedKb && selectedKb.datasetId === kb.datasetId }"
+                  :class="{ active: selectedKb && selectedKb.datasetId === kb.datasetId, error: !!kb.errorMessage }"
                   @click="selectKnowledgeBase(kb)"
                 >
                   <div class="kb-card-actions-top">
@@ -72,6 +72,9 @@
                             @click.native.stop
                             @change="handleStatusChange(kb)"
                           ></el-switch>
+                          <el-tooltip v-if="kb.errorMessage" :content="kb.errorMessage" placement="top-end" effect="dark">
+                            <i class="kb-card-warning el-icon-warning"></i>
+                          </el-tooltip>
                         </div>
                       </div>
                     </div>
@@ -875,6 +878,21 @@ export default {
   &.active {
     border: 1px solid #6b80eb;
   }
+
+  &.error {
+    background: linear-gradient(135deg, #fff5f5, #fff0f0);
+    border: 1px solid #fde2e2;
+    box-shadow: 0 0 10px rgba(245, 108, 108, 0.15);
+
+    &:hover {
+      border: 1px solid #f56c6c;
+      box-shadow: 0 0 12px rgba(245, 108, 108, 0.25);
+    }
+
+    &.active {
+      border: 1px solid #f56c6c;
+    }
+  }
 }
 
 .kb-card-top {
@@ -882,6 +900,20 @@ export default {
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 12px;
+}
+
+.kb-card-warning {
+  color: #e6a23c;
+  font-size: 16px;
+  cursor: pointer;
+  vertical-align: middle;
+  margin-left: 6px;
+  animation: warning-pulse 2s ease-in-out infinite;
+}
+
+@keyframes warning-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .kb-card-actions-top {

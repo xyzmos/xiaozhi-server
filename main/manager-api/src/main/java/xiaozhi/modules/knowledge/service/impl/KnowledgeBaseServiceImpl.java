@@ -100,9 +100,9 @@ public class KnowledgeBaseServiceImpl extends BaseServiceImpl<KnowledgeBaseDao, 
             }
 
             DatasetDTO.InfoVO datasetInfo = adapter.getDatasetInfo(dto.getDatasetId());
-
+            // getDatasetInfo 正常返回 null 表示远端确实不存在；异常时已抛出 RenException 由外层 catch 接管
             if (datasetInfo == null) {
-                // RAGFlow 端已删除 → 本地级联清理
+                // RAGFlow 端已确认删除 → 本地级联清理
                 log.info("数据集 {} 在 RAGFlow 端不存在，执行本地清理", dto.getDatasetId());
                 cleanupLocalDataset(dto.getDatasetId(), dto.getId());
                 // 标记为已删除，让上层从列表中移除
@@ -145,8 +145,9 @@ public class KnowledgeBaseServiceImpl extends BaseServiceImpl<KnowledgeBaseDao, 
             }
 
         } catch (Exception e) {
-            log.warn("同步数据集信息失败 {}: {}", dto.getName(), e.getMessage());
+            log.error("同步数据集信息失败 {}: {}", dto.getName(), e.getMessage());
             dto.setDocumentCount(0);
+            dto.setErrorMessage(e.getMessage());
         }
     }
 
