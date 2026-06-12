@@ -529,7 +529,8 @@ public class KnowledgeFilesServiceImpl extends BaseServiceImpl<DocumentDao, Docu
             adapter.deleteDocument(datasetId, req);
             log.info("远程批量删除请求成功");
         } catch (Exception e) {
-            log.warn("远程删除请求部分或全部失败: {}", e.getMessage());
+            log.error("远程删除请求失败，中止本地清理以避免数据不一致: {}", e.getMessage());
+            throw new RenException(e.getMessage());
         }
 
         // 4. 原子化清理本地影子记录并同步统计数据

@@ -1,6 +1,6 @@
 <template>
   <el-dialog :visible="dialogVisible" @update:visible="handleVisibleChange" width="57%" center
-    custom-class="custom-dialog" :show-close="false" class="center-dialog">
+    custom-class="add-model-dialog" :show-close="false" class="center-dialog">
     <div style="margin: 0 18px; text-align: left; padding: 10px; border-radius: 10px;">
       <div style="font-size: 30px; color: #3d4566; margin-top: -10px; margin-bottom: 10px; text-align: center;">
         {{ $t('modelConfigDialog.addModel') }}
@@ -298,7 +298,7 @@ export default {
 </script>
 
 <style>
-.custom-dialog {
+.add-model-dialog {
   position: relative;
   border-radius: 20px;
   overflow: hidden;
@@ -306,7 +306,7 @@ export default {
   padding-bottom: 17px;
 }
 
-.custom-dialog .el-dialog__header {
+.add-model-dialog .el-dialog__header {
   padding: 0;
   border-bottom: none;
 }

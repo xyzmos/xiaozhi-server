@@ -65,6 +65,7 @@ VAD:
 3、[如何部署MQTT网关开启MQTT+UDP协议](./mqtt-gateway-integration.md)<br/>
 4、[如何自动拉取本项目最新代码自动编译和启动](./dev-ops-integration.md)<br/>
 5、[如何与Nginx集成](https://github.com/xinnan-tech/xiaozhi-esp32-server/issues/791)<br/>
+6、[修改代码后怎么编译自己的Docker镜像](./docker-build.md)<br/>
 
 ### 8、编译固件相关教程
 1、[如何自己编译小智固件](./firmware-build.md)<br/>
@@ -85,6 +86,7 @@ VAD:
 11、[如何集成PowerMem智能记忆](./powermem-integration.md)<br/>
 12、[如何配置天气插件查询天气](./weather-integration.md)<br/>
 13、[如何开启设备呼叫插件](./device-call-guide.md)<br/>
+14、[如何开启联网搜索功能](./web-search-integration.md)<br/>
 
 ### 10、数字人相关教程
 1、[数字人digital-human启动方法](./digital-human-wakeword.md)<br/>
