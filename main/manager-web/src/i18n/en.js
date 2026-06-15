@@ -1420,8 +1420,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': 'Control the enable status of core feature modules',
   'featureManagement.groupDescription.voiceManagement': 'Configure which features are visible and available to agents (AI assistants)',
   'featureManagement.moduleCount': '{count} modules in total',
-  'featureManagement.enabled': 'Enabled',
-  'featureManagement.disabled': 'Disabled',
 
   // Feature names and descriptions
   'feature.voiceprintRecognition.name': 'Voiceprint Recognition',

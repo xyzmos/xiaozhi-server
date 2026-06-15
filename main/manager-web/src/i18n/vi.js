@@ -1420,8 +1420,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': 'Kiểm soát trạng thái kích hoạt của các mô-đun tính năng cốt lõi',
   'featureManagement.groupDescription.voiceManagement': 'Cấu hình các tính năng hiển thị và khả dụng cho agent (trợ lý AI)',
   'featureManagement.moduleCount': 'Tổng cộng {count} mô-đun',
-  'featureManagement.enabled': 'Đã bật',
-  'featureManagement.disabled': 'Chưa bật',
 
   // Feature names and descriptions
   'feature.voiceprintRecognition.name': 'Nhận dạng giọng nói',

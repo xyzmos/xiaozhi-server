@@ -1418,8 +1418,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': '控制系统核心功能模块的启用状态',
   'featureManagement.groupDescription.voiceManagement': '配置哪些功能对智能体（AI助手）可见和可用',
   'featureManagement.moduleCount': '共 {count} 个模块',
-  'featureManagement.enabled': '已启用',
-  'featureManagement.disabled': '未启用',
 
   // 功能名称和描述
   'feature.voiceprintRecognition.name': '声纹识别',

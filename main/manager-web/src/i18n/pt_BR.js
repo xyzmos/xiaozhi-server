@@ -1420,8 +1420,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': 'Controlar o status de ativação dos módulos de funcionalidade principal',
   'featureManagement.groupDescription.voiceManagement': 'Configurar quais funcionalidades são visíveis e disponíveis para agentes (assistentes de IA)',
   'featureManagement.moduleCount': '{count} módulos no total',
-  'featureManagement.enabled': 'Ativado',
-  'featureManagement.disabled': 'Desativado',
 
   // Nomes e descrições de funcionalidades
   'feature.voiceprintRecognition.name': 'Reconhecimento de Impressão Vocal',

@@ -1420,8 +1420,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': 'Aktivierungsstatus der Kernfunktionsmodule steuern',
   'featureManagement.groupDescription.voiceManagement': 'Konfigurieren, welche Funktionen für Agenten (KI-Assistenten) sichtbar und verfügbar sind',
   'featureManagement.moduleCount': '{count} Module insgesamt',
-  'featureManagement.enabled': 'Aktiviert',
-  'featureManagement.disabled': 'Deaktiviert',
 
   // Feature names and descriptions
   'feature.voiceprintRecognition.name': 'Stimmerkennung',
