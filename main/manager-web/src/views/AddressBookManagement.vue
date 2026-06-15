@@ -290,8 +290,11 @@ export default {
             });
           });
           Promise.all(agentPromises).then(() => {
+            const firstDevice = agentList[0] || {};
             this.agentDeviceOptions = agentList;
             this.filteredAgents = agentList;
+            // 默认选中第一项
+            this.handleDeviceClick(firstDevice.devices?.[0] || {}, firstDevice);
             // 获取设备状态
             this.fetchDeviceStatus();
           });
@@ -346,17 +349,6 @@ export default {
           device.deviceStatus = 'offline';
         }
       });
-    },
-    handleAgentClick(agent) {
-      if (this.expandedAgentId === agent.id) {
-        this.expandedAgentId = null;
-        this.selectedAgent = null;
-        this.selectedDevice = null;
-      } else {
-        this.expandedAgentId = agent.id;
-        this.selectedAgent = agent;
-        this.selectedDevice = null;
-      }
     },
     handleDeviceClick(device, agent) {
       this.expandedAgentId = agent.id;
