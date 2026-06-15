@@ -426,6 +426,7 @@ export default {
 }
 
 .page-title {
+  font-weight: 500;
   font-size: 24px;
   margin: 0;
 }
@@ -475,7 +476,7 @@ export default {
   overflow: hidden;
 
   ::v-deep .el-card__body {
-    padding: 16px 22px;
+    padding: 14px 20px;
     display: flex;
     flex-direction: column;
     flex: 1;

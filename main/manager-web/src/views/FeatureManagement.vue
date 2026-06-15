@@ -379,6 +379,7 @@ export default {
 }
 
 .page-title {
+  font-weight: 500;
   font-size: 24px;
   margin: 0;
 }
@@ -461,7 +462,7 @@ export default {
 }
 
 .feature-card ::v-deep .el-card__body {
-  padding: 24px;
+  padding: 14px 20px;
   display: flex;
   flex-direction: column;
   flex: 1;
