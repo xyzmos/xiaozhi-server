@@ -1442,7 +1442,6 @@ export default {
   // 通訊錄管理頁面
   'addressBookManagement.title': '通訊錄',
   'addressBookManagement.searchPlaceholder': '請輸入通訊錄名稱搜尋',
-  'addressBookManagement.search': '搜尋',
   'addressBookManagement.name': '通訊錄名稱',
   'addressBookManagement.description': '通訊錄描述',
   'addressBookManagement.contactCount': '聯繫人數量',

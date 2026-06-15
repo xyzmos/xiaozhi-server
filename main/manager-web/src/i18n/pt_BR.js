@@ -1442,7 +1442,6 @@ export default {
   // Página de Gerenciamento de Lista de Contatos
   'addressBookManagement.title': 'Gerenciamento de Lista de Contatos',
   'addressBookManagement.searchPlaceholder': 'Pesquisar nome do dispositivo ou endereço MAC',
-  'addressBookManagement.search': 'Pesquisar',
   'addressBookManagement.selectAgent': 'Selecione um agente',
   'addressBookManagement.name': 'Nome da Lista de Contatos',
   'addressBookManagement.description': 'Descrição da Lista de Contatos',

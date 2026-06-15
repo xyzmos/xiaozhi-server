@@ -26,4 +26,9 @@ public interface DeviceAddressBookDao extends BaseMapper<DeviceAddressBookEntity
      * 更新权限
      */
     void updatePermission(@Param("macAddress") String macAddress, @Param("targetMac") String targetMac, @Param("hasPermission") Boolean hasPermission);
+
+    /**
+     * 批量删除设备相关的通讯录记录
+     */
+    void deleteByMacAddresses(@Param("macAddresses") List<String> macAddresses);
 }

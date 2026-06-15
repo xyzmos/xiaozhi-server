@@ -1440,7 +1440,6 @@ export default {
   // 通讯录管理页面
   'addressBookManagement.title': '通讯录管理',
   'addressBookManagement.searchPlaceholder': '搜索设备名称或MAC地址',
-  'addressBookManagement.search': '搜索',
   'addressBookManagement.selectAgent': '请选择智能体',
   'addressBookManagement.name': '通讯录名称',
   'addressBookManagement.description': '通讯录描述',

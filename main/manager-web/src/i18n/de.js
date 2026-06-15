@@ -1442,7 +1442,6 @@ export default {
   // Adressbuch Verwaltungsseite
   'addressBookManagement.title': 'Adressbuchverwaltung',
   'addressBookManagement.searchPlaceholder': 'Gerätename oder MAC-Adresse suchen',
-  'addressBookManagement.search': 'Suchen',
   'addressBookManagement.selectAgent': 'Bitte Agent auswählen',
   'addressBookManagement.name': 'Adressbuchname',
   'addressBookManagement.description': 'Adressbuchbeschreibung',
