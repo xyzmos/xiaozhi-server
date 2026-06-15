@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +64,7 @@ import xiaozhi.modules.device.dto.DeviceReportReqDTO;
 import xiaozhi.modules.device.dto.DeviceReportRespDTO;
 import xiaozhi.modules.device.entity.DeviceEntity;
 import xiaozhi.modules.device.entity.OtaEntity;
+import xiaozhi.modules.device.service.DeviceAddressBookService;
 import xiaozhi.modules.device.service.DeviceService;
 import xiaozhi.modules.device.service.OtaService;
 import xiaozhi.modules.device.vo.UserShowDeviceListVO;
@@ -80,6 +82,7 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
     private final SysParamsService sysParamsService;
     private final RedisUtils redisUtils;
     private final OtaService otaService;
+    private final DeviceAddressBookService deviceAddressBookService;
 
     @Async
     public void updateDeviceConnectionInfo(String agentId, String deviceId, String appVersion) {
@@ -314,11 +317,12 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
 
     @Override
     public void unbindDevice(Long userId, String deviceId) {
-        // 先查询设备信息，获取agentId
+        // 先查询设备信息，获取agentId和macAddress
         DeviceEntity device = baseDao.selectById(deviceId);
         if (device == null) {
             return;
         }
+        String macAddress = device.getMacAddress();
         if (StringUtils.isNotBlank(device.getAgentId())) {
             // 清除智能体设备数量缓存
             redisUtils.delete(RedisKeys.getAgentDeviceCountById(device.getAgentId()));
@@ -328,6 +332,9 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
         wrapper.eq("user_id", userId);
         wrapper.eq("id", deviceId);
         baseDao.delete(wrapper);
+
+        // 删除设备相关的通讯录权限记录
+        deviceAddressBookService.deleteByMacAddresses(Collections.singletonList(macAddress));
     }
 
     @Override
@@ -346,9 +353,23 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
 
     @Override
     public void deleteByAgentId(String agentId) {
+        // 先查询该智能体下的所有设备，获取mac地址用于删除通讯录记录
+        QueryWrapper<DeviceEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("agent_id", agentId);
+        List<DeviceEntity> devices = baseDao.selectList(queryWrapper);
+
+        // 删除设备
         UpdateWrapper<DeviceEntity> wrapper = new UpdateWrapper<>();
         wrapper.eq("agent_id", agentId);
         baseDao.delete(wrapper);
+
+        // 批量删除这些设备相关的所有通讯录权限记录
+        if (!devices.isEmpty()) {
+            List<String> macAddresses = devices.stream()
+                    .map(DeviceEntity::getMacAddress)
+                    .collect(Collectors.toList());
+            deviceAddressBookService.deleteByMacAddresses(macAddresses);
+        }
     }
 
     @Override
@@ -890,71 +911,5 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
             }
         }
         return null;
-    }
-
-    @Override
-    public Map<String, Object> forwardCallRequest(String callerMac, String targetMac, String callerNickname) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("status", "error");
-        result.put("message", "网关配置缺失");
-
-        // 从系统参数获取网关配置
-        String mqttGatewayUrl = sysParamsService.getValue("server.mqtt_manager_api", true);
-        String mqttSignatureKey = sysParamsService.getValue("server.mqtt_signature_key", true);
-
-        if (StringUtils.isBlank(mqttGatewayUrl) || "null".equals(mqttGatewayUrl)) {
-            log.error("MQTT网关地址未配置");
-            result.put("message", "MQTT网关地址未配置");
-            return result;
-        }
-        if (StringUtils.isBlank(mqttSignatureKey) || "null".equals(mqttSignatureKey)) {
-            log.error("MQTT签名密钥未配置");
-            result.put("message", "MQTT签名密钥未配置");
-            return result;
-        }
-
-        // 生成token: SHA256(date + secret)
-        String dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest((dateStr + mqttSignatureKey).getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            String token = hexString.toString();
-
-            // 构建请求体
-            Map<String, Object> body = new HashMap<>();
-            body.put("caller_mac", callerMac);
-            body.put("target_mac", targetMac);
-            body.put("caller_nickname", callerNickname);
-
-            // 发送请求并获取响应
-            String url = "http://" + mqttGatewayUrl + "/api/call/request";
-            String response = cn.hutool.http.HttpRequest.post(url)
-                    .header("Authorization", "Bearer " + token)
-                    .header("Content-Type", "application/json")
-                    .body(JSONUtil.toJsonStr(body))
-                    .timeout(5000)
-                    .execute()
-                    .body();
-
-            // 解析网关响应
-            if (StringUtils.isNotBlank(response)) {
-                Map<String, Object> gwResult = JSONUtil.parseObj(response);
-                result.put("status", gwResult.get("status"));
-                result.put("message", gwResult.get("message"));
-            }
-            return result;
-        } catch (Exception e) {
-            log.error("转发呼叫请求失败: {}", e.getMessage());
-            result.put("message", "呼叫请求转发失败: " + e.getMessage());
-            return result;
-        }
     }
 }

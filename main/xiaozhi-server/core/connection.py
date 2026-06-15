@@ -192,6 +192,8 @@ class ConnectionHandler:
 
         # 初始化通话状态
         self.calling = False
+        # 标记当前是否为来电接听模式
+        self.incoming_call = None
 
     async def handle_connection(self, ws: websockets.ServerConnection):
         try:

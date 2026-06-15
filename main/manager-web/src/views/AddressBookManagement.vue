@@ -15,10 +15,9 @@
             :placeholder="$t('addressBookManagement.searchPlaceholder')"
             v-model="searchKeyword"
             class="search-input"
-            @keyup.enter="handleSearch"
+            @input="handleSearch"
             clearable
           />
-          <el-button class="btn-search" @click="handleSearch">{{ $t('addressBookManagement.search') }}</el-button>
         </div>
 
         <!-- 智能体列表 -->
@@ -410,8 +409,8 @@ export default {
           alias: newName
         }, (res) => {
           if (res.data?.code === 0) {
-            device.addressBookAlias = newName;
             this.$message.success(this.$t('addressBookManagement.aliasSaved'));
+            this.loadAddressBookPermissions(this.selectedDevice.deviceId);
           } else {
             this.$message.error(res.data?.msg || this.$t('addressBookManagement.saveFailed'));
           }
@@ -467,6 +466,7 @@ export default {
         } else if (results.every(r => r)) {
           this.$message.success(this.$t('addressBookManagement.permissionSaved'));
           this.originalPermissions = [...this.selectedPermissions];
+          this.loadAddressBookPermissions(this.selectedDevice.deviceId);
         } else {
           this.$message.error(this.$t('addressBookManagement.partialSaveFailed'));
         }
@@ -1136,14 +1136,6 @@ export default {
 
 .search-input {
   flex: 1;
-}
-
-.btn-search {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #6b8cff, #a966ff);
-  border: none;
-  color: white;
-  width: 80px;
 }
 
 .agent-card {
