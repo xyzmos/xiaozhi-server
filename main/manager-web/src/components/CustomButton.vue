@@ -15,7 +15,7 @@ export default {
     type: {
       type: String,
       default: 'default',
-      validator: (val) => ['default', 'confirm'].includes(val)
+      validator: (val) => ['default', 'confirm', 'delete'].includes(val)
     }
   }
 };
@@ -23,29 +23,33 @@ export default {
 
 <style lang="scss" scoped>
 .custom-button--default {
-  background: transparent;
-  color: #8099fc;
-  border: 1px solid #adbdff;
+  width: fit-content;
+  background: #4998ff;
+  color: #ffffff;
+  border: none;
   border-radius: 6px;
   transition: all 0.3s ease;
 
   &.el-button--small {
     font-size: 14px;
   }
+  &.el-button--medium {
+    padding: 12px 20px;
+  }
 
   &:hover {
-    background: #f1f2ff;
-    color: #8099fc;
-    border-color: #adbdff;
-    box-shadow: 0 2px 8px rgba(128, 153, 252, 0.3);
+    background: #62a4fc;
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(74, 124, 253, 0.2);
     transform: translateY(-2px);
   }
 
   &.is-disabled,
   &.is-disabled:hover {
-    background: transparent;
-    color: #c0c4cc;
-    border-color: #e4e7ed;
+    background: linear-gradient(to right, #f0f3fe, #f5f6fe);
+    color: rgba(74, 124, 253, 0.5);
+    border-color: transparent;
     box-shadow: none;
     transform: none;
     cursor: not-allowed;
@@ -63,9 +67,11 @@ export default {
   &.el-button--small {
     font-size: 14px;
   }
+  &.el-button--medium {
+    padding: 12px 20px;
+  }
 
   &:hover {
-    background: linear-gradient(to right, #6b8cff, #9a7cff);
     color: white;
     border-color: transparent;
     box-shadow: 0 2px 8px rgba(74, 124, 253, 0.3);
@@ -75,6 +81,39 @@ export default {
   &.is-disabled,
   &.is-disabled:hover {
     background: linear-gradient(to right, #a0b4fd, #b8a4fd);
+    color: rgba(255, 255, 255, 0.6);
+    border-color: transparent;
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+  }
+}
+
+.custom-button--delete {
+  width: fit-content;
+  background: linear-gradient(to right, #ff6b6b, #ff8e8e);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+
+  &.el-button--small {
+    font-size: 14px;
+  }
+  &.el-button--medium {
+    padding: 12px 20px;
+  }
+
+  &:hover {
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    transform: translateY(-2px);
+  }
+
+  &.is-disabled,
+  &.is-disabled:hover {
+    background: linear-gradient(to right, #ffaaaa, #ffcaca);
     color: rgba(255, 255, 255, 0.6);
     border-color: transparent;
     box-shadow: none;

@@ -1126,6 +1126,7 @@ export default {
 }
 
 .slice-pagination {
+  margin-top: 20px;
   display: flex;
   justify-content: center;
 }

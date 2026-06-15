@@ -72,6 +72,7 @@
       </div>
     </div>
     <CustomPagination
+      class="pagination-wrapper"
       :total="total"
       :current-page="currentPage"
       :page-size="pageSize"
@@ -603,6 +604,10 @@ export default {
     font-size: 48px;
     margin-bottom: 12px;
   }
+}
+
+.pagination-wrapper {
+  margin-top: 20px;
 }
 
 @media (max-width: 1144px) {

@@ -21,19 +21,20 @@
     <slot></slot>
     <template slot="footer">
       <div v-if="footer" class="dialog-footer">
-        <el-button @click="handleCancel">{{ cancelText }}</el-button>
-        <el-button :loading="confirmLoading" type="primary" @click="handleConfirm">
+        <CustomButton @click="handleCancel">{{ cancelText }}</CustomButton>
+        <CustomButton :loading="confirmLoading" type="confirm" @click="handleConfirm">
           <span class="confirm-inner">
             <img src="@/assets/knowledge-base/star.png" class="confirm-icon" />
             {{ confirmText }}
           </span>
-        </el-button>
+        </CustomButton>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
+import CustomButton from './CustomButton.vue';
 export default {
   name: "CustomDialog",
   props: {
@@ -90,6 +91,9 @@ export default {
     return {
       dialogVisible: this.visible
     };
+  },
+  components: {
+    CustomButton
   },
   watch: {
     visible(val) {
@@ -195,7 +199,6 @@ export default {
   .dialog-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
 
     .el-button {
       padding: 10px 20px;
