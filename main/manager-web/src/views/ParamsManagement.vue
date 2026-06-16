@@ -128,27 +128,6 @@ export default {
     this.fetchParams();
 
   },
-
-  computed: {
-    pageCount() {
-      return Math.ceil(this.total / this.pageSize);
-    },
-    visiblePages() {
-      const pages = [];
-      const maxVisible = 3;
-      let start = Math.max(1, this.currentPage - 1);
-      let end = Math.min(this.pageCount, start + maxVisible - 1);
-
-      if (end - start + 1 < maxVisible) {
-        start = Math.max(1, end - maxVisible + 1);
-      }
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      return pages;
-    },
-  },
   methods: {
     initTableColumns() {
       this.tableColumns = [
@@ -325,6 +304,12 @@ export default {
       }).then(() => {
         Api.admin.deleteParam(paramIds, ({ data }) => {
           if (data.code === 0) {
+            // 删除后检查是否需要调整页码
+            const newTotal = this.total - paramCount;
+            const maxPage = Math.max(1, Math.ceil(newTotal / this.pageSize));
+            if (this.currentPage > maxPage) {
+              this.currentPage = maxPage;
+            }
             this.fetchParams();
             this.$message.success({
               message: this.$t('paramManagement.batchDeleteSuccess', { paramCount }),
@@ -351,24 +336,6 @@ export default {
         this.fetchParams();
       }
     },
-    goFirst() {
-      if (this.currentPage !== 1) {
-        this.currentPage = 1;
-        this.fetchParams();
-      }
-    },
-    goPrev() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        this.fetchParams();
-      }
-    },
-    goNext() {
-      if (this.currentPage < this.pageCount) {
-        this.currentPage++;
-        this.fetchParams();
-      }
-    },
     isSensitiveParam(paramCode) {
       return this.sensitive_keys.some(key => paramCode.toLowerCase().includes(key));
     },
@@ -381,9 +348,6 @@ export default {
     toggleSensitiveValue(row) {
       row.showValue = !row.showValue;
     },
-    headerCellClassName() {
-      return 'header-cell';
-    }
   }
 };
 </script>
@@ -418,11 +382,6 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 0 0 16px 0;
-}
-.divider {
-  height: 1px;
-  background: #f3f1f1;
-  margin-bottom: 20px;
 }
 
 .page-title {
@@ -484,120 +443,8 @@ export default {
   }
 }
 
-.table_bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-  // padding-bottom: 10px;
-}
-
 .ctrl_btn {
   display: flex;
-}
-
-.custom-pagination {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  .el-select {
-    margin-right: 8px;
-  }
-
-  .pagination-btn:first-child,
-  .pagination-btn:nth-child(2),
-  .pagination-btn:nth-last-child(2),
-  .pagination-btn:nth-child(3) {
-    min-width: 60px;
-    height: 32px;
-    padding: 0 12px;
-    border-radius: 4px;
-    border: 1px solid #e4e7ed;
-    background: #dee7ff;
-    color: #606266;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: #d7dce6;
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
-
-  .pagination-btn:not(:first-child):not(:nth-child(3)):not(:nth-child(2)):not(:nth-last-child(2)) {
-    min-width: 28px;
-    height: 32px;
-    padding: 0;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    background: transparent;
-    color: #606266;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: rgba(245, 247, 250, 0.3);
-    }
-  }
-
-  .pagination-btn.active {
-    background: #5f70f3 !important;
-    color: #ffffff !important;
-    border-color: #5f70f3 !important;
-
-    &:hover {
-      background: #6d7cf5 !important;
-    }
-  }
-
-  .total-text {
-    color: #909399;
-    font-size: 14px;
-    margin-left: 10px;
-  }
-}
-
-:deep(.el-checkbox__inner) {
-  background-color: #ffffff !important;
-  border-color: #cccccc !important;
-}
-
-:deep(.el-checkbox__inner:hover) {
-  border-color: #cccccc !important;
-}
-
-:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #5f70f3 !important;
-  border-color: #5f70f3 !important;
-}
-
-@media (min-width: 1144px) {
-  .table_bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 40px;
-  }
-
-  :deep(.transparent-table) {
-    .el-table__body tr {
-      td {
-        padding-top: 16px;
-        padding-bottom: 16px;
-      }
-
-      &+tr {
-        margin-top: 10px;
-      }
-    }
-  }
 }
 
 :deep(.el-table .el-button--text) {
@@ -606,95 +453,5 @@ export default {
 
 :deep(.el-table .el-button--text:hover) {
   color: #5a64b5;
-}
-
-.el-button--success {
-  background: #5bc98c;
-  color: white;
-}
-
-:deep(.el-table .cell) {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.page-size-select {
-  width: 100px;
-  margin-right: 10px;
-
-  :deep(.el-input__inner) {
-    height: 32px;
-    line-height: 32px;
-    border-radius: 4px;
-    border: 1px solid #e4e7ed;
-    background: #dee7ff;
-    color: #606266;
-    font-size: 14px;
-  }
-
-  :deep(.el-input__suffix) {
-    right: 6px;
-    width: 15px;
-    height: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    top: 6px;
-    border-radius: 4px;
-  }
-
-  :deep(.el-input__suffix-inner) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-  }
-
-  :deep(.el-icon-arrow-up:before) {
-    content: "";
-    display: inline-block;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-top: 9px solid #606266;
-    position: relative;
-    transform: rotate(0deg);
-    transition: transform 0.3s;
-  }
-}
-
-:deep(.el-table) {
-  .el-table__body-wrapper {
-    transition: height 0.3s ease;
-  }
-}
-
-.el-table {
-  // --table-max-height: calc(100vh - 40vh);
-  max-height: var(--table-max-height);
-
-  .el-table__body-wrapper {
-    max-height: calc(var(--table-max-height) - 40px);
-  }
-}
-
-:deep(.el-loading-mask) {
-  background-color: rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(2px);
-}
-
-:deep(.el-loading-spinner .circular) {
-  width: 28px;
-  height: 28px;
-}
-
-:deep(.el-loading-spinner .path) {
-  stroke: #6b8cff;
-}
-
-:deep(.el-loading-text) {
-  color: #6b8cff !important;
-  font-size: 14px;
-  margin-top: 8px;
 }
 </style>

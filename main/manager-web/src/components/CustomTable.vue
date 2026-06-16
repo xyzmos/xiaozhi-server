@@ -237,14 +237,14 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 .custom-table-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   .table-container {
-    height: 100%;
+    height: calc(100% - 48px);
     width: 100%;
     box-shadow: 0 2px 12px rgba(74, 124, 253, 0.12);
     border-radius: 6px;
@@ -276,10 +276,52 @@ export default {
     }
   }
 }
+:deep(.el-table) {
+  .el-table__body-wrapper {
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #a1c9fd;
+      border-radius: 3px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #f0f3fe;
+      border-radius: 3px;
+    }
+  }
+  .el-table__header {
+    th {
+      color: #342f45;
+      background: #edf2fc !important;
+    }
+  }
+}
 .table-footer {
-  padding: 20px 0px 0px;
+  padding: 16px 0px 0px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+:deep(.el-loading-mask) {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(2px);
+}
+
+:deep(.el-loading-spinner .circular) {
+  width: 28px;
+  height: 28px;
+}
+
+:deep(.el-loading-spinner .path) {
+  stroke: #6b8cff;
+}
+
+:deep(.el-loading-text) {
+  color: #6b8cff !important;
+  font-size: 14px;
+  margin-top: 8px;
 }
 </style>
