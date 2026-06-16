@@ -1118,6 +1118,8 @@ export default {
   'agentTemplateManagement.action': 'Aktion',
   'agentTemplateManagement.createTemplate': 'Vorlage erstellen',
   'templateQuickConfig.newTemplate': 'Neue Vorlage',
+  'templateQuickConfig.editTemplate': 'Vorlage bearbeiten',
+  'templateQuickConfig.addTemplate': 'Vorlage hinzufügen',
   'agentTemplateManagement.editTemplate': 'Vorlage bearbeiten',
   'agentTemplateManagement.deleteTemplate': 'Vorlage löschen',
   'agentTemplateManagement.deleteSuccess': 'Vorlage erfolgreich gelöscht',

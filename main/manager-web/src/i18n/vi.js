@@ -1118,6 +1118,8 @@ export default {
   'agentTemplateManagement.action': 'Hành động',
   'agentTemplateManagement.createTemplate': 'Tạo mẫu',
   'templateQuickConfig.newTemplate': 'Mẫu mới',
+  'templateQuickConfig.editTemplate': 'Chỉnh sửa mẫu',
+  'templateQuickConfig.addTemplate': 'Thêm mẫu',
   'agentTemplateManagement.editTemplate': 'Chỉnh sửa mẫu',
   'agentTemplateManagement.deleteTemplate': 'Xóa mẫu',
   'agentTemplateManagement.deleteSuccess': 'Đã xóa mẫu thành công',

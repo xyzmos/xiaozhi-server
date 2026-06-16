@@ -1152,6 +1152,8 @@ export default {
   'templateQuickConfig.cancel': 'Cancelar',
   'templateQuickConfig.templateNotFound': 'Modelo não encontrado',
   'templateQuickConfig.newTemplate': 'Novo Modelo',
+  'templateQuickConfig.editTemplate': 'Editar Modelo',
+  'templateQuickConfig.addTemplate': 'Adicionar Modelo',
   'warning': 'Aviso',
   'info': 'Informação',
   'common.networkError': 'Falha na requisição de rede',
