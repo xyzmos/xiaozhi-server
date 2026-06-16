@@ -645,6 +645,8 @@ export default {
   'user.disable': 'Vô hiệu hóa',
   'user.delete': 'Xóa',
   'user.selectUsersFirst': 'Vui lòng chọn người dùng để xóa trước',
+  'user.selectUsersToDisable': 'Vui lòng chọn người dùng để vô hiệu hóa',
+  'user.selectUsersToEnable': 'Vui lòng chọn người dùng để kích hoạt',
   'user.confirmDeleteSelected': 'Bạn có chắc chắn muốn xóa {count} người dùng đã chọn?',
   'user.deleting': 'Đang xóa...',
   'user.deleteSuccess': 'Đã xóa thành công {count} người dùng',
@@ -1420,8 +1422,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': 'Kiểm soát trạng thái kích hoạt của các mô-đun tính năng cốt lõi',
   'featureManagement.groupDescription.voiceManagement': 'Cấu hình các tính năng hiển thị và khả dụng cho agent (trợ lý AI)',
   'featureManagement.moduleCount': 'Tổng cộng {count} mô-đun',
-  'featureManagement.enabled': 'Đã bật',
-  'featureManagement.disabled': 'Chưa bật',
 
   // Feature names and descriptions
   'feature.voiceprintRecognition.name': 'Nhận dạng giọng nói',

@@ -645,6 +645,8 @@ export default {
   'user.disable': 'Desativar',
   'user.delete': 'Excluir',
   'user.selectUsersFirst': 'Por favor, selecione usuários para excluir primeiro',
+  'user.selectUsersToDisable': 'Por favor, selecione usuários para desativar',
+  'user.selectUsersToEnable': 'Por favor, selecione usuários para ativar',
   'user.confirmDeleteSelected': 'Tem certeza de que deseja excluir {count} usuários selecionados?',
   'user.deleting': 'Excluindo...',
   'user.deleteSuccess': '{count} usuários excluídos com sucesso',
@@ -1420,8 +1422,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': 'Controlar o status de ativação dos módulos de funcionalidade principal',
   'featureManagement.groupDescription.voiceManagement': 'Configurar quais funcionalidades são visíveis e disponíveis para agentes (assistentes de IA)',
   'featureManagement.moduleCount': '{count} módulos no total',
-  'featureManagement.enabled': 'Ativado',
-  'featureManagement.disabled': 'Desativado',
 
   // Nomes e descrições de funcionalidades
   'feature.voiceprintRecognition.name': 'Reconhecimento de Impressão Vocal',

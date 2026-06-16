@@ -645,6 +645,8 @@ export default {
   'user.disable': '禁用',
   'user.delete': '刪除',
   'user.selectUsersFirst': '請先選擇需要刪除的用戶',
+  'user.selectUsersToDisable': '請選擇要禁用的用戶',
+  'user.selectUsersToEnable': '請選擇要啟用的用戶',
   'user.confirmDeleteSelected': '確定要刪除選中的{count}個用戶嗎？',
   'user.deleting': '正在刪除中...',
   'user.deleteSuccess': '成功刪除{count}個用戶',
@@ -1420,8 +1422,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': '控制系統核心功能模組的啟用狀態',
   'featureManagement.groupDescription.voiceManagement': '配置哪些功能對智能體（AI助手）可見和可用',
   'featureManagement.moduleCount': '共 {count} 個模組',
-  'featureManagement.enabled': '已啟用',
-  'featureManagement.disabled': '未啟用',
 
   // 功能名稱和描述
   'feature.voiceprintRecognition.name': '聲紋識別',

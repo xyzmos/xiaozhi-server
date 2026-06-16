@@ -645,6 +645,8 @@ export default {
   'user.disable': 'Disable',
   'user.delete': 'Delete',
   'user.selectUsersFirst': 'Please select users to delete first',
+  'user.selectUsersToDisable': 'Please select users to disable',
+  'user.selectUsersToEnable': 'Please select users to enable',
   'user.confirmDeleteSelected': 'Are you sure you want to delete {count} selected users?',
   'user.deleting': 'Deleting...',
   'user.deleteSuccess': 'Successfully deleted {count} users',
@@ -1420,8 +1422,6 @@ export default {
   'featureManagement.groupDescription.featureManagement': 'Control the enable status of core feature modules',
   'featureManagement.groupDescription.voiceManagement': 'Configure which features are visible and available to agents (AI assistants)',
   'featureManagement.moduleCount': '{count} modules in total',
-  'featureManagement.enabled': 'Enabled',
-  'featureManagement.disabled': 'Disabled',
 
   // Feature names and descriptions
   'feature.voiceprintRecognition.name': 'Voiceprint Recognition',
