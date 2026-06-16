@@ -645,6 +645,8 @@ export default {
   'user.disable': '禁用',
   'user.delete': '删除',
   'user.selectUsersFirst': '请先选择需要删除的用户',
+  'user.selectUsersToDisable': '请选择要禁用的用户',
+  'user.selectUsersToEnable': '请选择要启用的用户',
   'user.confirmDeleteSelected': '确定要删除选中的{count}个用户吗？',
   'user.deleting': '正在删除中...',
   'user.deleteSuccess': '成功删除{count}个用户',

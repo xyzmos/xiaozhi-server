@@ -645,6 +645,8 @@ export default {
   'user.disable': 'Desativar',
   'user.delete': 'Excluir',
   'user.selectUsersFirst': 'Por favor, selecione usuários para excluir primeiro',
+  'user.selectUsersToDisable': 'Por favor, selecione usuários para desativar',
+  'user.selectUsersToEnable': 'Por favor, selecione usuários para ativar',
   'user.confirmDeleteSelected': 'Tem certeza de que deseja excluir {count} usuários selecionados?',
   'user.deleting': 'Excluindo...',
   'user.deleteSuccess': '{count} usuários excluídos com sucesso',

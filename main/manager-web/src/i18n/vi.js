@@ -645,6 +645,8 @@ export default {
   'user.disable': 'Vô hiệu hóa',
   'user.delete': 'Xóa',
   'user.selectUsersFirst': 'Vui lòng chọn người dùng để xóa trước',
+  'user.selectUsersToDisable': 'Vui lòng chọn người dùng để vô hiệu hóa',
+  'user.selectUsersToEnable': 'Vui lòng chọn người dùng để kích hoạt',
   'user.confirmDeleteSelected': 'Bạn có chắc chắn muốn xóa {count} người dùng đã chọn?',
   'user.deleting': 'Đang xóa...',
   'user.deleteSuccess': 'Đã xóa thành công {count} người dùng',

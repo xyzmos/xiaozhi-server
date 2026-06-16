@@ -645,6 +645,8 @@ export default {
   'user.disable': 'Disable',
   'user.delete': 'Delete',
   'user.selectUsersFirst': 'Please select users to delete first',
+  'user.selectUsersToDisable': 'Please select users to disable',
+  'user.selectUsersToEnable': 'Please select users to enable',
   'user.confirmDeleteSelected': 'Are you sure you want to delete {count} selected users?',
   'user.deleting': 'Deleting...',
   'user.deleteSuccess': 'Successfully deleted {count} users',
