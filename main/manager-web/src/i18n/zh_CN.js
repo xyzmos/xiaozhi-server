@@ -1152,6 +1152,8 @@ export default {
   'templateQuickConfig.cancel': '取消',
   'templateQuickConfig.templateNotFound': '未找到指定模板',
   'templateQuickConfig.newTemplate': '新模板',
+  'templateQuickConfig.editTemplate': '编辑模板',
+  'templateQuickConfig.addTemplate': '新增模板',
   'warning': '警告',
   'info': '提示',
   'common.networkError': '网络请求失败',

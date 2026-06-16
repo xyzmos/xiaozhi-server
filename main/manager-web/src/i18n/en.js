@@ -1152,6 +1152,8 @@ export default {
   'templateQuickConfig.cancel': 'Cancel',
   'templateQuickConfig.templateNotFound': 'Template not found',
   'templateQuickConfig.newTemplate': 'New Template',
+  'templateQuickConfig.editTemplate': 'Edit Template',
+  'templateQuickConfig.addTemplate': 'Add Template',
   'warning': 'Warning',
   'info': 'Info',
   'common.networkError': 'Network request failed',
