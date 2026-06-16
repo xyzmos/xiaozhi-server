@@ -1,80 +1,82 @@
 <template>
   <div class="custom-table-wrapper">
-    <el-table
-      ref="tableRef"
-      :data="data"
-      :class="['custom-table', tableClass]"
-      height="100%"
-      v-loading="loading"
-      :element-loading-text="loadingText"
-      :element-loading-spinner="loadingSpinner"
-      :element-loading-background="loadingBackground"
-      :header-cell-class-name="headerCellClassName"
-      :row-class-name="rowClassName"
-      @selection-change="handleSelectionChange"
-      @row-click="handleRowClick"
-    >
-      <!-- 选择列 -->
-      <el-table-column
-        v-if="showSelection"
-        width="55"
-        align="center"
-        label="选择"
+    <div class="table-container">
+      <el-table
+        ref="tableRef"
+        :data="data"
+        :class="['custom-table', tableClass]"
+        height="100%"
+        v-loading="loading"
+        :element-loading-text="loadingText"
+        :element-loading-spinner="loadingSpinner"
+        :element-loading-background="loadingBackground"
+        :header-cell-class-name="headerCellClassName"
+        :row-class-name="rowClassName"
+        @selection-change="handleSelectionChange"
+        @row-click="handleRowClick"
       >
-        <template slot-scope="scope">
-          <slot
-            v-if="$scopedSlots.selection"
-            name="selection"
-            :row="scope.row"
-            :$index="scope.$index"
-          />
-          <el-checkbox
-            v-else
-            :value="scope.row.selected"
-            @change="handleCheckboxChange(scope.row)"
-          />
-        </template>
-      </el-table-column>
-
-      <!-- 动态列 -->
-      <el-table-column
-        v-for="column in columns"
-        :key="column.prop"
-        :prop="column.prop"
-        :label="column.label"
-        :width="column.width"
-        :min-width="column.minWidth"
-        :align="column.align || 'center'"
-        :show-overflow-tooltip="column.showOverflowTooltip !== false"
-      >
-        <template slot-scope="scope">
-          <!-- 自定义插槽：优先使用 column.slot 指定的插槽名，否则用 column.prop 作为插槽名 -->
-          <slot
-            v-if="$scopedSlots[column.slot] || $scopedSlots[column.prop]"
-            :name="column.slot || column.prop"
-            :row="scope.row"
-            :$index="scope.$index"
-            :column="column"
-          />
-          <!-- 默认显示 -->
-          <template v-else>
-            {{ scope.row[column.prop] }}
+        <!-- 选择列 -->
+        <el-table-column
+          v-if="showSelection"
+          width="55"
+          align="center"
+          label="选择"
+        >
+          <template slot-scope="scope">
+            <slot
+              v-if="$scopedSlots.selection"
+              name="selection"
+              :row="scope.row"
+              :$index="scope.$index"
+            />
+            <el-checkbox
+              v-else
+              :value="scope.row.selected"
+              @change="handleCheckboxChange(scope.row)"
+            />
           </template>
-        </template>
-      </el-table-column>
+        </el-table-column>
 
-      <!-- 操作列 -->
-      <el-table-column
-        v-if="showOperations"
-        :label="operationsLabel"
-        align="center"
-        :width="operationsWidth"
-      >
-        <template slot-scope="scope">
-          <slot name="operations" :row="scope.row" :$index="scope.$index" />
-        </template>
-      </el-table-column>
-    </el-table>
+        <!-- 动态列 -->
+        <el-table-column
+          v-for="column in columns"
+          :key="column.prop"
+          :prop="column.prop"
+          :label="column.label"
+          :width="column.width"
+          :min-width="column.minWidth"
+          :align="column.align || 'center'"
+          :show-overflow-tooltip="column.showOverflowTooltip !== false"
+        >
+          <template slot-scope="scope">
+            <!-- 自定义插槽：优先使用 column.slot 指定的插槽名，否则用 column.prop 作为插槽名 -->
+            <slot
+              v-if="$scopedSlots[column.slot] || $scopedSlots[column.prop]"
+              :name="column.slot || column.prop"
+              :row="scope.row"
+              :$index="scope.$index"
+              :column="column"
+            />
+            <!-- 默认显示 -->
+            <template v-else>
+              {{ scope.row[column.prop] }}
+            </template>
+          </template>
+        </el-table-column>
+
+        <!-- 操作列 -->
+        <el-table-column
+          v-if="showOperations"
+          :label="operationsLabel"
+          align="center"
+          :width="operationsWidth"
+        >
+          <template slot-scope="scope">
+            <slot name="operations" :row="scope.row" :$index="scope.$index" />
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <!-- 分页 -->
     <div class="table-footer">
@@ -241,30 +243,35 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
-  .custom-table {
+  .table-container {
+    height: 100%;
     width: 100%;
-    border: 1px solid #eef3fd;
-    border-bottom: none;
+    box-shadow: 0 2px 12px rgba(74, 124, 253, 0.12);
     border-radius: 6px;
-    .el-table__body-wrapper {
-      overflow-y: auto;
-      &::-webkit-scrollbar {
-        width: 6px;
+    .custom-table {
+      width: 100%;
+      border: 1px solid #eef3fd;
+      border-bottom: none;
+      border-radius: 6px;
+      .el-table__body-wrapper {
+        overflow-y: auto;
+        &::-webkit-scrollbar {
+          width: 6px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background: #a1c9fd;
+          border-radius: 3px;
+        }
+        &::-webkit-scrollbar-track {
+          background: #f0f3fe;
+          border-radius: 3px;
+        }
       }
-      &::-webkit-scrollbar-thumb {
-        background: #a1c9fd;
-        border-radius: 3px;
-      }
-      &::-webkit-scrollbar-track {
-        background: #f0f3fe;
-        border-radius: 3px;
-      }
-    }
-    .el-table__header {
-      th {
-        color: #342f45;
-        background: #edf2fc !important;
+      .el-table__header {
+        th {
+          color: #342f45;
+          background: #edf2fc !important;
+        }
       }
     }
   }
