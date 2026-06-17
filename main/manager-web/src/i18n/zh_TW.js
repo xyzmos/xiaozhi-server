@@ -352,6 +352,8 @@ export default {
 
   // 替換詞管理頁面相關
   'replacementWordManagement.pageTitle': '替換詞管理',
+  'replacementWordManagement.searchPlaceholder': '請輸入檔案名稱查詢',
+  'replacementWordManagement.search': '搜尋',
   'replacementWordManagement.fileName': '檔案名稱',
   'replacementWordManagement.replacementWordCount': '替換詞數量',
   'replacementWordManagement.replacementWordContent': '替換詞內容',

@@ -352,6 +352,8 @@ export default {
 
   // 替换词对话框相关
   'replacementWordManagement.pageTitle': '替换词管理',
+  'replacementWordManagement.searchPlaceholder': '请输入文件名称查询',
+  'replacementWordManagement.search': '搜索',
   'replacementWordManagement.fileName': '文件名称',
   'replacementWordManagement.replacementWordCount': '替换词数量',
   'replacementWordManagement.replacementWordContent': '替换词内容',

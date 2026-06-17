@@ -352,6 +352,8 @@ export default {
 
   // Replacement word management page related
   'replacementWordManagement.pageTitle': 'Replacement Word Management',
+  'replacementWordManagement.searchPlaceholder': 'Please enter file name to search',
+  'replacementWordManagement.search': 'Search',
   'replacementWordManagement.fileName': 'File Name',
   'replacementWordManagement.replacementWordCount': 'Replacement Word Count',
   'replacementWordManagement.replacementWordContent': 'Replacement Word Content',

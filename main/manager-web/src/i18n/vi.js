@@ -352,6 +352,8 @@ export default {
 
   // Replacement word management page related
   'replacementWordManagement.pageTitle': 'Quản lý từ thay thế',
+  'replacementWordManagement.searchPlaceholder': 'Vui lòng nhập tên tệp để tìm kiếm',
+  'replacementWordManagement.search': 'Tìm kiếm',
   'replacementWordManagement.fileName': 'Tên tệp',
   'replacementWordManagement.replacementWordCount': 'Số lượng từ thay thế',
   'replacementWordManagement.replacementWordContent': 'Nội dung từ thay thế',
