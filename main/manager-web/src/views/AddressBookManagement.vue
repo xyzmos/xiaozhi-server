@@ -282,7 +282,7 @@ export default {
                   remarks: device.alias || '',
                   online: false,
                   createDate: device.createDate,
-                  lastConnectedAt: device.lastConnectedAt,
+                  lastConnectedAt: device.lastConnectedAtTimestamp,
                   deviceStatus: 'offline'
                 }));
                 resolve();
@@ -529,7 +529,7 @@ export default {
     getTimeAgo(timestamp) {
       if (!timestamp) return '-';
       const now = new Date();
-      const date = new Date(timestamp);
+      const date = new Date(Number(timestamp));
       const diff = now - date;
 
       const seconds = Math.floor(diff / 1000);
