@@ -352,6 +352,8 @@ export default {
 
   // 替换词对话框相关
   'replacementWordManagement.pageTitle': '替换词管理',
+  'replacementWordManagement.searchPlaceholder': '请输入文件名称查询',
+  'replacementWordManagement.search': '搜索',
   'replacementWordManagement.fileName': '文件名称',
   'replacementWordManagement.replacementWordCount': '替换词数量',
   'replacementWordManagement.replacementWordContent': '替换词内容',
@@ -706,6 +708,9 @@ export default {
   'common.cancel': '取消',
   'common.sensitive': '敏感',
   'common.loading': '加载中',
+  'common.copySuccess': '复制成功',
+  'common.copyFailed': '复制失败',
+  'common.copyAddress': '复制地址',
 
   // 语言切换
   'language.zhCN': '中文简体',

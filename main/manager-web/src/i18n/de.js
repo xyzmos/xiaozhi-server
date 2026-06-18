@@ -352,6 +352,8 @@ export default {
 
   // Replacement word management page related
   'replacementWordManagement.pageTitle': 'Ersetzungswortverwaltung',
+  'replacementWordManagement.searchPlaceholder': 'Bitte geben Sie den Dateinamen zur Suche ein',
+  'replacementWordManagement.search': 'Suchen',
   'replacementWordManagement.fileName': 'Dateiname',
   'replacementWordManagement.replacementWordCount': 'Anzahl der Ersetzungswörter',
   'replacementWordManagement.replacementWordContent': 'Ersetzungswortinhalt',
@@ -706,6 +708,9 @@ export default {
   'common.cancel': 'Abbrechen',
   'common.sensitive': 'Sensibel',
   'common.loading': 'Lädt',
+  'common.copySuccess': 'Erfolgreich kopiert',
+  'common.copyFailed': 'Kopieren fehlgeschlagen',
+  'common.copyAddress': 'Adresse kopieren',
 
   // Language switch
   'language.zhCN': '中文简体',

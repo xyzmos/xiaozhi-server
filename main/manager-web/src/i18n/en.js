@@ -352,6 +352,8 @@ export default {
 
   // Replacement word management page related
   'replacementWordManagement.pageTitle': 'Replacement Word Management',
+  'replacementWordManagement.searchPlaceholder': 'Please enter file name to search',
+  'replacementWordManagement.search': 'Search',
   'replacementWordManagement.fileName': 'File Name',
   'replacementWordManagement.replacementWordCount': 'Replacement Word Count',
   'replacementWordManagement.replacementWordContent': 'Replacement Word Content',
@@ -706,6 +708,9 @@ export default {
   'common.cancel': 'Cancel',
   'common.sensitive': 'Sensitive',
   'common.loading': 'Loading',
+  'common.copySuccess': 'Copy successful',
+  'common.copyFailed': 'Copy failed',
+  'common.copyAddress': 'Copy address',
 
   // Language switch
   'language.zhCN': '中文简体',

@@ -352,6 +352,8 @@ export default {
 
   // Replacement word management page related
   'replacementWordManagement.pageTitle': 'Quản lý từ thay thế',
+  'replacementWordManagement.searchPlaceholder': 'Vui lòng nhập tên tệp để tìm kiếm',
+  'replacementWordManagement.search': 'Tìm kiếm',
   'replacementWordManagement.fileName': 'Tên tệp',
   'replacementWordManagement.replacementWordCount': 'Số lượng từ thay thế',
   'replacementWordManagement.replacementWordContent': 'Nội dung từ thay thế',
@@ -706,6 +708,9 @@ export default {
   'common.cancel': 'Hủy bỏ',
   'common.sensitive': 'Nhạy cảm',
   'common.loading': 'Đang tải',
+  'common.copySuccess': 'Sao chép thành công',
+  'common.copyFailed': 'Sao chép thất bại',
+  'common.copyAddress': 'Sao chép địa chỉ',
 
   // Language switch
   'language.zhCN': '中文简体',

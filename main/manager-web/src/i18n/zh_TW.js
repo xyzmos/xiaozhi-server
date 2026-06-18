@@ -352,6 +352,8 @@ export default {
 
   // 替換詞管理頁面相關
   'replacementWordManagement.pageTitle': '替換詞管理',
+  'replacementWordManagement.searchPlaceholder': '請輸入檔案名稱查詢',
+  'replacementWordManagement.search': '搜尋',
   'replacementWordManagement.fileName': '檔案名稱',
   'replacementWordManagement.replacementWordCount': '替換詞數量',
   'replacementWordManagement.replacementWordContent': '替換詞內容',
@@ -706,6 +708,9 @@ export default {
   'common.cancel': '取消',
   'common.sensitive': '敏感',
   'common.loading': '載入中',
+  'common.copySuccess': '複製成功',
+  'common.copyFailed': '複製失敗',
+  'common.copyAddress': '複製地址',
 
   // 語言切換
   'language.zhCN': '中文简体',
