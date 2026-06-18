@@ -593,6 +593,7 @@ export default {
 
   // 字典管理页面文本
   'dictManagement.pageTitle': '字典管理',
+  'dictManagement.dictTypeCategory': '字典分类',
   'dictManagement.searchPlaceholder': '请输入字典值标签查询',
   'dictManagement.search': '搜索',
   'dictManagement.dictTypeName': '字典类型名称',

@@ -593,6 +593,7 @@ export default {
 
   // Dictionary management page text
   'dictManagement.pageTitle': 'Quản lý từ điển',
+  'dictManagement.dictTypeCategory': 'Danh mục từ điển',
   'dictManagement.searchPlaceholder': 'Vui lòng nhập nhãn giá trị từ điển để tìm kiếm',
   'dictManagement.search': 'Tìm kiếm',
   'dictManagement.dictTypeName': 'Tên loại từ điển',

@@ -593,6 +593,7 @@ export default {
 
   // Página de gerenciamento de dicionário
   'dictManagement.pageTitle': 'Gerenciamento de Dicionário',
+  'dictManagement.dictTypeCategory': 'Categoria do Dicionário',
   'dictManagement.searchPlaceholder': 'Por favor, insira o rótulo do dicionário para pesquisar',
   'dictManagement.search': 'Pesquisar',
   'dictManagement.dictTypeName': 'Nome do Tipo de Dicionário',

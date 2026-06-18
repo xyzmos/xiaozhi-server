@@ -593,6 +593,7 @@ export default {
 
   // 字典管理頁面文本
   'dictManagement.pageTitle': '字典管理',
+  'dictManagement.dictTypeCategory': '字典分類',
   'dictManagement.searchPlaceholder': '請輸入字典值標籤查詢',
   'dictManagement.search': '搜索',
   'dictManagement.dictTypeName': '字典類型名稱',

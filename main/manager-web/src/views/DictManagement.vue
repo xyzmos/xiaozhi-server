@@ -17,7 +17,7 @@
           <!-- 左侧字典类型列表 -->
           <div class="dict-type-panel">
             <div class="dict-type-header">
-              <h4 class="dict-type-title">字典分类</h4>
+              <h4 class="dict-type-title">{{ $t('dictManagement.dictTypeCategory') }}</h4>
               <div>
                 <el-button icon="el-icon-plus" size="mini" @click="showAddDictTypeDialog" />
                 <el-button icon="el-icon-delete" size="mini" @click="batchDeleteDictType" />
