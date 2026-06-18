@@ -593,6 +593,7 @@ export default {
 
   // Dictionary management page text
   'dictManagement.pageTitle': 'Wörterbuchverwaltung',
+  'dictManagement.dictTypeCategory': 'Wörterbuchkategorie',
   'dictManagement.searchPlaceholder': 'Bitte Wörterbuchwert-Label zur Suche eingeben',
   'dictManagement.search': 'Suchen',
   'dictManagement.dictTypeName': 'WDT-Name',

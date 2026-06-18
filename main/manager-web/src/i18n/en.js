@@ -593,6 +593,7 @@ export default {
 
   // Dictionary management page text
   'dictManagement.pageTitle': 'Dictionary Management',
+  'dictManagement.dictTypeCategory': 'Dict Category',
   'dictManagement.searchPlaceholder': 'Please enter dict value label to search',
   'dictManagement.search': 'Search',
   'dictManagement.dictTypeName': 'Dict Type Name',
