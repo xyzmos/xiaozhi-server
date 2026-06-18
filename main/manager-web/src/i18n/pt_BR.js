@@ -708,6 +708,9 @@ export default {
   'common.cancel': 'Cancelar',
   'common.sensitive': 'Sensível',
   'common.loading': 'Carregando',
+  'common.copySuccess': 'Cópia bem-sucedida',
+  'common.copyFailed': 'Falha ao copiar',
+  'common.copyAddress': 'Copiar endereço',
 
   // Troca de idioma
   'language.zhCN': '中文简体',

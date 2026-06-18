@@ -708,6 +708,9 @@ export default {
   'common.cancel': 'Hủy bỏ',
   'common.sensitive': 'Nhạy cảm',
   'common.loading': 'Đang tải',
+  'common.copySuccess': 'Sao chép thành công',
+  'common.copyFailed': 'Sao chép thất bại',
+  'common.copyAddress': 'Sao chép địa chỉ',
 
   // Language switch
   'language.zhCN': '中文简体',

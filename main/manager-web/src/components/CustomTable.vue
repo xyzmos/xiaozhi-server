@@ -1,6 +1,6 @@
 <template>
   <div class="custom-table-wrapper">
-    <div class="table-container">
+    <div class="table-container" :style="{ height: tableContainerHeight }">
       <el-table
         ref="tableRef"
         :data="data"
@@ -79,10 +79,9 @@
     </div>
 
     <!-- 分页 -->
-    <div class="table-footer">
+    <div class="table-footer" v-if="showPagination">
       <slot name="footer-btns"></slot>
       <CustomPagination
-        v-if="showPagination"
         :total="total"
         :current-page="currentPage"
         :page-size="pageSize"
@@ -182,26 +181,13 @@ export default {
       type: [String, Function],
       default: ''
     },
-    // 敏感值相关
-    hideText: {
-      type: String,
-      default: '隐藏'
-    },
-    viewText: {
-      type: String,
-      default: '查看'
+  },
+  computed: {
+    tableContainerHeight() {
+      return this.showPagination ? 'calc(100% - 48px)' : '100%';
     }
   },
   methods: {
-    // 掩码处理
-    maskValue(value) {
-      if (!value) return '';
-      return '*'.repeat(Math.min(value.length, 8));
-    },
-    // 切换显示/隐藏
-    toggleValue(row, prop) {
-      this.$set(row, 'showValue', !row.showValue);
-    },
     // 复选框变化
     handleCheckboxChange(row) {
       this.$set(row, 'selected', !row.selected);
@@ -220,10 +206,6 @@ export default {
     // 行点击事件
     handleRowClick(row, column, event) {
       this.$emit('row-click', row, column, event);
-    },
-    // 获取表格实例
-    getTable() {
-      return this.$refs.tableRef;
     },
     // 清除选择
     clearSelection() {
@@ -244,7 +226,6 @@ export default {
   flex-direction: column;
   min-height: 0;
   .table-container {
-    height: calc(100% - 48px);
     width: 100%;
     box-shadow: 0 2px 12px rgba(74, 124, 253, 0.12);
     border-radius: 6px;
