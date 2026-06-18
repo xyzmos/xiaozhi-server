@@ -31,6 +31,7 @@ export default {
   transition: all 0.3s ease;
 
   &.el-button--small {
+    padding: 10px;
     font-size: 14px;
   }
   &.el-button--medium {
@@ -91,7 +92,7 @@ export default {
 
 .custom-button--delete {
   width: fit-content;
-  background: linear-gradient(to right, #ff6b6b, #ff8e8e);
+  background: #ff6b6b;
   color: white;
   border: none;
   border-radius: 6px;
