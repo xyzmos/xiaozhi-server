@@ -36,6 +36,10 @@ class ListenTextMessageHandler(TextMessageHandler):
             # 设备从播放模式切回录音模式,清除所有音频状态和缓冲区
             conn.reset_audio_states()
         elif msg_json["state"] == "stop":
+            # 收到stop但asr未初始化，跳过处理
+            if conn.asr is None:
+                return
+
             conn.client_voice_stop = True
             if conn.asr.interface_type == InterfaceType.STREAM:
                 # 流式模式下，发送结束请求
@@ -71,10 +75,19 @@ class ListenTextMessageHandler(TextMessageHandler):
                     conn.sentence_id = uuid.uuid4().hex
 
                     await send_stt_message(conn, call_text)
-                    conn.tts.store_tts_text(conn.sentence_id, call_text)
-                    conn.tts.tts_text_queue.put(TTSMessageDTO(sentence_id=conn.sentence_id, sentence_type=SentenceType.FIRST, content_type=ContentType.ACTION))
-                    conn.tts.tts_one_sentence(conn, ContentType.TEXT, content_detail=call_text)
-                    conn.tts.tts_text_queue.put(TTSMessageDTO(sentence_id=conn.sentence_id, sentence_type=SentenceType.LAST, content_type=ContentType.ACTION))
+
+                    # 等待tts初始化，最多等待3秒
+                    start_time = time.time()
+                    while time.time() - start_time < 3:
+                        if conn.tts:
+                            break
+                        await asyncio.sleep(0.1)
+
+                    if conn.tts:
+                        conn.tts.store_tts_text(conn.sentence_id, call_text)
+                        conn.tts.tts_text_queue.put(TTSMessageDTO(sentence_id=conn.sentence_id, sentence_type=SentenceType.FIRST, content_type=ContentType.ACTION))
+                        conn.tts.tts_one_sentence(conn, ContentType.TEXT, content_detail=call_text)
+                        conn.tts.tts_text_queue.put(TTSMessageDTO(sentence_id=conn.sentence_id, sentence_type=SentenceType.LAST, content_type=ContentType.ACTION))
 
                     # 添加到对话历史，让模型理解上下文
                     conn.dialogue.put(Message(role="assistant", content=call_text))
