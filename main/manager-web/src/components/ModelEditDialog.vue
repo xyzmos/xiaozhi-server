@@ -1,6 +1,6 @@
 <template>
   <CustomDialog
-    :title="title"
+    :title="$t('modelConfigDialog.editModel')"
     :visible.sync="dialogVisible"
     width="57%"
     class="model-edit-dialog"
@@ -57,8 +57,10 @@
       </el-form-item>
     </el-form>
 
-    <div class="section-title">{{ $t("modelConfigDialog.callInfo") }}</div>
-    <div class="section-divider"></div>
+    <teleport v-if="chunkedCallInfoFields.length">
+      <div class="section-title">{{ $t("modelConfigDialog.callInfo") }}</div>
+      <div class="section-divider"></div>
+    </teleport>
 
     <el-form :model="form.configJson" ref="callInfoForm" label-width="auto">
       <template>
