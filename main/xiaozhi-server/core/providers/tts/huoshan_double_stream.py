@@ -229,6 +229,10 @@ class TTSProvider(TTSProviderBase):
                     except:
                         pass
             logger.bind(tag=TAG).debug("开始建立新连接...")
+
+            # 建立新连接前取消旧监听任务
+            await self._cancel_monitor_task()
+
             ws_header = {
                 "X-Api-App-Key": self.appId,
                 "X-Api-Access-Key": self.access_token,
@@ -472,16 +476,7 @@ class TTSProvider(TTSProviderBase):
         """资源清理方法"""
         await super().close()
         self.activate_session = False
-        # 取消监听任务
-        if self._monitor_task:
-            try:
-                self._monitor_task.cancel()
-                await self._monitor_task
-            except asyncio.CancelledError:
-                pass
-            except Exception as e:
-                logger.bind(tag=TAG).warning(f"关闭时取消监听任务错误: {e}")
-            self._monitor_task = None
+        await self._cancel_monitor_task()
 
         if self.ws:
             try:
@@ -730,6 +725,18 @@ class TTSProvider(TTSProviderBase):
 
     def wav_to_opus_data_audio_raw_stream(self, raw_data_var, is_end=False, callback: Callable[[Any], Any]=None):
         return self.opus_encoder.encode_pcm_to_opus_stream(raw_data_var, is_end, callback=callback)
+
+    async def _cancel_monitor_task(self):
+        """取消监听任务"""
+        if self._monitor_task and not self._monitor_task.done():
+            self._monitor_task.cancel()
+            try:
+                await self._monitor_task
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logger.bind(tag=TAG).warning(f"取消监听任务错误: {e}")
+        self._monitor_task = None
 
     def to_tts(self, text: str) -> list:
         """非流式生成音频数据，用于生成音频及测试场景
