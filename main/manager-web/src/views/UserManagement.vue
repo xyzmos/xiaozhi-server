@@ -52,12 +52,12 @@
                   <CustomButton :icon="isAllSelected ? 'el-icon-circle-close' : 'el-icon-circle-check'" size="small" @click="handleSelectAll">
                     {{ isAllSelected ? $t('user.deselectAll') : $t('user.selectAll') }}
                   </CustomButton>
-                  <CustomButton size="small" icon="el-icon-circle-check" @click="batchEnable">{{
-                    $t('user.enable')
-                    }}</CustomButton>
                   <CustomButton size="small" icon="el-icon-remove-outline" @click="batchDisable">
                     {{$t('user.disable') }}
                   </CustomButton>
+                  <CustomButton size="small" type="add" icon="el-icon-circle-check" @click="batchEnable">{{
+                    $t('user.enable')
+                    }}</CustomButton>
                   <CustomButton size="small" type="delete" icon="el-icon-delete" @click="batchDelete">{{ $t('user.delete')
                     }}</CustomButton>
                 </div>

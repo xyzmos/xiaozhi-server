@@ -65,7 +65,7 @@
                     size="small" @click="selectAllDictData">
                     {{ isAllDictDataSelected ? $t('dictManagement.deselectAll') : $t('dictManagement.selectAll') }}
                   </CustomButton>
-                  <CustomButton icon="el-icon-plus" size="small" @click="showAddDictDataDialog">
+                  <CustomButton type="add" icon="el-icon-plus" size="small" @click="showAddDictDataDialog">
                     {{ $t('dictManagement.addDictData') }}
                   </CustomButton>
                   <CustomButton size="small" type="delete" icon="el-icon-delete" @click="batchDeleteDictData">

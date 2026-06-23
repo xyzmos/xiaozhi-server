@@ -67,7 +67,7 @@
                   <CustomButton :icon="isAllSelected ? 'el-icon-circle-close' : 'el-icon-circle-check'" size="small" @click="handleSelectAll">
                     {{ isAllSelected ? $t('common.deselectAll') : $t('common.selectAll') }}
                   </CustomButton>
-                  <CustomButton icon="el-icon-plus" size="small" @click="showAddDialog">
+                  <CustomButton type="add" icon="el-icon-plus" size="small" @click="showAddDialog">
                     {{ $t('common.add') }}
                   </CustomButton>
                   <CustomButton size="small" type="delete" icon="el-icon-delete" @click="deleteSelectedProviders">
