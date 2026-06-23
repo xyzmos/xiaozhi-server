@@ -52,7 +52,7 @@
                                         size="small" @click="handleSelectAll">
                                         {{ isAllSelected ? $t('otaManagement.deselectAll') : $t('otaManagement.selectAll') }}
                                     </CustomButton>
-                                    <CustomButton icon="el-icon-plus" size="small" @click="showAddDialog">
+                                    <CustomButton type="add" icon="el-icon-plus" size="small" @click="showAddDialog">
                                         {{ $t('otaManagement.addNew') }}
                                     </CustomButton>
                                     <CustomButton size="small" type="delete" icon="el-icon-delete"

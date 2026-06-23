@@ -187,19 +187,19 @@
             </el-table>
             <div class="table-footer">
               <div class="batch-actions">
-                <CustomButton :icon="isAllSelected ? 'el-icon-circle-close' : 'el-icon-circle-check'" type="default" size="mini" @click="selectAll">
+                <CustomButton :icon="isAllSelected ? 'el-icon-circle-close' : 'el-icon-circle-check'" type="default" size="small" @click="selectAll">
                   {{
                     isAllSelected
                       ? $t("modelConfig.deselectAll")
                       : $t("modelConfig.selectAll")
                   }}
                 </CustomButton>
-                <CustomButton icon="el-icon-plus" type="add" size="mini" @click="addModel">
+                <CustomButton icon="el-icon-plus" type="add" size="small" @click="addModel">
                   {{ $t("modelConfig.add") }}
                 </CustomButton>
                 <CustomButton
                   type="delete"
-                  size="mini"
+                  size="small"
                   icon="el-icon-delete"
                   @click="batchDelete"
                 >
@@ -747,53 +747,53 @@ export default {
   background: white;
 }
 
-.batch-actions {
-  display: flex;
-  gap: 8px;
-}
+// .batch-actions {
+//   display: flex;
+//   gap: 8px;
+// }
 
-.batch-actions .el-button {
-  min-width: 72px;
-  height: 32px;
-  padding: 7px 12px 7px 10px;
-  font-size: 12px;
-  border-radius: 4px;
-  line-height: 1;
-  font-weight: 500;
-  border: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
+// .batch-actions .el-button {
+//   min-width: 72px;
+//   height: 32px;
+//   padding: 7px 12px 7px 10px;
+//   font-size: 12px;
+//   border-radius: 4px;
+//   line-height: 1;
+//   font-weight: 500;
+//   border: none;
+//   transition: all 0.3s ease;
+//   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+// }
 
-.batch-actions .el-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
+// .batch-actions .el-button:hover {
+//   transform: translateY(-1px);
+//   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+// }
 
-.batch-actions .el-button--primary {
-  background: #5f70f3 !important;
-  color: white;
-}
+// .batch-actions .el-button--primary {
+//   background: #5f70f3 !important;
+//   color: white;
+// }
 
-.batch-actions .el-button--success {
-  background: #5bc98c;
-  color: white;
-}
+// .batch-actions .el-button--success {
+//   background: #5bc98c;
+//   color: white;
+// }
 
-.batch-actions .el-button--danger {
-  background: #fd5b63;
-  color: white;
-}
+// .batch-actions .el-button--danger {
+//   background: #fd5b63;
+//   color: white;
+// }
 
-.batch-actions .el-button:first-child {
-  background: linear-gradient(135deg, #409eff, #6b8cff);
-  border: none;
-  color: white;
-}
+// .batch-actions .el-button:first-child {
+//   background: linear-gradient(135deg, #409eff, #6b8cff);
+//   border: none;
+//   color: white;
+// }
 
-.batch-actions .el-button:first-child:hover {
-  background: linear-gradient(135deg, #3a8ee6, #5a7cff);
-}
+// .batch-actions .el-button:first-child:hover {
+//   background: linear-gradient(135deg, #3a8ee6, #5a7cff);
+// }
 
 .el-table th ::v-deep .el-table__cell {
   overflow: hidden;

@@ -70,7 +70,7 @@
                   >
                     {{ allSelected ? $t('user.deselectAll') : $t('user.selectAll') }}
                   </CustomButton>
-                  <CustomButton icon="el-icon-plus" size="small" @click="handleAdd">
+                  <CustomButton type="add" icon="el-icon-plus" size="small" @click="handleAdd">
                     {{ $t('replacementWordManagement.addFile') }}
                   </CustomButton>
                   <CustomButton size="small" type="delete" icon="el-icon-delete" @click="handleBatchDelete">

@@ -27,12 +27,12 @@ export default {
   background: #4998ff;
   color: #ffffff;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.3s ease;
 
   &.el-button--small {
-    padding: 10px;
-    font-size: 14px;
+    padding: 9px 14px;
+    font-size: 12px;
   }
   &.el-button--medium {
     padding: 12px 20px;
@@ -62,11 +62,12 @@ export default {
   background: linear-gradient(to right, #4a7cfd, #8154fc);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.3s ease;
 
   &.el-button--small {
-    font-size: 14px;
+    padding: 9px 14px;
+    font-size: 12px;
   }
   &.el-button--medium {
     padding: 12px 20px;
@@ -95,11 +96,12 @@ export default {
   background: #ff6b6b;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.3s ease;
 
   &.el-button--small {
-    font-size: 14px;
+    padding: 9px 14px;
+    font-size: 12px;
   }
   &.el-button--medium {
     padding: 12px 20px;
@@ -128,11 +130,12 @@ export default {
   background: #52c41a;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.3s ease;
 
   &.el-button--small {
-    font-size: 14px;
+    padding: 9px 14px;
+    font-size: 12px;
   }
   &.el-button--medium {
     padding: 12px 20px;
