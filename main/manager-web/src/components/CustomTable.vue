@@ -79,9 +79,10 @@
     </div>
 
     <!-- 分页 -->
-    <div class="table-footer" v-if="showPagination">
+    <div class="table-footer">
       <slot name="footer-btns"></slot>
       <CustomPagination
+        v-if="showPagination"
         :total="total"
         :current-page="currentPage"
         :page-size="pageSize"

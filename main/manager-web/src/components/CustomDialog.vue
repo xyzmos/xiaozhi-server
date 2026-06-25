@@ -13,10 +13,12 @@
     @open="handleOpen"
   >
     <template slot="title">
-      <div class="dialog-title">
-        <img src="@/assets/knowledge-base/level.png" class="title-icon" />
-        <span>{{ title }}</span>
-      </div>
+      <slot name="title">
+        <div class="dialog-title">
+          <img src="@/assets/knowledge-base/level.png" class="title-icon" />
+          <span>{{ title }}</span>
+        </div>
+      </slot>
     </template>
     <slot></slot>
     <template slot="footer">

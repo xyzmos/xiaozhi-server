@@ -53,7 +53,7 @@
       </el-form-item>
 
       <el-form-item :label="$t('modelConfigDialog.remark')" prop="remark" class="prop-remark">
-        <el-input v-model="form.remark" type="textarea" :rows="4" :placeholder="$t('modelConfigDialog.enterRemark')"></el-input>
+        <el-input v-model="form.remark" type="textarea" :rows="3" :autosize="{ minRows: 3, maxRows: 5 }" :placeholder="$t('modelConfigDialog.enterRemark')"></el-input>
       </el-form-item>
     </el-form>
 
@@ -62,7 +62,7 @@
       <div class="section-divider"></div>
     </teleport>
 
-    <el-form :model="form.configJson" ref="callInfoForm" label-width="auto">
+    <el-form :model="form.configJson" ref="callInfoForm" label-width="auto" label-position="left">
       <template>
         <div v-for="(row, rowIndex) in chunkedCallInfoFields" :key="rowIndex" class="form-row">
           <el-form-item v-for="field in row" :key="field.prop" :label="field.label" :prop="field.prop"
@@ -467,25 +467,22 @@ export default {
 ::v-deep .el-dialog {
   margin-top: 6vh !important;
 }
-.model-edit-dialog {
-  .dialog-scroll-body {
-    max-height: 72vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-
-    &::-webkit-scrollbar {
+::v-deep .el-dialog__body {
+  max-height: 60vh;
+  overflow-y: auto;
+  &::-webkit-scrollbar {
       width: 6px;
     }
-    &::-webkit-scrollbar-thumb {
-      background: #a1c9fd;
-      border-radius: 3px;
-    }
-    &::-webkit-scrollbar-track {
-      background: #f0f3fe;
-      border-radius: 3px;
-    }
+  &::-webkit-scrollbar-thumb {
+    background: #a1c9fd;
+    border-radius: 3px;
   }
-
+  &::-webkit-scrollbar-track {
+    background: #f0f3fe;
+    border-radius: 3px;
+  }
+}
+.model-edit-dialog {
   .header-row {
     display: flex;
     justify-content: space-between;
