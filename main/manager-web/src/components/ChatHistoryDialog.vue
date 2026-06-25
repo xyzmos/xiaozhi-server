@@ -1,8 +1,12 @@
 <template>
-    <el-dialog
-        :title="$t('chatHistory.with') + agentName + $t('chatHistory.dialogTitle') + (currentMacAddress ? '[' + currentMacAddress + ']' : '')"
-        :visible.sync="dialogVisible" width="80%" :before-close="handleClose" custom-class="chat-history-dialog">
-        <template slot="title">
+    <CustomDialog
+        :title="$t('chatHistory.with') + agentName + $t('chatHistory.dialogTitle')"
+        :visible.sync="dialogVisible"
+        width="80%"
+        :footer="false"
+        :close-on-click-modal="false"
+        custom-class="chat-history-dialog">
+        <template v-slot:title>
             <span style="font-size: 18px;">
                 {{ $t('chatHistory.with') + agentName + $t('chatHistory.dialogTitle') }}
                 <template v-if="currentMacAddress">
@@ -77,12 +81,13 @@
                 {{ $t('chatHistory.downloadCurrentSession') }}
             </el-button>
         </div>
-    </el-dialog>
+    </CustomDialog>
 </template>
 
 <script>
 import { debounce } from '@/utils'
 import Api from '@/apis/api';
+import CustomDialog from '@/components/CustomDialog.vue';
 import MacAddressMask from '@/components/MacAddressMask.vue';
 
 export default {
@@ -120,6 +125,7 @@ export default {
         };
     },
     components: {
+        CustomDialog,
         MacAddressMask,
     },
     watch: {
@@ -240,9 +246,6 @@ export default {
             this.hasMore = true;
             this.isFirstLoad = true;
             this.expandedToolResults = {};
-        },
-        handleClose() {
-            this.dialogVisible = false;
         },
         loadSessions() {
             if (this.loading || (!this.isFirstLoad && !this.hasMore)) {
@@ -633,11 +636,6 @@ export default {
     max-width: 85vw;
     border-radius: 12px;
     overflow: hidden;
-}
-
-.chat-history-dialog .el-dialog__header {
-    background-color: #e6f7ff;
-    padding: 15px 20px;
 }
 
 .chat-history-dialog .el-dialog__body {
