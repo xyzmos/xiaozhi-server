@@ -475,12 +475,26 @@ export default {
 }
 
 .voice-clone-grid {
+  padding: 10px 16px;
+  margin-bottom: 20px;
   height: calc(100% - 90px);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 16px;
   align-content: start;
   min-height: 200px;
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #a1c9fd;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f0f3fe;
+    border-radius: 3px;
+  }
 }
 
 .voice-clone-card {

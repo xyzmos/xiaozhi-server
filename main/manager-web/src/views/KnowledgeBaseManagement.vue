@@ -695,7 +695,7 @@ export default {
   display: flex;
   position: relative;
   flex-direction: column;
-  background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
+  background: #eff4ff;
   background-size: cover;
   -webkit-background-size: cover;
   -o-background-size: cover;
@@ -758,7 +758,6 @@ export default {
   background: #fff;
   border-radius: 10px;
   padding: 14px 20px;
-  box-shadow: 0 4px 16px rgba(31, 42, 68, 0.06);
   border: 1px solid #f0f3f9;
 }
 

@@ -390,7 +390,7 @@ export default {
   position: relative;
   flex-direction: column;
   background-size: cover;
-  background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
+  background: #eff4ff;
   -webkit-background-size: cover;
   -o-background-size: cover;
   overflow: hidden;
@@ -517,7 +517,6 @@ export default {
   flex-direction: column;
   border: none;
   border-radius: 15px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 
   ::v-deep .el-card__body {

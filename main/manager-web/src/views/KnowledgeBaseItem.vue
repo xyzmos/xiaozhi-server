@@ -383,8 +383,6 @@ export default {
   background: #fff;
   border-radius: 10px;
   padding: 16px 20px;
-  box-shadow: 0 4px 16px rgba(31, 42, 68, 0.06);
-  border: 1px solid #f0f3f9;
   flex: 1;
   display: flex;
   flex-direction: column;
