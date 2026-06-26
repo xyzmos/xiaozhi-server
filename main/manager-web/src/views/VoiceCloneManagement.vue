@@ -34,20 +34,14 @@
                           <span class="info-label">{{ $t('voiceClone.languages') }}</span>
                           <span class="info-value">{{ item.languages || '-' }}</span>
                         </div>
-                        <!-- <div class="info-row">
-                          <span class="info-label">模型名称</span>
-                          <span class="info-value" :title="item.modelName">{{ item.modelName || '-' }}</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="info-label">{{ $t('voiceClone.createdAt') }}</span>
-                          <span class="info-value">{{ formatDate(item.createDate) }}</span>
-                        </div> -->
                       </div>
                     </div>
                     <div class="info-right" :class="{ 'info-right--centered': !item.hasVoice }">
-                      <div class="status-button" :class="getStatusButtonClass(item)">
-                        <span>{{ getTrainStatusText(item) }}</span>
-                      </div>
+                       <el-tooltip :content="getTooltipContent(item)" placement="top" effect="light">
+                          <div class="status-button" :class="getStatusButtonClass(item)">
+                            <span>{{ getTrainStatusText(item) }}</span>
+                          </div>
+                       </el-tooltip>
                       <div v-if="item.hasVoice" class="voice-wave" :class="{ 'is-playing': playingRowId === item.id }">
                         <span class="wave-bar"></span>
                         <span class="wave-bar"></span>
@@ -80,7 +74,7 @@
                   <el-button size="mini" type="text"
                     :icon="item.isEdit ? 'el-icon-check' : 'el-icon-edit'"
                     @click="handleEditButtonClick(item)">
-                    {{ item.isEdit ? '保存' : '编辑' }}
+                    {{ item.isEdit ? $t('button.save') : $t('common.edit') }}
                   </el-button>
                 </div>
               </div>
@@ -149,18 +143,18 @@ export default {
   methods: {
     getTooltipContent(row) {
       if (!row.hasVoice) {
-        return '待上传';
+        return this.$t('voiceClone.waitingUpload');
       }
       switch (row.trainStatus) {
         case 0:
-          return '待复刻';
+          return this.$t('voiceClone.waitingTraining');
         case 2:
-          return '训练成功';
+          return this.$t('voiceClone.trainSuccess');
         case 3:
           if (row.trainError) {
-            return `训练失败：${row.trainError}`;
+            return this.$t('voiceClone.trainFailedWithError', { error: row.trainError });
           }
-          return '训练失败';
+          return this.$t('voiceClone.trainFailed');
         default:
           return '';
       }
@@ -260,13 +254,13 @@ export default {
           }
         }, (error) => {
           console.error('API调用失败:', error);
-          this.$message.error('克隆失败，请将鼠标悬停在错误提示上，查看错误详情');
+          this.$message.error(this.$t('voiceClone.cloneErrorTip'));
           this.fetchVoiceCloneList();
           this.$set(row, '_cloning', false);
         });
       } catch (error) {
         console.error('调用API时出错:', error);
-        this.$message.error('调用API时出错');
+        this.$message.error(this.$t('voiceClone.apiError'));
         this.fetchVoiceCloneList();
         this.$set(row, '_cloning', false);
       }
@@ -377,7 +371,7 @@ export default {
   position: relative;
   flex-direction: column;
   background-size: cover;
-  background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
+  background: #eff4ff;
   -webkit-background-size: cover;
   -o-background-size: cover;
   overflow: hidden;
@@ -491,11 +485,11 @@ export default {
 
 .voice-clone-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; 
   gap: 14px;
   padding: 16px 16px 8px;
   background: #fff;
-  border: 1px solid #ebeef5;
+  box-shadow: 0 0 10px 0 #e8ecf5;
   border-radius: 8px;
   transition: box-shadow 0.2s, border-color 0.2s;
 
