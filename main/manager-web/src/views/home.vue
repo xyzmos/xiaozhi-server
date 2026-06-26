@@ -1,7 +1,7 @@
 <template>
   <div class="welcome">
     <!-- 公共头部 -->
-    <HeaderBar :devices="devices" @search="handleSearch" @search-reset="handleSearchReset" />
+    <HeaderBar :devices="devices" />
     <el-main style="padding: 20px;display: flex;flex-direction: column;">
       <div>
         <!-- 首页内容 -->
@@ -16,13 +16,30 @@
             <div class="hi-hint">
               let's have a wonderful day!
             </div>
-            <div class="add-device-btn">
-              <div class="left-add" @click="showAddDialog">
-                {{ $t('home.addAgent') }}
+            <div class="add-device-options">
+            <div class="search-container" v-if="userInfo.superAdmin">
+              <div class="search-wrapper">
+                  <el-input
+                    v-model="search"
+                    :placeholder="$t('header.searchPlaceholder')"
+                    class="custom-search-input"
+                    @keyup.enter.native="handleSearch"
+                    @clear="handleSearchReset"
+                    clearable
+                    ref="searchInput"
+                  >
+                    <i slot="suffix" class="el-icon-search search-icon" @click="handleSearch"></i>
+                  </el-input>
+                </div>
               </div>
-              <div style="width: 23px;height: 13px;background: #5778ff;margin-left: -10px;" />
-              <div class="right-add">
-                <i class="el-icon-right" @click="showAddDialog" style="font-size: 20px;color: #fff;" />
+              <div class="add-device-btn">
+                <div class="left-add" @click="showAddDialog">
+                  {{ $t('home.addAgent') }}
+                </div>
+                <div style="width: 23px;height: 13px;background: #5778ff;margin-left: -10px;" />
+                <div class="right-add">
+                  <i class="el-icon-right" @click="showAddDialog" style="font-size: 20px;color: #fff;" />
+                </div>
               </div>
             </div>
           </div>
@@ -57,6 +74,7 @@
 
 <script>
 import Api from '@/apis/api';
+import { mapState } from "vuex";
 import AddWisdomBodyDialog from '@/components/AddWisdomBodyDialog.vue';
 import ChatHistoryDialog from '@/components/ChatHistoryDialog.vue';
 import DeviceItem from '@/components/DeviceItem.vue';
@@ -84,8 +102,15 @@ export default {
         voiceprintRecognition: false,
         voiceClone: false,
         knowledgeBase: false
-      }
+      },
+      search: "",
     }
+  },
+
+  computed: {
+    ...mapState({
+      userInfo: (state) => state.userInfo,
+    }),
   },
 
   async mounted() {
@@ -118,26 +143,6 @@ export default {
     },
     handleDeviceManage() {
       this.$router.push('/device-management');
-    },
-    handleSearch(keyword) {
-      this.isSearching = true;
-      this.isLoading = true;
-      // 检测MAC地址格式：包含4个冒号
-      const isMac = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(keyword)
-      const searchType = isMac ? 'mac' : 'name';
-      Api.agent.searchAgent(keyword, searchType, ({ data }) => {
-        if (data?.data) {
-          this.devices = data.data.map(item => ({
-            ...item,
-            agentId: item.id
-          }));
-        }
-        this.isLoading = false;
-      }, (error) => {
-        console.error('搜索智能体失败:', error);
-        this.isLoading = false;
-        this.$message.error(this.$t('message.searchFailed'));
-      });
     },
     handleSearchReset() {
       this.isSearching = false;
@@ -200,7 +205,36 @@ export default {
       this.currentAgentId = agentId;
       this.currentAgentName = agentName;
       this.showChatHistory = true;
-    }
+    },
+    // 处理搜索
+    handleSearch() {
+      const searchValue = this.search.trim();
+
+      // 如果搜索内容为空，触发重置事件
+      if (!searchValue) {
+        this.handleSearchReset();
+        return;
+      }
+
+      this.isSearching = true;
+      this.isLoading = true;
+      // 检测MAC地址格式：包含4个冒号
+      const isMac = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(searchValue)
+      const searchType = isMac ? 'mac' : 'name';
+      Api.agent.searchAgent(searchValue, searchType, ({ data }) => {
+        if (data?.data) {
+          this.devices = data.data.map(item => ({
+            ...item,
+            agentId: item.id
+          }));
+        }
+        this.isLoading = false;
+      }, (error) => {
+        console.error('搜索智能体失败:', error);
+        this.isLoading = false;
+        this.$message.error(this.$t('message.searchFailed'));
+      });
+    },
   }
 }
 </script>
@@ -212,7 +246,7 @@ export default {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(145deg, #e6eeff, #eff0ff);
+  background: #eff4ff;
   background-size: cover;
   /* 确保背景图像覆盖整个元素 */
   background-position: center;
@@ -267,12 +301,17 @@ export default {
     margin-top: 5px;
   }
 }
+.add-device-options {
+  display: flex;
+  margin-top: 16px;
+  margin-left: 75px;
+  align-items: center;
+}
 
 .add-device-btn {
   display: flex;
   align-items: center;
-  margin-left: 75px;
-  margin-top: 15px;
+  margin-left: 20px;
   cursor: pointer;
 
   .left-add {
@@ -297,6 +336,82 @@ export default {
     justify-content: center;
     align-items: center;
   }
+}
+
+.search-container {
+  margin-right: 5px;
+  min-width: 60px;
+  max-width: none;
+}
+
+.custom-search-input::v-deep .el-input__suffix-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  cursor: pointer;
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+.search-history-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e4e6ef;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+.search-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+  color: #909399;
+}
+
+.clear-history-btn {
+  color: #909399;
+  font-size: 11px;
+  padding: 0;
+  height: auto;
+}
+
+.clear-history-btn:hover {
+  color: #606266;
+}
+
+.search-history-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #606266;
+}
+
+.search-history-item:hover {
+  background-color: #f5f7fa;
+}
+
+.clear-item-icon {
+  font-size: 10px;
+  color: #909399;
+  visibility: hidden;
 }
 
 .device-list-container {

@@ -13,59 +13,85 @@
                 <CustomButton type="confirm" icon="el-icon-search" @click="handleSearch">{{ $t('voiceClone.search') }}</CustomButton>
               </div>
             </div>
-            <CustomTable
-              ref="voiceCloneTable"
-              :data="voiceCloneList"
-              :columns="tableColumns"
-              :loading="loading"
+            <div v-loading="loading" class="voice-clone-grid">
+              <div v-for="item in voiceCloneList" :key="item.id" class="voice-clone-card">
+                <div class="card-top">
+                  <img src="@/assets/setting/voiceclone.png" alt="" width="80px" height="80px">
+                  <div class="card-info">
+                    <div class="info-left">
+                      <div class="info-title">
+                        <el-input v-show="item.isEdit" v-model="item.name" size="mini" maxlength="64"
+                          show-word-limit @keyup.enter.native="onNameEnter(item)"
+                          ref="nameInput" />
+                        <span v-show="!item.isEdit" class="name-text" :title="item.name">{{ item.name || '-' }}</span>
+                      </div>
+                      <div class="info-grid">
+                        <div class="info-row">
+                          <span class="info-label">{{ $t('voiceClone.voiceId') }}</span>
+                          <span class="info-value" :title="item.voiceId">{{ item.voiceId || '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">{{ $t('voiceClone.languages') }}</span>
+                          <span class="info-value">{{ item.languages || '-' }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="info-right" :class="{ 'info-right--centered': !item.hasVoice }">
+                       <el-tooltip :content="getTooltipContent(item)" placement="top" effect="light">
+                          <div class="status-button" :class="getStatusButtonClass(item)">
+                            <span>{{ getTrainStatusText(item) }}</span>
+                          </div>
+                       </el-tooltip>
+                      <div v-if="item.hasVoice" class="voice-wave" :class="{ 'is-playing': playingRowId === item.id }">
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                        <span class="wave-bar"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-actions">
+                  <el-button v-if="item.hasVoice" size="mini" type="text" icon="el-icon-video-play"
+                    @click="handlePlay(item)">
+                    {{ playingRowId === item.id ? $t('voiceClone.stop') : $t('voiceClone.play') }}
+                  </el-button>
+                  <el-button size="mini" type="text" icon="el-icon-upload2" @click="handleUpload(item)">
+                    {{ $t('voiceClone.upload') }}
+                  </el-button>
+                  <el-button v-if="item.hasVoice" size="mini" type="text" icon="el-icon-copy-document"
+                    @click="handleClone(item)" :loading="item._cloning">
+                    {{ $t('voiceClone.clone') }}
+                  </el-button>
+                  <el-button size="mini" type="text"
+                    :icon="item.isEdit ? 'el-icon-check' : 'el-icon-edit'"
+                    @click="handleEditButtonClick(item)">
+                    {{ item.isEdit ? $t('button.save') : $t('common.edit') }}
+                  </el-button>
+                </div>
+              </div>
+
+              <div v-if="!loading && voiceCloneList.length === 0" class="empty-state">
+                {{ $t('voiceClone.noVoiceCloneAssigned') }}
+              </div>
+            </div>
+
+            <CustomPagination
               :total="total"
               :current-page="currentPage"
               :page-size="pageSize"
               :page-size-options="pageSizeOptions"
               @size-change="handlePageSizeChange"
               @page-change="goToPage"
-            >
-              <template slot="name" slot-scope="scope">
-                <el-input v-show="scope.row.isEdit" v-model="scope.row.name" size="mini" maxlength="64"
-                  show-word-limit @blur="onNameBlur(scope.row)" @keyup.enter.native="onNameEnter(scope.row)"
-                  ref="nameInput" />
-                <span v-show="!scope.row.isEdit" class="name-view">
-                  <i class="el-icon-edit" @click="handleEditName(scope.row)" style="cursor: pointer;"></i>
-                  <span @click="handleEditName(scope.row)">
-                    {{ scope.row.name || '-' }}
-                  </span>
-                </span>
-              </template>
-              <template slot="trainStatus" slot-scope="scope">
-                <div class="status-button" :class="getStatusButtonClass(scope.row)">
-                  <span>{{ getTrainStatusText(scope.row) }}</span>
-                </div>
-              </template>
-              <template slot="Details" slot-scope="scope">
-                <el-tooltip :content="getTooltipContent(scope.row)" placement="top">
-                  <el-button size="mini" type="text" icon="el-icon-info"
-                    @click="handleViewDetails(scope.row)">
-                  </el-button>
-                </el-tooltip>
-              </template>
-              <template slot="action" slot-scope="scope">
-                <el-button v-if="scope.row.hasVoice" size="mini" type="text"
-                  @click="handlePlay(scope.row)">
-                  {{ playingRowId === scope.row.id ? $t('voiceClone.stop') : $t('voiceClone.play') }}
-                </el-button>
-                <el-button size="mini" type="text" @click="handleUpload(scope.row)">
-                  {{ $t('voiceClone.upload') }}
-                </el-button>
-                <el-button v-if="scope.row.hasVoice" size="mini" type="text"
-                  @click="handleClone(scope.row)" :loading="scope.row._cloning">
-                  {{ $t('voiceClone.clone') }}
-                </el-button>
-              </template>
-              <!-- 占位作用保持分页在右边展示 -->
-              <template slot="footer-btns">
-                <div></div>
-              </template>
-            </CustomTable>
+            />
           </el-card>
         </div>
       </div>
@@ -86,11 +112,11 @@ import HeaderBar from "@/components/HeaderBar.vue";
 import VersionFooter from "@/components/VersionFooter.vue";
 import VoiceCloneDialog from "@/components/VoiceCloneDialog.vue";
 import CustomButton from "@/components/CustomButton.vue";
-import CustomTable from "@/components/CustomTable.vue";
+import CustomPagination from "@/components/CustomPagination.vue";
 import { formatDate } from "@/utils/format";
 
 export default {
-  components: { HeaderBar, VersionFooter, VoiceCloneDialog, CustomButton, CustomTable },
+  components: { HeaderBar, VersionFooter, VoiceCloneDialog, CustomButton, CustomPagination },
   data() {
     return {
       searchName: "",
@@ -108,39 +134,27 @@ export default {
         userId: null
       },
       currentAudio: null,
-      playingRowId: null,
-      tableColumns: []
+      playingRowId: null
     };
   },
   created() {
-    this.initTableColumns();
     this.fetchVoiceCloneList();
   },
   methods: {
-    initTableColumns() {
-      this.tableColumns = [
-        { prop: 'voiceId', label: this.$t('voiceClone.voiceId'), align: 'center' },
-        { prop: 'name', label: this.$t('voiceClone.name'), align: 'center' },
-        { prop: 'languages', label: this.$t('voiceClone.languages'), align: 'center' },
-        { prop: 'trainStatus', label: this.$t('voiceClone.trainStatus'), align: 'center' },
-        { prop: 'Details', label: this.$t('voiceClone.Details'), align: 'center', width: 120 },
-        { prop: 'action', label: this.$t('voiceClone.action'), align: 'center', width: 230 }
-      ];
-    },
     getTooltipContent(row) {
       if (!row.hasVoice) {
-        return '待上传';
+        return this.$t('voiceClone.waitingUpload');
       }
       switch (row.trainStatus) {
         case 0:
-          return '待复刻';
+          return this.$t('voiceClone.waitingTraining');
         case 2:
-          return '训练成功';
+          return this.$t('voiceClone.trainSuccess');
         case 3:
           if (row.trainError) {
-            return `训练失败：${row.trainError}`;
+            return this.$t('voiceClone.trainFailedWithError', { error: row.trainError });
           }
-          return '训练失败';
+          return this.$t('voiceClone.trainFailed');
         default:
           return '';
       }
@@ -240,13 +254,13 @@ export default {
           }
         }, (error) => {
           console.error('API调用失败:', error);
-          this.$message.error('克隆失败，请将鼠标悬停在错误提示上，查看错误详情');
+          this.$message.error(this.$t('voiceClone.cloneErrorTip'));
           this.fetchVoiceCloneList();
           this.$set(row, '_cloning', false);
         });
       } catch (error) {
         console.error('调用API时出错:', error);
-        this.$message.error('调用API时出错');
+        this.$message.error(this.$t('voiceClone.apiError'));
         this.fetchVoiceCloneList();
         this.$set(row, '_cloning', false);
       }
@@ -287,11 +301,13 @@ export default {
         row._submitting = false;
       });
     },
-    onNameBlur(row) {
-      row.isEdit = false;
-      setTimeout(() => {
+    handleEditButtonClick(row) {
+      if (row.isEdit) {
+        row.isEdit = false;
         this.submitName(row);
-      }, 100);
+      } else {
+        this.handleEditName(row);
+      }
     },
     onNameEnter(row) {
       row.isEdit = false;
@@ -355,7 +371,7 @@ export default {
   position: relative;
   flex-direction: column;
   background-size: cover;
-  background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
+  background: #eff4ff;
   -webkit-background-size: cover;
   -o-background-size: cover;
   overflow: hidden;
@@ -430,28 +446,6 @@ export default {
   }
 }
 
-.name-view {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-
-  i {
-    color: #909399;
-    font-size: 14px;
-
-    &:hover {
-      color: #5a64b5;
-    }
-  }
-
-  span {
-    &:hover {
-      color: #5a64b5;
-    }
-  }
-}
-
 .status-button {
   display: inline-flex;
   align-items: center;
@@ -480,11 +474,187 @@ export default {
   border: 1px solid #ffccc7;
 }
 
-:deep(.el-table .el-button--text) {
-  color: #7079aa;
+.voice-clone-grid {
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  height: calc(100% - 90px);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  align-content: start;
+  min-height: 200px;
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #a1c9fd;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f0f3fe;
+    border-radius: 3px;
+  }
 }
 
-:deep(.el-table .el-button--text:hover) {
-  color: #5a64b5;
+.voice-clone-card {
+  display: flex;
+  flex-direction: column; 
+  gap: 14px;
+  padding: 16px 16px 8px;
+  background: #fff;
+  box-shadow: 0 0 10px 0 #e8ecf5;
+  border-radius: 8px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+
+  &:hover {
+    border-color: #c0caff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.card-top {
+  display: flex;
+  gap: 12px;
+}
+
+.voice-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 1;
+  min-height: 40px;
+  width: 100%;
+  padding: 0 4px;
+
+  .wave-bar {
+    width: 3px;
+    height: 50%;
+    max-height: 80px;
+    background: linear-gradient(to top, #a5b4fc 0%, #c4b5fd 100%);
+    border-radius: 2px;
+    transform-origin: center;
+    animation: voice-wave 1.2s ease-in-out infinite paused;
+
+    &:nth-child(1) { animation-delay: -0s; }
+    &:nth-child(2) { animation-delay: -0.12s; }
+    &:nth-child(3) { animation-delay: -0.24s; }
+    &:nth-child(4) { animation-delay: -0.36s; }
+    &:nth-child(5) { animation-delay: -0.48s; }
+    &:nth-child(6) { animation-delay: -0.6s; }
+    &:nth-child(7) { animation-delay: -0.72s; }
+    &:nth-child(8) { animation-delay: -0.84s; }
+    &:nth-child(9) { animation-delay: -0.96s; }
+    &:nth-child(10) { animation-delay: -1.08s; }
+    &:nth-child(11) { animation-delay: -1.2s; }
+  }
+
+  &.is-playing .wave-bar {
+    animation-play-state: running;
+  }
+}
+
+@keyframes voice-wave {
+  0%, 100% { transform: scaleY(0.2); }
+  50% { transform: scaleY(0.95); }
+}
+
+.card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+}
+
+.info-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+
+.info-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.info-title {
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+
+  .name-text {
+    line-height: 28px;
+    text-align: left;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.info-label {
+  margin-right: 10px;
+  color: #909399;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f2f5;
+
+  ::v-deep .el-button {
+    display: flex;
+    align-items: center;
+  }
+
+  ::v-deep .el-button--text {
+    color: #7079aa;
+  }
+
+  ::v-deep .el-button--text:hover {
+    color: #5a64b5;
+  }
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  color: #909399;
+  font-size: 14px;
 }
 </style>
