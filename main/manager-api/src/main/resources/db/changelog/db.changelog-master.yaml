@@ -691,9 +691,9 @@ databaseChangeLog:
             encoding: utf8
             path: classpath:db/changelog/202606261131.sql
   - changeSet:
-      id: 202606301405
+      id: 202607011405
       author: LauraGPT
       changes:
         - sqlFile:
             encoding: utf8
-            path: classpath:db/changelog/202606301405.sql
+            path: classpath:db/changelog/202607011405.sql
