@@ -1,7 +1,6 @@
 from plugins_func.register import register_function, ToolType, ActionResponse, Action
 from plugins_func.functions.hass_init import initialize_hass_handler
 from config.logger import setup_logging
-import asyncio
 import requests
 from typing import TYPE_CHECKING
 
@@ -39,16 +38,27 @@ hass_play_music_function_desc = {
 )
 def hass_play_music(conn: "ConnectionHandler", entity_id="", media_content_id="random"):
     try:
-        # 执行音乐播放命令
-        future = asyncio.run_coroutine_threadsafe(
-            handle_hass_play_music(conn, entity_id, media_content_id), conn.loop
+        task = conn.loop.create_task(
+            handle_hass_play_music(conn, entity_id, media_content_id)
         )
-        ha_response = future.result()
+
+        def handle_done(f):
+            try:
+                f.result()
+                logger.bind(tag=TAG).info("音乐播放完成")
+            except Exception as e:
+                logger.bind(tag=TAG).error(f"音乐播放失败: {e}")
+
+        task.add_done_callback(handle_done)
+
         return ActionResponse(
-            action=Action.RESPONSE, result="退出意图已处理", response=ha_response
+            action=Action.RECORD, result="指令已接收", response="正在为您播放音乐"
         )
     except Exception as e:
         logger.bind(tag=TAG).error(f"处理音乐意图错误: {e}")
+        return ActionResponse(
+            action=Action.RESPONSE, result=str(e), response="播放音乐时出错了"
+        )
 
 
 async def handle_hass_play_music(
