@@ -81,6 +81,52 @@ export default {
                 });
             }).send();
     },
+    // 获取智能体配置快照列表
+    getAgentSnapshots(agentId, params, callback) {
+        RequestService.sendRequest()
+            .url(`${getServiceUrl()}/agent/${agentId}/snapshots`)
+            .method('GET')
+            .data(params)
+            .success((res) => {
+                RequestService.clearRequestTime();
+                callback(res);
+            })
+            .networkFail(() => {
+                RequestService.reAjaxFun(() => {
+                    this.getAgentSnapshots(agentId, params, callback);
+                });
+            }).send();
+    },
+    // 获取智能体配置快照详情
+    getAgentSnapshot(agentId, snapshotId, callback) {
+        RequestService.sendRequest()
+            .url(`${getServiceUrl()}/agent/${agentId}/snapshots/${snapshotId}`)
+            .method('GET')
+            .success((res) => {
+                RequestService.clearRequestTime();
+                callback(res);
+            })
+            .networkFail(() => {
+                RequestService.reAjaxFun(() => {
+                    this.getAgentSnapshot(agentId, snapshotId, callback);
+                });
+            }).send();
+    },
+    // 恢复智能体配置快照
+    restoreAgentSnapshot(agentId, snapshotId, callback) {
+        RequestService.sendRequest()
+            .url(`${getServiceUrl()}/agent/${agentId}/snapshots/${snapshotId}/restore`)
+            .method('POST')
+            .success((res) => {
+                RequestService.clearRequestTime();
+                callback(res);
+            })
+            .networkFail(() => {
+                RequestService.reAjaxFun(() => {
+                    this.restoreAgentSnapshot(agentId, snapshotId, callback);
+                });
+            }).send();
+    },
     // 新增方法：获取智能体模板
     getAgentTemplate(callback) {  // 移除templateName参数
         RequestService.sendRequest()

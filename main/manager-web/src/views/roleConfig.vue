@@ -16,6 +16,9 @@
                   <img loading="lazy" src="@/assets/home/setting-user.png" alt="" />
                 </div>
                 <span class="header-title">{{ form.agentName }}</span>
+                <span v-if="currentVersionNo" class="current-version-tag">
+                  当前版本 #{{ currentVersionNo }}
+                </span>
               </div>
               <div class="header-tags">
                 <el-tag
@@ -45,6 +48,9 @@
                   <img loading="lazy" src="@/assets/home/info.png" alt="" />
                   <span>{{ $t("roleConfig.restartNotice") }}</span>
                 </div>
+                <el-button class="history-btn" @click="showSnapshotDialog = true">
+                  {{ $t("roleConfig.snapshotHistory") }}
+                </el-button>
                 <el-button type="primary" class="save-btn" @click="saveConfig">
                   {{ $t("roleConfig.saveConfig") }}
                 </el-button>
@@ -457,6 +463,13 @@
       :checked-replacement-word-ids="checkedReplacementWordIds"
       @save="handleTtsSettingsSave"
     />
+      <agent-snapshot-dialog
+        v-if="$route.query.agentId"
+        :visible.sync="showSnapshotDialog"
+        :agent-id="$route.query.agentId"
+        :current-version-no="currentVersionNo"
+        @restored="handleSnapshotRestored"
+      />
     <el-footer>
       <version-footer />
     </el-footer>
@@ -470,6 +483,7 @@ import RequestService from "@/apis/httpRequest";
 import FunctionDialog from "@/components/FunctionDialog.vue";
 import ContextProviderDialog from "@/components/ContextProviderDialog.vue";
 import TtsAdvancedSettings from "@/components/TtsAdvancedSettings.vue";
+import AgentSnapshotDialog from "@/components/AgentSnapshotDialog.vue";
 import HeaderBar from "@/components/HeaderBar.vue";
 import i18n from "@/i18n";
 import featureManager from "@/utils/featureManager"; 
@@ -477,11 +491,12 @@ import VersionFooter from "@/components/VersionFooter.vue";
 
 export default {
   name: "RoleConfigPage",
-  components: { HeaderBar, FunctionDialog, ContextProviderDialog, TtsAdvancedSettings, VersionFooter },
+  components: { HeaderBar, FunctionDialog, ContextProviderDialog, TtsAdvancedSettings, AgentSnapshotDialog, VersionFooter },
   data() {
     return {
       showContextProviderDialog: false,
       showTtsAdvancedDialog: false,
+      showSnapshotDialog: false,
       ttsSettings: {
         volume: 0,
         speed: 0,
@@ -529,6 +544,7 @@ export default {
       voiceOptions: [],
       voiceDetails: {}, // 保存完整的音色信息
       showFunctionDialog: false,
+      currentVersionNo: null,
       currentFunctions: [],
       currentContextProviders: [],
       allFunctions: [],
@@ -555,14 +571,26 @@ export default {
     goToHome() {
       this.$router.push("/home");
     },
-    async saveConfig() {
-      try {
-        await this.handleSaveAgentTags(this.$route.query.agentId);
-      } catch (error) {
-        console.error('保存标签失败:', error);
-        return;
+    normalizeFunctionParams(params, fallback = {}) {
+      if (params === null || params === undefined || params === '') {
+        return { ...fallback };
       }
-
+      if (typeof params === 'string') {
+        try {
+          const parsed = JSON.parse(params);
+          return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? parsed
+            : { ...fallback };
+        } catch (error) {
+          return { ...fallback };
+        }
+      }
+      if (typeof params === 'object' && !Array.isArray(params)) {
+        return { ...params };
+      }
+      return { ...fallback };
+    },
+    async saveConfig() {
       const configData = {
         agentCode: this.form.agentCode,
         agentName: this.form.agentName,
@@ -585,11 +613,12 @@ export default {
         functions: this.currentFunctions.map((item) => {
           return {
             pluginId: item.id,
-            paramInfo: item.params,
+            paramInfo: this.normalizeFunctionParams(item.params),
           };
         }),
         contextProviders: this.currentContextProviders,
         correctWordFileIds: this.checkedReplacementWordIds,
+        tagNames: this.dynamicTags.map(tag => tag.tagName),
       };
 
       // 只在用户设置了TTS参数时才传递（不为null/undefined）
@@ -608,6 +637,7 @@ export default {
             message: i18n.t("roleConfig.saveSuccess"),
             showClose: true,
           });
+          this.fetchCurrentVersion(this.$route.query.agentId);
         } else {
           this.$message.error({
             message: data.msg || i18n.t("roleConfig.saveFailed"),
@@ -616,6 +646,32 @@ export default {
         }
       });
       
+    },
+    handleSnapshotRestored() {
+      const agentId = this.$route.query.agentId;
+      if (agentId) {
+        this.fetchAgentConfig(agentId);
+        this.getAgentTags(agentId);
+        this.fetchCurrentVersion(agentId);
+      }
+    },
+    fetchCurrentVersion(agentId) {
+      if (!agentId) {
+        this.currentVersionNo = null;
+        return;
+      }
+
+      Api.agent.getAgentSnapshots(
+        agentId,
+        { page: "1", limit: "1" },
+        ({ data }) => {
+          if (data.code === 0) {
+            const latest = data.data?.list?.[0];
+            const latestVersionNo = Number(latest?.versionNo) || 0;
+            this.currentVersionNo = latestVersionNo + 1;
+          }
+        }
+      );
     },
     resetConfig() {
       this.$confirm(i18n.t("roleConfig.confirmReset"), i18n.t("message.info"), {
@@ -754,7 +810,7 @@ export default {
                 id: mapping.pluginId,
                 name: meta.name,
                 // 后端如果还有 paramInfo 字段就用 mapping.paramInfo，否则用 meta.params 默认值
-                params: mapping.paramInfo || { ...meta.params },
+                params: this.normalizeFunctionParams(mapping.paramInfo, meta.params),
                 fieldsMeta: meta.fieldsMeta, // 保留以便对话框渲染 tooltip
               };
             });
@@ -1382,6 +1438,7 @@ export default {
       this.fetchAgentConfig(agentId);
       this.getAgentTags(agentId);
       this.fetchAllFunctions();
+      this.fetchCurrentVersion(agentId);
     }
     this.fetchModelOptions();
     this.fetchTemplates();
@@ -1505,6 +1562,18 @@ export default {
 
 .header-tags .el-tag {
   flex-shrink: 0;
+}
+
+.current-version-tag {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border: 1px solid #dfe7ff;
+  border-radius: 999px;
+  background: #f4f7ff;
+  color: #5778ff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .more-tag {
@@ -1779,6 +1848,16 @@ export default {
   background: #5778ff;
   color: white;
   border: none;
+  border-radius: 18px;
+  padding: 8px 16px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.header-actions .history-btn {
+  background: #ffffff;
+  color: #4d5b7c;
+  border: 1px solid #d8dce8;
   border-radius: 18px;
   padding: 8px 16px;
   height: 32px;

@@ -45,6 +45,7 @@ import xiaozhi.modules.agent.service.AgentChatHistoryService;
 import xiaozhi.modules.agent.service.AgentContextProviderService;
 import xiaozhi.modules.agent.service.AgentPluginMappingService;
 import xiaozhi.modules.agent.service.AgentService;
+import xiaozhi.modules.agent.service.AgentSnapshotService;
 import xiaozhi.modules.agent.service.AgentTagService;
 import xiaozhi.modules.agent.service.AgentTemplateService;
 import xiaozhi.modules.agent.vo.AgentInfoVO;
@@ -76,6 +77,7 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
     private final AgentContextProviderService agentContextProviderService;
     private final AgentTagService agentTagService;
     private final CorrectWordFileService correctWordFileService;
+    private final AgentSnapshotService agentSnapshotService;
 
     @Override
     public PageData<AgentEntity> adminAgentList(Map<String, Object> params) {
@@ -276,10 +278,21 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateAgentById(String agentId, AgentUpdateDTO dto) {
+        updateAgentById(agentId, dto, true);
+    }
+
+    // 根据id更新智能体信息
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateAgentById(String agentId, AgentUpdateDTO dto, boolean createSnapshot) {
         // 先查询现有实体
         AgentEntity existingEntity = this.getAgentById(agentId);
         if (existingEntity == null) {
             throw new RenException(ErrorCode.AGENT_NOT_FOUND);
+        }
+
+        if (createSnapshot) {
+            agentSnapshotService.createSnapshot(agentId, "config", dto);
         }
 
         // 只更新提供的非空字段
@@ -428,6 +441,11 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         // 更新替换词文件关联
         if (dto.getCorrectWordFileIds() != null) {
             correctWordFileService.saveAgentCorrectWords(agentId, dto.getCorrectWordFileIds());
+        }
+
+        // 更新智能体标签
+        if (dto.getTagNames() != null || dto.getTagIds() != null) {
+            agentTagService.saveAgentTags(agentId, dto.getTagIds(), dto.getTagNames());
         }
 
         boolean b = validateLLMIntentParams(dto.getLlmModelId(), dto.getIntentModelId());

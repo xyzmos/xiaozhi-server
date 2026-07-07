@@ -127,7 +127,7 @@ public class AgentController {
         }
         AgentUpdateDTO agentUpdateDTO = new AgentUpdateDTO();
         agentUpdateDTO.setSummaryMemory(dto.getSummaryMemory());
-        agentService.updateAgentById(device.getAgentId(), agentUpdateDTO);
+        agentService.updateAgentById(device.getAgentId(), agentUpdateDTO, false);
         return new Result<>();
     }
 
@@ -332,7 +332,10 @@ public class AgentController {
     public Result<Void> saveAgentTags(@PathVariable String id, @RequestBody Map<String, Object> params) {
         List<String> tagIds = (List<String>) params.get("tagIds");
         List<String> tagNames = (List<String>) params.get("tagNames");
-        agentTagService.saveAgentTags(id, tagIds, tagNames);
+        AgentUpdateDTO dto = new AgentUpdateDTO();
+        dto.setTagIds(tagIds);
+        dto.setTagNames(tagNames);
+        agentService.updateAgentById(id, dto);
         return new Result<Void>().ok(null);
     }
 

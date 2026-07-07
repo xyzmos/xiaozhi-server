@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xiaozhi.modules.agent.dao.AgentSnapshotDao">
+
+    <select id="selectMaxVersionNo" resultType="java.lang.Integer">
+        SELECT COALESCE(MAX(version_no), 0)
+        FROM ai_agent_snapshot
+        WHERE agent_id = #{agentId}
+    </select>
+
+    <select id="selectNextSnapshot" resultType="xiaozhi.modules.agent.entity.AgentSnapshotEntity">
+        SELECT id,
+               agent_id       AS agentId,
+               user_id        AS userId,
+               version_no     AS versionNo,
+               snapshot_data  AS snapshotData,
+               changed_fields AS changedFields,
+               source,
+               creator,
+               created_at     AS createdAt
+        FROM ai_agent_snapshot
+        WHERE agent_id = #{agentId}
+          AND version_no &gt; #{versionNo}
+        ORDER BY version_no ASC
+        LIMIT 1
+    </select>
+
+</mapper>
