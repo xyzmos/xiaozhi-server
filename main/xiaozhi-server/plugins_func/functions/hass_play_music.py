@@ -1,7 +1,7 @@
-from plugins_func.register import register_function, ToolType, ActionResponse, Action
-from plugins_func.functions.hass_init import initialize_hass_handler
+import httpx
 from config.logger import setup_logging
-import requests
+from plugins_func.functions.hass_init import initialize_hass_handler
+from plugins_func.register import register_function, ToolType, ActionResponse, Action
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -36,23 +36,11 @@ hass_play_music_function_desc = {
 @register_function(
     "hass_play_music", hass_play_music_function_desc, ToolType.SYSTEM_CTL
 )
-def hass_play_music(conn: "ConnectionHandler", entity_id="", media_content_id="random"):
+async def hass_play_music(conn: "ConnectionHandler", entity_id="", media_content_id="random"):
     try:
-        task = conn.loop.create_task(
-            handle_hass_play_music(conn, entity_id, media_content_id)
-        )
-
-        def handle_done(f):
-            try:
-                f.result()
-                logger.bind(tag=TAG).info("音乐播放完成")
-            except Exception as e:
-                logger.bind(tag=TAG).error(f"音乐播放失败: {e}")
-
-        task.add_done_callback(handle_done)
-
+        result = await handle_hass_play_music(conn, entity_id, media_content_id)
         return ActionResponse(
-            action=Action.RECORD, result="指令已接收", response="正在为您播放音乐"
+            action=Action.RECORD, result="指令已接收", response=result
         )
     except Exception as e:
         logger.bind(tag=TAG).error(f"处理音乐意图错误: {e}")
@@ -70,7 +58,10 @@ async def handle_hass_play_music(
     url = f"{base_url}/api/services/music_assistant/play_media"
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     data = {"entity_id": entity_id, "media_id": media_content_id}
-    response = requests.post(url, headers=headers, json=data)
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=3.0)) as client:
+        response = await client.post(url, headers=headers, json=data)
+
     if response.status_code == 200:
         return f"正在播放{media_content_id}的音乐"
     else:
