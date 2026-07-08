@@ -983,7 +983,7 @@ class ConnectionHandler:
                 llm_responses = self.llm.response_with_functions(
                     self.session_id,
                     self.dialogue.get_llm_dialogue_with_memory(
-                        memory_str, self.config.get("voiceprint", {})
+                        memory_str, self.config.get("voiceprint", {}), self.current_speaker
                     ),
                     functions=functions,
                 )
@@ -991,7 +991,7 @@ class ConnectionHandler:
                 llm_responses = self.llm.response(
                     self.session_id,
                     self.dialogue.get_llm_dialogue_with_memory(
-                        memory_str, self.config.get("voiceprint", {})
+                        memory_str, self.config.get("voiceprint", {}), self.current_speaker
                     ),
                 )
         except Exception as e:
