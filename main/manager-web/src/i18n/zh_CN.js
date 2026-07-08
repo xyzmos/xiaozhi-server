@@ -275,7 +275,7 @@ export default {
   'voicePrint.closeOperation': '操作已关闭',
   'voicePrint.loading': '拼命加载中',
 
-  // 手動添加設備對話框相關
+  // 手动添加设备对话框相关
   'manualAddDeviceDialog.title': '手动添加设备',
   'manualAddDeviceDialog.deviceType': '设备型号',
   'manualAddDeviceDialog.deviceTypePlaceholder': '请选择设备型号',
@@ -865,7 +865,6 @@ export default {
   'roleConfig.audioPlayFailed': '音频播放失败',
   'roleConfig.cannotPlayAudio': '无法播放音频',
   'roleConfig.audioPlayError': '播放音频过程出错',
-
   'agentSnapshot.title': '历史版本',
   'agentSnapshot.empty': '暂无历史版本',
   'agentSnapshot.version': '版本',
@@ -1451,10 +1450,6 @@ export default {
   'knowledgeFileUpload.viewSlices': '查看切片',
   'knowledgeFileUpload.delete': '删除',
   'knowledgeFileUpload.itemsPerPage': '条/页',
-  'knowledgeFileUpload.firstPage': '首页',
-  'knowledgeFileUpload.prevPage': '上一页',
-  'knowledgeFileUpload.nextPage': '下一页',
-  'knowledgeFileUpload.totalRecords': '共{total}条记录',
   'knowledgeFileUpload.uploadDocument': '上传文档',
   'knowledgeFileUpload.documentNamePlaceholder': '请输入文档名称',
   'knowledgeFileUpload.file': '文件',
@@ -1493,10 +1488,7 @@ export default {
   'knowledgeFileUpload.sliceCount': '切片数量',
   'knowledgeFileUpload.add': '新增',
   'knowledgeFileUpload.retrievalTest': '召回测试',
-  'knowledgeFileUpload.testQuestion': '测试问题',
-  'knowledgeFileUpload.testQuestionPlaceholder': '请输入要测试的问题',
   'knowledgeFileUpload.executeTest': '执行测试',
-  'knowledgeFileUpload.testResult': '测试结果：',
   'knowledgeFileUpload.selectedFiles': '已选择文件',
   'knowledgeFileUpload.totalSlices': '共{total}条记录',
   'knowledgeFileUpload.slice': '切片',
@@ -1516,6 +1508,8 @@ export default {
   'knowledgeFileUpload.testQuestionRequired': '请输入测试问题',
   'knowledgeBaseDialog.descriptionRequired': '请输入知识库描述',
   'knowledgeFileUpload.parsing': '正在解析中...',
+
+  // 知识库管理页面文本
   'knowledgeBaseManagement.loading': '加载中...',
   'knowledgeBaseManagement.noData': '暂无数据',
   'knowledgeBaseManagement.switchKnowledgeBase': '切换知识库',
@@ -1570,7 +1564,6 @@ export default {
   'addressBookManagement.name': '通讯录名称',
   'addressBookManagement.description': '通讯录描述',
   'addressBookManagement.contactCount': '联系人数量',
-  'addressBookManagement.status': '启用',
   'addressBookManagement.createdAt': '创建时间',
   'addressBookManagement.operation': '操作',
   'addressBookManagement.add': '新增',
@@ -1591,9 +1584,7 @@ export default {
   'addressBookManagement.operationCancelled': '已取消删除操作',
   'addressBookManagement.updateSuccess': '修改成功',
   'addressBookManagement.addSuccess': '新增成功',
-  'addressBookManagement.updateFailed': '更新失败',
   'addressBookManagement.addFailed': '新增失败',
-  'addressBookManagement.selectAll': '全选',
   'addressBookManagement.cancelSelectAll': '取消全选',
   'addressBookManagement.deviceName': '设备名称',
   'addressBookManagement.deviceType': '设备类型',
@@ -1610,7 +1601,6 @@ export default {
   'addressBookManagement.selectDevice': '请选择一个设备查看通讯录详情',
   'addressBookManagement.save': '保存权限',
   'addressBookManagement.saveSuccess': '保存成功',
-  'addressBookManagement.saveFailed': '保存失败',
   'addressBookManagement.deviceNotSelected': '请先选择一个设备',
   'addressBookManagement.addDeviceTip': '新增设备功能开发中',
   'addressBookManagement.selectAgentFirst': '请先选择智能体',
