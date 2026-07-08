@@ -39,7 +39,6 @@ async def resume_vad_detection(conn: "ConnectionHandler"):
 async def startToChat(conn: "ConnectionHandler", text):
     # 检查输入是否是JSON格式（包含说话人信息）
     speaker_name = None
-    language_tag = None
     actual_text = text
 
     try:
@@ -48,12 +47,16 @@ async def startToChat(conn: "ConnectionHandler", text):
             data = json.loads(text)
             if "speaker" in data and "content" in data:
                 speaker_name = data["speaker"]
-                language_tag = data["language"]
-                actual_text = data["content"]
+                actual_content = data["content"]
                 conn.logger.bind(tag=TAG).info(f"解析到说话人信息: {speaker_name}")
 
-                # 直接使用JSON格式的文本，不解析
-                actual_text = text
+                # 仅在该说话人首次出现时保留 {"speaker":...} JSON，让模型自然称呼一次；
+                # 后续轮降为纯文本，避免每轮重复出现名字诱导模型反复称呼
+                if speaker_name not in conn.introduced_speakers:
+                    conn.introduced_speakers.add(speaker_name)
+                    actual_text = text
+                else:
+                    actual_text = actual_content
     except (json.JSONDecodeError, KeyError):
         # 如果解析失败，继续使用原始文本
         pass

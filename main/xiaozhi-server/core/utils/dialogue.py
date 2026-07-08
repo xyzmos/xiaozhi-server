@@ -145,13 +145,13 @@ class Dialogue:
 
             # 追加说话人信息
             try:
-                speakers = voiceprint_config.get("speakers", [])
                 current_speaker_name = (current_speaker or "").strip()
-                if speakers or (current_speaker_name and current_speaker_name != "未知说话人"):
+                # 仅在本轮注入了有效身份时才输出 speakers_info，避免列表里的名字每轮
+                # 重复出现诱导模型反复称呼；后续轮不再注入身份，靠对话历史首轮保留
+                if current_speaker_name and current_speaker_name != "未知说话人":
+                    speakers = voiceprint_config.get("speakers", [])
                     dynamic_part += "\n<speakers_info>"
-                    # 当前说话人置于块首，确保弱模型也能稳定获取身份
-                    if current_speaker_name and current_speaker_name != "未知说话人":
-                        dynamic_part += f"\n当前说话人：{current_speaker_name}"
+                    dynamic_part += f"\n当前说话人：{current_speaker_name}"
                     for speaker_str in speakers:
                         try:
                             parts = speaker_str.split(",", 2)

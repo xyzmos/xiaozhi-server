@@ -156,6 +156,8 @@ class ConnectionHandler:
         self.asr_audio = []
         self.asr_audio_queue = queue.Queue()
         self.current_speaker = None  # 存储当前说话人
+        self.introduced_speakers = set()  # 已"首次引入"的说话人，控制只在首轮带名字
+        self.system_introduced_speakers = set()  # 已在 system 注入过身份的说话人，控制 system 身份只首轮出现
 
         # llm相关变量
         self.dialogue = Dialogue()
@@ -978,12 +980,20 @@ class ConnectionHandler:
                 )
                 memory_str = future.result()
 
+            # 仅在该说话人首次出现时把身份注入 system，之后靠对话历史首轮保留，
+            # 避免每轮在 system 重复出现名字诱导模型反复称呼
+            speaker_for_system = None
+            cs = (self.current_speaker or "").strip()
+            if cs and cs != "未知说话人" and cs not in self.system_introduced_speakers:
+                self.system_introduced_speakers.add(cs)
+                speaker_for_system = cs
+
             if self.intent_type == "function_call" and functions is not None:
                 # 使用支持functions的streaming接口
                 llm_responses = self.llm.response_with_functions(
                     self.session_id,
                     self.dialogue.get_llm_dialogue_with_memory(
-                        memory_str, self.config.get("voiceprint", {}), self.current_speaker
+                        memory_str, self.config.get("voiceprint", {}), speaker_for_system
                     ),
                     functions=functions,
                 )
@@ -991,7 +1001,7 @@ class ConnectionHandler:
                 llm_responses = self.llm.response(
                     self.session_id,
                     self.dialogue.get_llm_dialogue_with_memory(
-                        memory_str, self.config.get("voiceprint", {}), self.current_speaker
+                        memory_str, self.config.get("voiceprint", {}), speaker_for_system
                     ),
                 )
         except Exception as e:
