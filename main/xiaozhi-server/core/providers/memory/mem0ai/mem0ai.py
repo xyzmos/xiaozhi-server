@@ -1,4 +1,5 @@
 import json
+import asyncio
 import traceback
 
 from ..base import MemoryProviderBase, logger
@@ -84,7 +85,9 @@ class MemoryProvider(MemoryProviderBase):
             except (json.JSONDecodeError, KeyError):
                 pass
 
-            results = self.client.search(search_query, filters=filters)
+            results = await asyncio.to_thread(
+                self.client.search, search_query, filters=filters
+            )
             if not results or "results" not in results:
                 return ""
 
