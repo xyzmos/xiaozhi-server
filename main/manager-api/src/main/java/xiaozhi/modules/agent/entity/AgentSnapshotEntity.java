@@ -36,6 +36,12 @@ public class AgentSnapshotEntity {
     @Schema(description = "快照来源")
     private String source;
 
+    @Schema(description = "恢复来源快照ID")
+    private String restoreFromSnapshotId;
+
+    @Schema(description = "恢复来源版本号")
+    private Integer restoreFromVersionNo;
+
     @Schema(description = "创建者")
     private Long creator;
 

@@ -7,15 +7,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.metadata.OrderItem;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import lombok.AllArgsConstructor;
@@ -30,6 +34,7 @@ import xiaozhi.modules.agent.dao.AgentSnapshotDao;
 import xiaozhi.modules.agent.dao.AgentTagDao;
 import xiaozhi.modules.agent.dao.AgentTagRelationDao;
 import xiaozhi.modules.agent.dto.AgentSnapshotDataDTO;
+import xiaozhi.modules.agent.dto.AgentSnapshotPageDTO;
 import xiaozhi.modules.agent.dto.AgentSnapshotTagDTO;
 import xiaozhi.modules.agent.dto.AgentUpdateDTO;
 import xiaozhi.modules.agent.entity.AgentContextProviderEntity;
@@ -38,6 +43,7 @@ import xiaozhi.modules.agent.entity.AgentPluginMapping;
 import xiaozhi.modules.agent.entity.AgentSnapshotEntity;
 import xiaozhi.modules.agent.entity.AgentTagEntity;
 import xiaozhi.modules.agent.entity.AgentTagRelationEntity;
+import xiaozhi.modules.agent.Enums.AgentSnapshotField;
 import xiaozhi.modules.agent.service.AgentChatHistoryService;
 import xiaozhi.modules.agent.service.AgentContextProviderService;
 import xiaozhi.modules.agent.service.AgentPluginMappingService;
@@ -54,10 +60,14 @@ import xiaozhi.modules.security.user.SecurityUser;
 @AllArgsConstructor
 public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, AgentSnapshotEntity>
         implements AgentSnapshotService {
+    private static final int MAX_SNAPSHOTS_PER_AGENT = 100;
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
     };
     private static final TypeReference<HashMap<String, Object>> PARAM_INFO_TYPE = new TypeReference<>() {
     };
+    private static final TypeReference<Map<String, Object>> OBJECT_MAP_TYPE = new TypeReference<>() {
+    };
+    private static final String SECRET_PLACEHOLDER = "__SNAPSHOT_SECRET_REDACTED__";
 
     private final AgentSnapshotDao agentSnapshotDao;
     private final AgentDao agentDao;
@@ -73,33 +83,27 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createSnapshot(String agentId, String source, AgentUpdateDTO pendingUpdate) {
-        AgentSnapshotDataDTO snapshotData = buildSnapshotData(agentId);
+        AgentInfoVO agent = getAgentInfo(agentId);
+        AgentSnapshotDataDTO snapshotData = buildSnapshotData(agent);
         List<String> changedFields = getChangedFields(snapshotData, pendingUpdate);
         if (pendingUpdate != null && changedFields.isEmpty()) {
             return;
         }
 
-        AgentInfoVO agent = agentDao.selectAgentInfoById(agentId);
-        if (agent == null) {
-            throw new RenException(ErrorCode.AGENT_NOT_FOUND);
-        }
-
-        AgentSnapshotEntity entity = new AgentSnapshotEntity();
-        entity.setAgentId(agentId);
-        entity.setUserId(agent.getUserId());
-        entity.setSnapshotData(JsonUtils.toJsonString(snapshotData));
-        entity.setChangedFields(JsonUtils.toJsonString(changedFields));
-        entity.setSource(StringUtils.defaultIfBlank(source, "config"));
-        entity.setCreator(SecurityUser.getUserId());
-        entity.setCreatedAt(new Date());
-        insertSnapshotWithRetry(entity);
+        insertSnapshot(agentId, agent.getUserId(), source, snapshotData, changedFields);
     }
 
     @Override
-    public PageData<AgentSnapshotVO> page(String agentId, Map<String, Object> params) {
-        IPage<AgentSnapshotEntity> page = getPage(params, "created_at", false);
+    @Transactional(rollbackFor = Exception.class)
+    public PageData<AgentSnapshotVO> page(String agentId, AgentSnapshotPageDTO params) {
+        ensureInitialSnapshot(agentId);
+        AgentSnapshotPageDTO pageParams = params == null ? new AgentSnapshotPageDTO() : params;
+        Page<AgentSnapshotEntity> page = new Page<>(pageParams.pageOrDefault(), pageParams.limitOrDefault());
+        page.addOrder(OrderItem.desc("version_no"));
         IPage<AgentSnapshotEntity> result = agentSnapshotDao.selectPage(page,
-                new QueryWrapper<AgentSnapshotEntity>().eq("agent_id", agentId));
+                new QueryWrapper<AgentSnapshotEntity>()
+                        .eq("agent_id", agentId)
+                        .le(pageParams.getMaxVersionNo() != null, "version_no", pageParams.getMaxVersionNo()));
         List<AgentSnapshotVO> list = result.getRecords().stream()
                 .map(entity -> toVO(entity, false))
                 .toList();
@@ -115,44 +119,109 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void restoreSnapshot(String agentId, String snapshotId) {
+        AgentEntity agent = agentDao.selectByIdForUpdate(agentId);
+        if (agent == null) {
+            throw new RenException(ErrorCode.AGENT_NOT_FOUND);
+        }
+
         AgentSnapshotEntity snapshot = getSnapshotEntity(agentId, snapshotId);
         AgentSnapshotDataDTO data = JsonUtils.parseObject(snapshot.getSnapshotData(), AgentSnapshotDataDTO.class);
         if (data == null) {
             throw new RenException("快照数据为空，无法恢复");
         }
 
-        createSnapshot(agentId, "restore", null);
+        AgentInfoVO currentAgent = getAgentInfo(agentId);
+        AgentSnapshotDataDTO currentData = buildSnapshotData(currentAgent);
+        AgentSnapshotDataDTO restoreData = preserveCurrentSensitiveValues(data, currentData);
+        List<String> changedFields = getChangedFields(currentData, restoreData);
+        insertSnapshot(agentId, currentAgent.getUserId(), "restore", currentData, changedFields,
+                snapshot.getId(), snapshot.getVersionNo());
 
-        AgentEntity agent = agentDao.selectById(agentId);
-        if (agent == null) {
-            throw new RenException(ErrorCode.AGENT_NOT_FOUND);
-        }
-        applyAgentFields(agent, data);
+        applyAgentFields(agent, restoreData);
         validateRestoreParams(agent);
         applyMemoryPolicy(agent);
         agent.setUpdater(SecurityUser.getUserId());
         agent.setUpdatedAt(new Date());
         agentDao.updateById(agent);
 
-        restoreFunctions(agentId, data.getFunctions());
-        restoreContextProviders(agentId, data.getContextProviders());
-        correctWordFileService.saveAgentCorrectWords(agentId, nullToEmpty(data.getCorrectWordFileIds()));
-        restoreTags(agentId, data);
+        restoreFunctions(agentId, restoreData.getFunctions());
+        restoreContextProviders(agentId, restoreData.getContextProviders());
+        correctWordFileService.saveAgentCorrectWords(agentId, nullToEmpty(restoreData.getCorrectWordFileIds()));
+        restoreTags(agentId, restoreData);
     }
 
-    private void insertSnapshotWithRetry(AgentSnapshotEntity entity) {
-        for (int attempt = 0; attempt < 3; attempt++) {
-            Integer maxVersionNo = agentSnapshotDao.selectMaxVersionNo(entity.getAgentId());
-            entity.setVersionNo((maxVersionNo == null ? 0 : maxVersionNo) + 1);
-            try {
-                agentSnapshotDao.insert(entity);
-                return;
-            } catch (DuplicateKeyException e) {
-                if (attempt == 2) {
-                    throw e;
-                }
-            }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteSnapshot(String agentId, String snapshotId) {
+        AgentSnapshotEntity entity = getSnapshotEntity(agentId, snapshotId);
+        Integer maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
+        if (Objects.equals(entity.getVersionNo(), maxVersionNo)) {
+            throw new RenException("最新历史版本不能删除");
         }
+        deleteById(snapshotId);
+    }
+
+    @Override
+    public Integer getCurrentVersionNo(String agentId) {
+        Integer maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
+        return (maxVersionNo == null ? 0 : maxVersionNo) + 1;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteByAgentId(String agentId) {
+        agentSnapshotDao.delete(new QueryWrapper<AgentSnapshotEntity>().eq("agent_id", agentId));
+    }
+
+    private void insertSnapshot(String agentId, Long userId, String source, AgentSnapshotDataDTO snapshotData,
+            List<String> changedFields) {
+        insertSnapshot(agentId, userId, source, snapshotData, changedFields, null, null);
+    }
+
+    private void insertSnapshot(String agentId, Long userId, String source, AgentSnapshotDataDTO snapshotData,
+            List<String> changedFields, String restoreFromSnapshotId, Integer restoreFromVersionNo) {
+        AgentSnapshotEntity entity = new AgentSnapshotEntity();
+        entity.setAgentId(agentId);
+        entity.setUserId(userId);
+        entity.setVersionNo(allocateVersionNo(agentId));
+        entity.setSnapshotData(JsonUtils.toJsonString(redactSnapshotData(snapshotData)));
+        entity.setChangedFields(JsonUtils.toJsonString(changedFields));
+        entity.setSource(StringUtils.defaultIfBlank(source, "config"));
+        entity.setRestoreFromSnapshotId(restoreFromSnapshotId);
+        entity.setRestoreFromVersionNo(restoreFromVersionNo);
+        entity.setCreator(SecurityUser.getUserId());
+        entity.setCreatedAt(new Date());
+        agentSnapshotDao.insert(entity);
+        pruneSnapshots(agentId);
+    }
+
+    private void ensureInitialSnapshot(String agentId) {
+        Integer maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
+        if (maxVersionNo != null && maxVersionNo > 0) {
+            return;
+        }
+        AgentEntity agent = agentDao.selectByIdForUpdate(agentId);
+        if (agent == null) {
+            throw new RenException(ErrorCode.AGENT_NOT_FOUND);
+        }
+        maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
+        if (maxVersionNo != null && maxVersionNo > 0) {
+            return;
+        }
+        AgentInfoVO agentInfo = getAgentInfo(agentId);
+        insertSnapshot(agentId, agentInfo.getUserId(), "initial", buildSnapshotData(agentInfo), List.of("initial"));
+    }
+
+    private void pruneSnapshots(String agentId) {
+        agentSnapshotDao.deleteOlderThanKeepLimit(agentId, MAX_SNAPSHOTS_PER_AGENT);
+    }
+
+    private Integer allocateVersionNo(String agentId) {
+        Integer maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
+        if (maxVersionNo == null || maxVersionNo < 0) {
+            throw new RenException("快照版本号生成失败");
+        }
+        return maxVersionNo + 1;
     }
 
     private AgentSnapshotEntity getSnapshotEntity(String agentId, String snapshotId) {
@@ -163,12 +232,19 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         return entity;
     }
 
-    private AgentSnapshotDataDTO buildSnapshotData(String agentId) {
+    private AgentInfoVO getAgentInfo(String agentId) {
         AgentInfoVO agent = agentDao.selectAgentInfoById(agentId);
         if (agent == null) {
             throw new RenException(ErrorCode.AGENT_NOT_FOUND);
         }
+        return agent;
+    }
 
+    private AgentSnapshotDataDTO buildSnapshotData(String agentId) {
+        return buildSnapshotData(getAgentInfo(agentId));
+    }
+
+    private AgentSnapshotDataDTO buildSnapshotData(AgentInfoVO agent) {
         AgentSnapshotDataDTO data = new AgentSnapshotDataDTO();
         data.setAgentCode(agent.getAgentCode());
         data.setAgentName(agent.getAgentName());
@@ -192,9 +268,9 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         data.setLanguage(agent.getLanguage());
         data.setSort(agent.getSort());
         data.setFunctions(toFunctionInfo(agent.getFunctions()));
-        data.setContextProviders(getContextProviders(agentId));
-        data.setCorrectWordFileIds(nullToEmpty(correctWordFileService.getAgentCorrectWordFileIds(agentId)));
-        List<AgentSnapshotTagDTO> tags = getSnapshotTags(agentId);
+        data.setContextProviders(getContextProviders(agent.getId()));
+        data.setCorrectWordFileIds(nullToEmpty(correctWordFileService.getAgentCorrectWordFileIds(agent.getId())));
+        List<AgentSnapshotTagDTO> tags = getSnapshotTags(agent.getId());
         data.setTags(tags);
         data.setTagNames(tags.stream().map(AgentSnapshotTagDTO::getTagName).toList());
         return data;
@@ -250,64 +326,124 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         }
 
         List<String> fields = new ArrayList<>();
-        compare(fields, "agentCode", current.getAgentCode(), pendingUpdate.getAgentCode());
-        compare(fields, "agentName", current.getAgentName(), pendingUpdate.getAgentName());
-        compare(fields, "asrModelId", current.getAsrModelId(), pendingUpdate.getAsrModelId());
-        compare(fields, "vadModelId", current.getVadModelId(), pendingUpdate.getVadModelId());
-        compare(fields, "llmModelId", current.getLlmModelId(), pendingUpdate.getLlmModelId());
-        compare(fields, "slmModelId", current.getSlmModelId(), pendingUpdate.getSlmModelId());
-        compare(fields, "vllmModelId", current.getVllmModelId(), pendingUpdate.getVllmModelId());
-        compare(fields, "ttsModelId", current.getTtsModelId(), pendingUpdate.getTtsModelId());
-        compare(fields, "ttsVoiceId", current.getTtsVoiceId(), pendingUpdate.getTtsVoiceId());
-        compare(fields, "ttsLanguage", current.getTtsLanguage(), pendingUpdate.getTtsLanguage());
-        compare(fields, "ttsVolume", current.getTtsVolume(), pendingUpdate.getTtsVolume());
-        compare(fields, "ttsRate", current.getTtsRate(), pendingUpdate.getTtsRate());
-        compare(fields, "ttsPitch", current.getTtsPitch(), pendingUpdate.getTtsPitch());
-        compare(fields, "memModelId", current.getMemModelId(), pendingUpdate.getMemModelId());
-        compare(fields, "intentModelId", current.getIntentModelId(), pendingUpdate.getIntentModelId());
-        compare(fields, "chatHistoryConf", current.getChatHistoryConf(), pendingUpdate.getChatHistoryConf());
-        compare(fields, "systemPrompt", current.getSystemPrompt(), pendingUpdate.getSystemPrompt());
-        compare(fields, "summaryMemory", current.getSummaryMemory(), pendingUpdate.getSummaryMemory());
-        compare(fields, "langCode", current.getLangCode(), pendingUpdate.getLangCode());
-        compare(fields, "language", current.getLanguage(), pendingUpdate.getLanguage());
-        compare(fields, "sort", current.getSort(), pendingUpdate.getSort());
-        compare(fields, "functions", current.getFunctions(), pendingUpdate.getFunctions());
-        compare(fields, "contextProviders", current.getContextProviders(), pendingUpdate.getContextProviders());
-        compare(fields, "correctWordFileIds", current.getCorrectWordFileIds(), pendingUpdate.getCorrectWordFileIds());
-        compare(fields, "tagNames", current.getTagNames(), pendingUpdate.getTagNames());
-        compare(fields, "tagIds", current.getTags().stream().map(AgentSnapshotTagDTO::getId).toList(),
-                pendingUpdate.getTagIds());
+        for (AgentSnapshotField field : AgentSnapshotField.values()) {
+            Object nextValue = field.updateValue(pendingUpdate);
+            if (nextValue != null && isChanged(field, field.snapshotValue(current), nextValue)) {
+                fields.add(field.getFieldName());
+            }
+        }
         return fields;
     }
 
-    private <T> void compare(List<String> fields, String name, T current, T next) {
-        if (next != null && !Objects.equals(current, next)) {
-            fields.add(name);
+    private List<String> getChangedFields(AgentSnapshotDataDTO current, AgentSnapshotDataDTO next) {
+        if (next == null) {
+            return List.of("restore");
         }
+        if (current == null) {
+            current = new AgentSnapshotDataDTO();
+        }
+
+        List<String> fields = new ArrayList<>();
+        for (AgentSnapshotField field : AgentSnapshotField.values()) {
+            if (isChanged(field, field.snapshotValue(current), field.snapshotValue(next))) {
+                fields.add(field.getFieldName());
+            }
+        }
+        return fields;
+    }
+
+    private boolean isChanged(AgentSnapshotField field, Object current, Object next) {
+        return !Objects.equals(normalizeForCompare(field, current), normalizeForCompare(field, next));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object normalizeForCompare(AgentSnapshotField field, Object value) {
+        return switch (field) {
+            case FUNCTIONS -> normalizeFunctions((List<AgentUpdateDTO.FunctionInfo>) value);
+            case CONTEXT_PROVIDERS -> normalizeSortedJsonList((List<?>) value);
+            case CORRECT_WORD_FILE_IDS -> normalizeStringList((List<String>) value);
+            case TAG_NAMES -> normalizeStringList((List<String>) value);
+            default -> value;
+        };
+    }
+
+    private Map<String, Object> normalizeFunctions(List<AgentUpdateDTO.FunctionInfo> functions) {
+        Map<String, Object> result = new TreeMap<>();
+        if (functions == null) {
+            return result;
+        }
+        for (AgentUpdateDTO.FunctionInfo function : functions) {
+            if (function == null || StringUtils.isBlank(function.getPluginId())) {
+                continue;
+            }
+            result.put(function.getPluginId(), normalizeMap(function.getParamInfo()));
+        }
+        return result;
+    }
+
+    private List<String> normalizeStringList(List<String> values) {
+        if (values == null) {
+            return Collections.emptyList();
+        }
+        return values.stream()
+                .filter(StringUtils::isNotBlank)
+                .sorted()
+                .toList();
+    }
+
+    private <T> List<String> normalizeSortedJsonList(List<T> values) {
+        if (values == null) {
+            return Collections.emptyList();
+        }
+        return values.stream()
+                .filter(Objects::nonNull)
+                .map(value -> JsonUtils.toJsonString(normalizeValue(value)))
+                .sorted()
+                .toList();
+    }
+
+    private Object normalizeValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Map<?, ?> map) {
+            return normalizeMap(map);
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(this::normalizeValue).toList();
+        }
+        if (isScalarValue(value)) {
+            return value;
+        }
+        return normalizeMap(JsonUtils.parseObject(JsonUtils.toJsonString(value), OBJECT_MAP_TYPE));
+    }
+
+    private boolean isScalarValue(Object value) {
+        return value instanceof CharSequence
+                || value instanceof Number
+                || value instanceof Boolean
+                || value instanceof Character
+                || value instanceof Enum<?>
+                || value instanceof Date;
+    }
+
+    private Map<String, Object> normalizeMap(Map<?, ?> map) {
+        Map<String, Object> result = new TreeMap<>();
+        if (map == null) {
+            return result;
+        }
+        map.forEach((key, value) -> {
+            if (key != null) {
+                result.put(String.valueOf(key), normalizeValue(value));
+            }
+        });
+        return result;
     }
 
     private void applyAgentFields(AgentEntity agent, AgentSnapshotDataDTO data) {
-        agent.setAgentCode(data.getAgentCode());
-        agent.setAgentName(data.getAgentName());
-        agent.setAsrModelId(data.getAsrModelId());
-        agent.setVadModelId(data.getVadModelId());
-        agent.setLlmModelId(data.getLlmModelId());
-        agent.setSlmModelId(data.getSlmModelId());
-        agent.setVllmModelId(data.getVllmModelId());
-        agent.setTtsModelId(data.getTtsModelId());
-        agent.setTtsVoiceId(data.getTtsVoiceId());
-        agent.setTtsLanguage(data.getTtsLanguage());
-        agent.setTtsVolume(data.getTtsVolume());
-        agent.setTtsRate(data.getTtsRate());
-        agent.setTtsPitch(data.getTtsPitch());
-        agent.setMemModelId(data.getMemModelId());
-        agent.setIntentModelId(data.getIntentModelId());
-        agent.setChatHistoryConf(data.getChatHistoryConf());
-        agent.setSystemPrompt(data.getSystemPrompt());
-        agent.setSummaryMemory(data.getSummaryMemory());
-        agent.setLangCode(data.getLangCode());
-        agent.setLanguage(data.getLanguage());
-        agent.setSort(data.getSort());
+        for (AgentSnapshotField field : AgentSnapshotField.values()) {
+            field.applyTo(agent, data);
+        }
     }
 
     private void validateRestoreParams(AgentEntity agent) {
@@ -406,26 +542,22 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         AgentTagEntity tag = null;
         if (StringUtils.isNotBlank(snapshotTag.getId())) {
             tag = agentTagDao.selectById(snapshotTag.getId());
+            if (tag != null && Objects.equals(tag.getDeleted(), 1)) {
+                tag = null;
+            }
         }
         if (tag == null) {
             tag = agentTagDao.selectOne(new QueryWrapper<AgentTagEntity>()
                     .eq("tag_name", snapshotTag.getTagName())
+                    .eq("deleted", 0)
                     .last("LIMIT 1"));
         }
         if (tag != null) {
-            if (Objects.equals(tag.getDeleted(), 1)) {
-                tag.setDeleted(0);
-                tag.setUpdater(SecurityUser.getUserId());
-                tag.setUpdatedAt(now);
-                agentTagDao.updateById(tag);
-            }
             return tag.getId();
         }
 
         AgentTagEntity newTag = new AgentTagEntity();
-        if (StringUtils.isNotBlank(snapshotTag.getId())) {
-            newTag.setId(snapshotTag.getId());
-        }
+        newTag.setId(UUID.randomUUID().toString().replace("-", ""));
         newTag.setTagName(snapshotTag.getTagName());
         newTag.setSort(snapshotTag.getSort() == null ? 0 : snapshotTag.getSort());
         newTag.setDeleted(0);
@@ -444,12 +576,16 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         vo.setUserId(entity.getUserId());
         vo.setVersionNo(entity.getVersionNo());
         vo.setChangedFields(parseChangedFields(entity.getChangedFields()));
+        vo.setFieldOrder(AgentSnapshotField.names());
         vo.setSource(entity.getSource());
+        vo.setRestoreFromSnapshotId(entity.getRestoreFromSnapshotId());
+        vo.setRestoreFromVersionNo(entity.getRestoreFromVersionNo());
         vo.setCreator(entity.getCreator());
         vo.setCreatedAt(entity.getCreatedAt());
         if (includeData) {
-            vo.setSnapshotData(JsonUtils.parseObject(entity.getSnapshotData(), AgentSnapshotDataDTO.class));
-            vo.setAfterSnapshotData(getAfterSnapshotData(entity));
+            vo.setSnapshotData(redactSnapshotData(JsonUtils.parseObject(entity.getSnapshotData(),
+                    AgentSnapshotDataDTO.class)));
+            vo.setAfterSnapshotData(redactSnapshotData(getAfterSnapshotData(entity)));
         }
         return vo;
     }
@@ -459,7 +595,7 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         if (nextSnapshot != null) {
             return JsonUtils.parseObject(nextSnapshot.getSnapshotData(), AgentSnapshotDataDTO.class);
         }
-        return buildSnapshotData(entity.getAgentId());
+        return null;
     }
 
     private List<String> parseChangedFields(String changedFields) {
@@ -467,6 +603,158 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
             return Collections.emptyList();
         }
         return JsonUtils.parseObject(changedFields, STRING_LIST_TYPE);
+    }
+
+    private AgentSnapshotDataDTO redactSnapshotData(AgentSnapshotDataDTO data) {
+        if (data == null) {
+            return null;
+        }
+        AgentSnapshotDataDTO copy = JsonUtils.parseObject(JsonUtils.toJsonString(data), AgentSnapshotDataDTO.class);
+        if (copy.getFunctions() != null) {
+            copy.getFunctions().forEach(function -> {
+                if (function != null) {
+                    function.setParamInfo(redactSensitiveMap(function.getParamInfo()));
+                }
+            });
+        }
+        if (copy.getContextProviders() != null) {
+            copy.getContextProviders().forEach(provider -> {
+                if (provider != null) {
+                    provider.setHeaders(redactSensitiveMap(provider.getHeaders()));
+                }
+            });
+        }
+        return copy;
+    }
+
+    private AgentSnapshotDataDTO preserveCurrentSensitiveValues(AgentSnapshotDataDTO target, AgentSnapshotDataDTO current) {
+        if (target == null) {
+            return null;
+        }
+        AgentSnapshotDataDTO copy = JsonUtils.parseObject(JsonUtils.toJsonString(target), AgentSnapshotDataDTO.class);
+        Map<String, AgentUpdateDTO.FunctionInfo> currentFunctions = nullToEmpty(current == null ? null : current.getFunctions())
+                .stream()
+                .filter(function -> function != null && StringUtils.isNotBlank(function.getPluginId()))
+                .collect(Collectors.toMap(AgentUpdateDTO.FunctionInfo::getPluginId, Function.identity(),
+                        (left, right) -> left));
+        if (copy.getFunctions() != null) {
+            copy.getFunctions().forEach(function -> {
+                if (function == null) {
+                    return;
+                }
+                AgentUpdateDTO.FunctionInfo currentFunction = currentFunctions.get(function.getPluginId());
+                function.setParamInfo(preserveCurrentSensitiveMap(function.getParamInfo(),
+                        currentFunction == null ? null : currentFunction.getParamInfo()));
+            });
+        }
+
+        Map<String, xiaozhi.modules.agent.dto.ContextProviderDTO> currentProviders = nullToEmpty(
+                current == null ? null : current.getContextProviders())
+                .stream()
+                .filter(provider -> provider != null && StringUtils.isNotBlank(provider.getUrl()))
+                .collect(Collectors.toMap(xiaozhi.modules.agent.dto.ContextProviderDTO::getUrl, Function.identity(),
+                        (left, right) -> left));
+        if (copy.getContextProviders() != null) {
+            copy.getContextProviders().forEach(provider -> {
+                if (provider == null) {
+                    return;
+                }
+                xiaozhi.modules.agent.dto.ContextProviderDTO currentProvider = currentProviders.get(provider.getUrl());
+                provider.setHeaders(preserveCurrentSensitiveMap(provider.getHeaders(),
+                        currentProvider == null ? null : currentProvider.getHeaders()));
+            });
+        }
+        return copy;
+    }
+
+    private HashMap<String, Object> redactSensitiveMap(Map<?, ?> map) {
+        HashMap<String, Object> result = new HashMap<>();
+        if (map == null) {
+            return result;
+        }
+        map.forEach((key, value) -> {
+            if (key != null) {
+                String keyText = String.valueOf(key);
+                result.put(keyText, isSensitiveKey(keyText) ? SECRET_PLACEHOLDER : redactSensitiveValue(value));
+            }
+        });
+        return result;
+    }
+
+    private Object redactSensitiveValue(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            return redactSensitiveMap(map);
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(this::redactSensitiveValue).toList();
+        }
+        return value;
+    }
+
+    private HashMap<String, Object> preserveCurrentSensitiveMap(Map<?, ?> target, Map<?, ?> current) {
+        HashMap<String, Object> result = new HashMap<>();
+        if (target == null) {
+            return result;
+        }
+        target.forEach((key, value) -> {
+            if (key == null) {
+                return;
+            }
+            String keyText = String.valueOf(key);
+            Object currentValue = getMapValue(current, keyText);
+            if (isSensitiveKey(keyText)) {
+                result.put(keyText, currentValue == null || SECRET_PLACEHOLDER.equals(currentValue) ? "" : currentValue);
+            } else {
+                result.put(keyText, preserveCurrentSensitiveValue(value, currentValue));
+            }
+        });
+        return result;
+    }
+
+    private Object preserveCurrentSensitiveValue(Object target, Object current) {
+        if (target instanceof Map<?, ?> targetMap) {
+            return preserveCurrentSensitiveMap(targetMap, current instanceof Map<?, ?> currentMap ? currentMap : null);
+        }
+        if (target instanceof List<?> targetList) {
+            List<?> currentList = current instanceof List<?> list ? list : Collections.emptyList();
+            List<Object> result = new ArrayList<>();
+            for (int i = 0; i < targetList.size(); i++) {
+                Object currentItem = i < currentList.size() ? currentList.get(i) : null;
+                result.add(preserveCurrentSensitiveValue(targetList.get(i), currentItem));
+            }
+            return result;
+        }
+        return target;
+    }
+
+    private Object getMapValue(Map<?, ?> map, String key) {
+        if (map == null) {
+            return null;
+        }
+        if (map.containsKey(key)) {
+            return map.get(key);
+        }
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            if (entry.getKey() != null && Objects.equals(key, String.valueOf(entry.getKey()))) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private boolean isSensitiveKey(String key) {
+        String normalized = StringUtils.defaultString(key).toLowerCase().replaceAll("[^a-z0-9]", "");
+        return normalized.equals("authorization")
+                || normalized.equals("token")
+                || normalized.endsWith("token")
+                || normalized.contains("apikey")
+                || normalized.contains("appkey")
+                || normalized.contains("accesskey")
+                || normalized.contains("privatekey")
+                || normalized.contains("password")
+                || normalized.contains("passwd")
+                || normalized.contains("secret")
+                || normalized.contains("credential");
     }
 
     private <T> List<T> nullToEmpty(List<T> list) {

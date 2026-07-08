@@ -17,7 +17,7 @@
                 </div>
                 <span class="header-title">{{ form.agentName }}</span>
                 <span v-if="currentVersionNo" class="current-version-tag">
-                  当前版本 #{{ currentVersionNo }}
+                  {{ $t("roleConfig.currentVersion", { version: currentVersionNo }) }}
                 </span>
               </div>
               <div class="header-tags">
@@ -319,7 +319,7 @@
                             placement="top"
                           >
                             <div slot="content">
-                              <div><strong>功能名称:</strong> {{ func.name }}</div>
+                              <div><strong>{{ $t("roleConfig.functionName") }}:</strong> {{ func.name }}</div>
                             </div>
                             <div class="icon-dot">
                               {{ getFunctionDisplayChar(func.name) }}
@@ -562,6 +562,7 @@ export default {
         asr: false, // 语音识别功能状态
       },
       dynamicTags: [],
+      originalTagNames: [],
       inputVisible: false,
       inputValue: '',
       checkedReplacementWordIds: []
@@ -618,8 +619,12 @@ export default {
         }),
         contextProviders: this.currentContextProviders,
         correctWordFileIds: this.checkedReplacementWordIds,
-        tagNames: this.dynamicTags.map(tag => tag.tagName),
       };
+      const tagNames = this.dynamicTags.map(tag => tag.tagName);
+      const tagsChanged = !this.isSameStringList(tagNames, this.originalTagNames);
+      if (tagsChanged) {
+        configData.tagNames = tagNames;
+      }
 
       // 只在用户设置了TTS参数时才传递（不为null/undefined）
       if (this.form.ttsVolume !== null && this.form.ttsVolume !== undefined) {
@@ -631,13 +636,20 @@ export default {
       if (this.form.ttsPitch !== null && this.form.ttsPitch !== undefined) {
         configData.ttsPitch = this.form.ttsPitch;
       }
-      Api.agent.updateAgentConfig(this.$route.query.agentId, configData, ({ data }) => {
+      const agentId = this.$route.query.agentId;
+      Api.agent.updateAgentConfig(agentId, configData, ({ data }) => {
         if (data.code === 0) {
-          this.$message.success({
-            message: i18n.t("roleConfig.saveSuccess"),
-            showClose: true,
-          });
-          this.fetchCurrentVersion(this.$route.query.agentId);
+          const afterSave = () => {
+            if (tagsChanged) {
+              this.originalTagNames = [...tagNames];
+            }
+            this.$message.success({
+              message: i18n.t("roleConfig.saveSuccess"),
+              showClose: true,
+            });
+            this.fetchCurrentVersion(agentId);
+          };
+          afterSave();
         } else {
           this.$message.error({
             message: data.msg || i18n.t("roleConfig.saveFailed"),
@@ -661,17 +673,11 @@ export default {
         return;
       }
 
-      Api.agent.getAgentSnapshots(
-        agentId,
-        { page: "1", limit: "1" },
-        ({ data }) => {
-          if (data.code === 0) {
-            const latest = data.data?.list?.[0];
-            const latestVersionNo = Number(latest?.versionNo) || 0;
-            this.currentVersionNo = latestVersionNo + 1;
-          }
+      Api.agent.getDeviceConfig(agentId, ({ data }) => {
+        if (data.code === 0) {
+          this.currentVersionNo = data.data?.currentVersionNo || null;
         }
-      );
+      });
     },
     resetConfig() {
       this.$confirm(i18n.t("roleConfig.confirmReset"), i18n.t("message.info"), {
@@ -862,7 +868,7 @@ export default {
               });
               this.$set(this.modelOptions, model.type, LLMdata);
             } else {
-              this.$message.error(data.msg || "获取LLM模型列表失败");
+              this.$message.error(data.msg || i18n.t("roleConfig.fetchModelsFailed"));
             }
           });
         }
@@ -1385,7 +1391,7 @@ export default {
     handleInputConfirm() {
       let inputValue = this.inputValue;
       if (inputValue) {
-        const tag = { id: new Date().getTime(), tagName: inputValue };
+        const tag = { id: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tagName: inputValue };
         this.dynamicTags.push(tag);
       }
       this.inputVisible = false;
@@ -1395,14 +1401,21 @@ export default {
       Api.agent.getAgentTags(agentId, ({ data }) => {
         if (data.code === 0) {
           this.dynamicTags = data.data || [];
+          this.originalTagNames = this.dynamicTags.map(tag => tag.tagName);
         }
       });
     },
-    handleSaveAgentTags(agentId) {
+    isSameStringList(left, right) {
+      if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+        return false;
+      }
+      return left.every((value, index) => value === right[index]);
+    },
+    handleSaveAgentTags(agentId, tagNames = this.dynamicTags.map(tag => tag.tagName)) {
       return new Promise((resolve, reject) => {
-        const tagNames = this.dynamicTags.map(tag => tag.tagName);
         Api.agent.saveAgentTags(agentId, { tagNames }, ({ data }) => {
           if (data.code === 0) {
+            this.originalTagNames = [...tagNames];
             resolve();
           } else {
             reject(data.msg);

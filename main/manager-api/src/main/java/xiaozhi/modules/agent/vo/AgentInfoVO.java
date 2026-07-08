@@ -25,4 +25,7 @@ public class AgentInfoVO extends AgentEntity
 
     @Schema(description = "替换词文件ID列表")
     private List<String> correctWordFileIds;
+
+    @Schema(description = "当前配置版本号")
+    private Integer currentVersionNo;
 }

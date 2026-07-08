@@ -11,4 +11,6 @@ public interface AgentSnapshotDao extends BaseDao<AgentSnapshotEntity> {
     Integer selectMaxVersionNo(@Param("agentId") String agentId);
 
     AgentSnapshotEntity selectNextSnapshot(@Param("agentId") String agentId, @Param("versionNo") Integer versionNo);
+
+    int deleteOlderThanKeepLimit(@Param("agentId") String agentId, @Param("keepLimit") int keepLimit);
 }

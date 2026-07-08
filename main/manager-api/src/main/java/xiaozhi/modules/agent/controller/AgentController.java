@@ -48,11 +48,8 @@ import xiaozhi.modules.agent.service.AgentTagService;
 import xiaozhi.modules.agent.service.AgentChatAudioService;
 import xiaozhi.modules.agent.service.AgentChatHistoryService;
 import xiaozhi.modules.agent.service.AgentChatSummaryService;
-import xiaozhi.modules.agent.service.AgentContextProviderService;
-import xiaozhi.modules.agent.service.AgentPluginMappingService;
 import xiaozhi.modules.agent.service.AgentService;
 import xiaozhi.modules.agent.service.AgentTemplateService;
-import xiaozhi.modules.correctword.service.CorrectWordFileService;
 import xiaozhi.modules.agent.vo.AgentChatHistoryUserVO;
 import xiaozhi.modules.agent.vo.AgentInfoVO;
 import xiaozhi.modules.device.entity.DeviceEntity;
@@ -69,12 +66,9 @@ public class AgentController {
     private final DeviceService deviceService;
     private final AgentChatHistoryService agentChatHistoryService;
     private final AgentChatAudioService agentChatAudioService;
-    private final AgentPluginMappingService agentPluginMappingService;
-    private final AgentContextProviderService agentContextProviderService;
     private final AgentChatSummaryService agentChatSummaryService;
     private final RedisUtils redisUtils;
     private final AgentTagService agentTagService;
-    private final CorrectWordFileService correctWordFileService;
 
     @GetMapping("/list")
     @Operation(summary = "获取用户智能体列表")
@@ -171,18 +165,7 @@ public class AgentController {
     @Operation(summary = "删除智能体")
     @RequiresPermissions("sys:role:normal")
     public Result<Void> delete(@PathVariable String id) {
-        // 先删除关联的设备
-        deviceService.deleteByAgentId(id);
-        // 删除关联的聊天记录
-        agentChatHistoryService.deleteByAgentId(id, true, true);
-        // 删除关联的插件
-        agentPluginMappingService.deleteByAgentId(id);
-        // 删除关联的上下文源配置
-        agentContextProviderService.deleteByAgentId(id);
-        // 删除关联的替换词文件关联记录
-        correctWordFileService.deleteMappingsByAgentId(id);
-        // 再删除智能体
-        agentService.deleteById(id);
+        agentService.deleteAgent(id);
         return new Result<>();
     }
 

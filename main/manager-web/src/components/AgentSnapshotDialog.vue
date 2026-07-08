@@ -5,7 +5,7 @@
       :visible="visible"
       width="760px"
       class="agent-snapshot-dialog"
-      @open="fetchSnapshots"
+      @open="open"
       @close="close"
     >
       <el-table
@@ -66,7 +66,7 @@
             <span v-else class="field-tags-empty">—</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('agentSnapshot.actions')" width="150" fixed="right">
+        <el-table-column :label="$t('agentSnapshot.actions')" width="190" fixed="right">
           <template slot-scope="scope">
             <el-button
               v-if="canViewSnapshot(scope.row)"
@@ -83,6 +83,16 @@
               @click="restoreSnapshot(scope.row)"
             >
               {{ $t('agentSnapshot.restore') }}
+            </el-button>
+            <el-button
+              v-if="canDeleteSnapshot(scope.row)"
+              type="text"
+              size="small"
+              class="snapshot-delete-button"
+              :loading="deletingSnapshotId === scope.row.id"
+              @click="deleteSnapshot(scope.row)"
+            >
+              {{ $t('agentSnapshot.delete') }}
             </el-button>
           </template>
         </el-table-column>
@@ -185,7 +195,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="value-empty">功能配置无变化</div>
+              <div v-else class="value-empty">{{ $t('agentSnapshot.noFunctionChange') }}</div>
             </div>
             <div v-else class="diff-values" :class="{ 'is-complex': item.complex }">
               <div class="diff-pane diff-before">
@@ -306,7 +316,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="value-empty">功能配置无变化</div>
+              <div v-else class="value-empty">{{ $t('agentSnapshot.noFunctionChange') }}</div>
             </div>
             <div v-else class="diff-values" :class="{ 'is-complex': item.complex }">
               <div class="diff-pane diff-before">
@@ -339,6 +349,22 @@
           :description="$t('agentSnapshot.noChangedContent')"
           :image-size="80"
         />
+        <el-alert
+          v-if="restorePreviewSnapshot"
+          class="restore-risk-alert"
+          type="info"
+          :closable="false"
+          show-icon
+          :title="$t('agentSnapshot.restoreConfirm', { version: restoreTargetVersion })"
+        />
+        <el-alert
+          v-if="restoreWillClearChatHistory"
+          class="restore-risk-alert"
+          type="warning"
+          :closable="false"
+          show-icon
+          :title="$t('agentSnapshot.restoreMemoryWarning')"
+        />
       </div>
       <span slot="footer" class="dialog-footer">
         <el-button @click="restorePreviewVisible = false">
@@ -361,33 +387,33 @@
 import Api from "@/apis/api";
 import { formatDate } from "@/utils/date";
 
-const FALLBACK_PLUGIN_NAMES = {
-  SYSTEM_PLUGIN_WEATHER: "天气查询",
-  SYSTEM_PLUGIN_MUSIC: "服务器音乐播放",
-  SYSTEM_PLUGIN_NEWS_CHINANEWS: "中新网新闻",
-  SYSTEM_PLUGIN_NEWS_NEWSNOW: "newsnow新闻聚合",
-  SYSTEM_PLUGIN_HA_GET_STATE: "HomeAssistant设备状态查询",
-  SYSTEM_PLUGIN_HA_SET_STATE: "HomeAssistant设备状态修改",
-  SYSTEM_PLUGIN_HA_PLAY_MUSIC: "HomeAssistant音乐播放",
-  SYSTEM_PLUGIN_WEB_SEARCH: "联网搜索",
-  SYSTEM_PLUGIN_CALL_DEVICE: "设备呼叫设备"
+const FALLBACK_PLUGIN_NAME_KEYS = {
+  SYSTEM_PLUGIN_WEATHER: "agentSnapshot.plugin.SYSTEM_PLUGIN_WEATHER",
+  SYSTEM_PLUGIN_MUSIC: "agentSnapshot.plugin.SYSTEM_PLUGIN_MUSIC",
+  SYSTEM_PLUGIN_NEWS_CHINANEWS: "agentSnapshot.plugin.SYSTEM_PLUGIN_NEWS_CHINANEWS",
+  SYSTEM_PLUGIN_NEWS_NEWSNOW: "agentSnapshot.plugin.SYSTEM_PLUGIN_NEWS_NEWSNOW",
+  SYSTEM_PLUGIN_HA_GET_STATE: "agentSnapshot.plugin.SYSTEM_PLUGIN_HA_GET_STATE",
+  SYSTEM_PLUGIN_HA_SET_STATE: "agentSnapshot.plugin.SYSTEM_PLUGIN_HA_SET_STATE",
+  SYSTEM_PLUGIN_HA_PLAY_MUSIC: "agentSnapshot.plugin.SYSTEM_PLUGIN_HA_PLAY_MUSIC",
+  SYSTEM_PLUGIN_WEB_SEARCH: "agentSnapshot.plugin.SYSTEM_PLUGIN_WEB_SEARCH",
+  SYSTEM_PLUGIN_CALL_DEVICE: "agentSnapshot.plugin.SYSTEM_PLUGIN_CALL_DEVICE"
 };
 
-const FALLBACK_FIELD_LABELS = {
-  url: "接口地址",
-  news_sources: "新闻源配置",
-  default_rss_url: "默认 RSS 源",
-  society_rss_url: "社会新闻 RSS 地址",
-  world_rss_url: "国际新闻 RSS 地址",
-  finance_rss_url: "财经新闻 RSS 地址",
-  api_key: "API 密钥",
-  default_location: "默认查询城市",
-  api_host: "开发者 API Host",
-  base_url: "服务器地址",
-  devices: "设备列表",
-  provider: "搜索源",
-  description: "工具描述",
-  max_results: "返回数量"
+const FALLBACK_FIELD_LABEL_KEYS = {
+  url: "agentSnapshot.pluginField.url",
+  news_sources: "agentSnapshot.pluginField.news_sources",
+  default_rss_url: "agentSnapshot.pluginField.default_rss_url",
+  society_rss_url: "agentSnapshot.pluginField.society_rss_url",
+  world_rss_url: "agentSnapshot.pluginField.world_rss_url",
+  finance_rss_url: "agentSnapshot.pluginField.finance_rss_url",
+  api_key: "agentSnapshot.pluginField.api_key",
+  default_location: "agentSnapshot.pluginField.default_location",
+  api_host: "agentSnapshot.pluginField.api_host",
+  base_url: "agentSnapshot.pluginField.base_url",
+  devices: "agentSnapshot.pluginField.devices",
+  provider: "agentSnapshot.pluginField.provider",
+  description: "agentSnapshot.pluginField.description",
+  max_results: "agentSnapshot.pluginField.max_results"
 };
 
 const MODEL_FIELD_TYPES = {
@@ -403,29 +429,29 @@ const MODEL_FIELD_TYPES = {
 
 const MODEL_TYPES = ["ASR", "VAD", "LLM", "SLM", "VLLM", "TTS", "Memory", "Intent"];
 
-const FALLBACK_MODEL_NAMES = {
-  Memory_nomem: "无记忆",
-  Memory_mem_local_short: "本地短记忆",
-  Memory_mem0ai: "Mem0AI记忆",
-  Memory_mem_report_only: "仅上报记忆",
-  Intent_nointent: "无意图识别",
-  Intent_intent_llm: "外挂的大模型意图识别",
-  Intent_function_call: "大模型自主函数调用"
+const FALLBACK_MODEL_NAME_KEYS = {
+  Memory_nomem: "agentSnapshot.model.Memory_nomem",
+  Memory_mem_local_short: "agentSnapshot.model.Memory_mem_local_short",
+  Memory_mem0ai: "agentSnapshot.model.Memory_mem0ai",
+  Memory_mem_report_only: "agentSnapshot.model.Memory_mem_report_only",
+  Intent_nointent: "agentSnapshot.model.Intent_nointent",
+  Intent_intent_llm: "agentSnapshot.model.Intent_intent_llm",
+  Intent_function_call: "agentSnapshot.model.Intent_function_call"
 };
 
-const FALLBACK_VOICE_NAMES = {
-  TTS_EdgeTTS0001: "EdgeTTS女声-晓晓",
-  TTS_EdgeTTS0002: "EdgeTTS男声-云扬",
-  TTS_EdgeTTS0003: "EdgeTTS女声-晓伊",
-  TTS_EdgeTTS0004: "EdgeTTS男声-云健",
-  TTS_EdgeTTS0005: "EdgeTTS男声-云希",
-  TTS_EdgeTTS0006: "EdgeTTS男声-云夏"
+const FALLBACK_VOICE_NAME_KEYS = {
+  TTS_EdgeTTS0001: "agentSnapshot.voice.TTS_EdgeTTS0001",
+  TTS_EdgeTTS0002: "agentSnapshot.voice.TTS_EdgeTTS0002",
+  TTS_EdgeTTS0003: "agentSnapshot.voice.TTS_EdgeTTS0003",
+  TTS_EdgeTTS0004: "agentSnapshot.voice.TTS_EdgeTTS0004",
+  TTS_EdgeTTS0005: "agentSnapshot.voice.TTS_EdgeTTS0005",
+  TTS_EdgeTTS0006: "agentSnapshot.voice.TTS_EdgeTTS0006"
 };
 
-const CHAT_HISTORY_CONF_LABELS = {
-  0: "不记录聊天记录",
-  1: "上报文字",
-  2: "上报文字+语音"
+const CHAT_HISTORY_CONF_LABEL_KEYS = {
+  0: "agentSnapshot.chatHistoryConf.none",
+  1: "agentSnapshot.chatHistoryConf.text",
+  2: "agentSnapshot.chatHistoryConf.textVoice"
 };
 
 export default {
@@ -456,16 +482,22 @@ export default {
       currentSnapshot: null,
       restorePreviewSnapshot: null,
       restorePreviewRow: null,
+      deletingSnapshotId: null,
       pluginMetadata: {},
       pluginMetadataLoaded: false,
       pluginMetadataLoading: null,
       modelNameMap: {},
       modelMetadataLoaded: false,
       modelMetadataLoading: null,
-      voiceNameMap: { ...FALLBACK_VOICE_NAMES },
+      voiceNameMap: {},
       voiceMetadataLoading: {},
       loadedVoiceModelIds: {},
       snapshotFetchSeq: 0,
+      detailFetchSeq: 0,
+      restorePreviewFetchSeq: 0,
+      restoreActionSeq: 0,
+      deleteActionSeq: 0,
+      historyAnchorVersionNo: null,
       historyTotal: 0,
       page: 1,
       limit: 10,
@@ -503,10 +535,11 @@ export default {
       const beforeData = this.currentSnapshot.snapshotData || {};
       const afterData = this.currentSnapshot.afterSnapshotData || {};
       return this.buildDiffs(beforeData, afterData, this.currentSnapshot.changedFields || [], {
-        beforeLabel: "变化前",
-        afterLabel: "变化后",
+        beforeLabel: this.$t("agentSnapshot.beforeChange"),
+        afterLabel: this.$t("agentSnapshot.afterChange"),
         beforeVersionNo: this.currentSnapshot.beforeVersionNo,
-        afterVersionNo: this.currentSnapshot.afterVersionNo || this.currentSnapshot.versionNo
+        afterVersionNo: this.currentSnapshot.afterVersionNo || this.currentSnapshot.versionNo,
+        fieldOrder: this.currentSnapshot.fieldOrder
       });
     },
     restorePreviewDiffs() {
@@ -519,17 +552,35 @@ export default {
         this.restorePreviewSnapshot.afterSnapshotData || {},
         [],
         {
-          beforeLabel: "恢复前",
-          afterLabel: "恢复后",
+          beforeLabel: this.$t("agentSnapshot.beforeRestore"),
+          afterLabel: this.$t("agentSnapshot.afterRestore"),
           beforeVersionNo: this.restorePreviewSnapshot.beforeVersionNo || this.resolveCurrentVersionNo(),
-          afterVersionNo: this.restorePreviewSnapshot.afterVersionNo || this.restorePreviewSnapshot.versionNo
+          afterVersionNo: this.restorePreviewSnapshot.afterVersionNo || this.restorePreviewSnapshot.versionNo,
+          fieldOrder: this.restorePreviewSnapshot.fieldOrder
         }
       );
+    },
+    restoreWillClearChatHistory() {
+      return this.restorePreviewSnapshot?.afterSnapshotData?.memModelId === "Memory_nomem";
+    },
+    restoreTargetVersion() {
+      return this.restorePreviewSnapshot?.versionNo || this.restorePreviewRow?.versionNo || "";
     }
+  },
+  watch: {
+    currentVersionNo(newValue, oldValue) {
+      if (this.visible && newValue !== oldValue) {
+        this.historyAnchorVersionNo = null;
+        this.fetchSnapshots({ clearTable: false });
+      }
+    }
+  },
+  beforeDestroy() {
+    this.cancelPendingSnapshotRequests();
   },
   methods: {
     buildDiffs(beforeData, afterData, changedFields, options = {}) {
-      const fields = this.resolveDiffFields(beforeData, afterData, changedFields);
+      const fields = this.resolveDiffFields(beforeData, afterData, changedFields, options.fieldOrder);
       return fields.map((field) => {
         const beforeValue = this.getFieldValue(beforeData, field);
         const afterValue = this.getFieldValue(afterData, field);
@@ -552,9 +603,26 @@ export default {
       });
     },
     close() {
-      this.snapshotFetchSeq += 1;
-      this.loading = false;
+      this.cancelPendingSnapshotRequests();
+      this.historyAnchorVersionNo = null;
       this.$emit("update:visible", false);
+    },
+    open() {
+      this.historyAnchorVersionNo = null;
+      this.page = 1;
+      this.fetchSnapshots();
+    },
+    cancelPendingSnapshotRequests() {
+      this.snapshotFetchSeq += 1;
+      this.detailFetchSeq += 1;
+      this.restorePreviewFetchSeq += 1;
+      this.restoreActionSeq += 1;
+      this.deleteActionSeq += 1;
+      this.loading = false;
+      this.detailLoading = false;
+      this.restorePreviewLoading = false;
+      this.restoring = false;
+      this.deletingSnapshotId = null;
     },
     snapshotRowKey(row) {
       if (row?.isCurrentVersion) {
@@ -566,10 +634,13 @@ export default {
       return row?.isCurrentVersion ? "current-version-row" : "";
     },
     canViewSnapshot(row) {
-      return Number(row?.versionNo) > 1;
+      return !!row && (row.isCurrentVersion || row.previousSnapshotId || row.previousVersionNo);
     },
     canRestoreSnapshot(row) {
       return !!row && !row.isCurrentVersion;
+    },
+    canDeleteSnapshot(row) {
+      return !!row && !row.isCurrentVersion && !row.isLatestSnapshot;
     },
     fetchSnapshots(options = {}) {
       if (!this.agentId) {
@@ -582,7 +653,7 @@ export default {
       const requestSeq = ++this.snapshotFetchSeq;
       const displayStart = (this.page - 1) * this.limit;
       const displayEnd = displayStart + this.limit;
-      const historyFetchLimit = Math.max(displayEnd, this.limit, 1);
+      const historyFetchLimit = Math.max(displayEnd + 1, this.limit, 1);
       this.ensurePluginMetadata();
       this.ensureModelMetadata();
       this.loading = true;
@@ -591,24 +662,32 @@ export default {
       }
       Api.agent.getAgentSnapshots(
         this.agentId,
-        { page: "1", limit: String(historyFetchLimit) },
+        this.snapshotQueryParams({ page: "1", limit: String(historyFetchLimit) }),
         ({ data }) => {
           if (requestSeq !== this.snapshotFetchSeq) {
             return;
           }
           this.loading = false;
           if (data.code === 0) {
-            const historyRows = data.data?.list || [];
+            const historyRows = this.decorateSnapshotRows(data.data?.list || []);
+            if (!this.historyAnchorVersionNo && historyRows[0]?.versionNo) {
+              this.historyAnchorVersionNo = Number(historyRows[0].versionNo);
+            }
+            const currentRow = this.buildCurrentVersionRow(historyRows[0]);
+            const historyOffset = currentRow ? 1 : 0;
             this.historyTotal = data.data?.total || 0;
-            this.total = this.historyTotal + 1;
+            this.total = this.historyTotal + historyOffset;
             if (this.page === 1) {
+              const firstPageRows = historyRows.slice(0, currentRow ? this.limit - 1 : this.limit);
               this.snapshots = [
-                this.buildCurrentVersionRow(historyRows[0]),
-                ...this.applyPreviousChangedFields(historyRows.slice(0, this.limit - 1), historyRows)
+                ...(currentRow ? [currentRow] : []),
+                ...this.applyPreviousChangedFields(firstPageRows, historyRows)
               ];
             } else {
+              const historyStart = Math.max(displayStart - historyOffset, 0);
+              const historyEnd = Math.max(displayEnd - historyOffset, 0);
               this.snapshots = this.applyPreviousChangedFields(
-                historyRows.slice(displayStart - 1, displayEnd - 1),
+                historyRows.slice(historyStart, historyEnd),
                 historyRows
               );
             }
@@ -629,18 +708,27 @@ export default {
       this.detailVisible = true;
       this.detailLoading = true;
       this.currentSnapshot = null;
+      const requestSeq = ++this.detailFetchSeq;
       this.ensurePluginMetadata();
       this.ensureModelMetadata();
       this.buildVersionDiffSnapshot(row)
         .then((snapshot) => this.ensureDisplayMetadata(snapshot).then(() => snapshot))
         .then((snapshot) => {
+          if (requestSeq !== this.detailFetchSeq) {
+            return;
+          }
           this.currentSnapshot = snapshot;
         })
         .catch(() => {
+          if (requestSeq !== this.detailFetchSeq) {
+            return;
+          }
           this.$message.error(this.$t("agentSnapshot.detailFailed"));
         })
         .finally(() => {
-          this.detailLoading = false;
+          if (requestSeq === this.detailFetchSeq) {
+            this.detailLoading = false;
+          }
         });
     },
     restoreSnapshot(row) {
@@ -651,6 +739,7 @@ export default {
       this.restorePreviewLoading = true;
       this.restorePreviewRow = row;
       this.restorePreviewSnapshot = null;
+      const requestSeq = ++this.restorePreviewFetchSeq;
       this.ensurePluginMetadata();
       this.ensureModelMetadata();
 
@@ -658,40 +747,96 @@ export default {
         this.fetchSnapshotDetail(row.id),
         this.fetchCurrentAgentData()
       ]).then(([targetSnapshot, currentData]) => {
+        if (requestSeq !== this.restorePreviewFetchSeq) {
+          return Promise.resolve();
+        }
         const previewSnapshot = {
           ...targetSnapshot,
           beforeSnapshotData: currentData,
           afterSnapshotData: targetSnapshot.snapshotData || {},
           beforeVersionNo: this.resolveCurrentVersionNo(),
-          afterVersionNo: targetSnapshot.versionNo
+          afterVersionNo: targetSnapshot.versionNo,
+          fieldOrder: targetSnapshot.fieldOrder || []
         };
         return this.ensureDisplayMetadata(previewSnapshot).then(() => {
+          if (requestSeq !== this.restorePreviewFetchSeq) {
+            return;
+          }
           this.restorePreviewSnapshot = previewSnapshot;
         });
       }).catch(() => {
+        if (requestSeq !== this.restorePreviewFetchSeq) {
+          return;
+        }
         this.restorePreviewVisible = false;
         this.$message.error(this.$t("agentSnapshot.detailFailed"));
       }).finally(() => {
-        this.restorePreviewLoading = false;
+        if (requestSeq === this.restorePreviewFetchSeq) {
+          this.restorePreviewLoading = false;
+        }
       });
+    },
+    decorateSnapshotRows(rows) {
+      return (rows || []).map((row, index) => ({
+        ...row,
+        isLatestSnapshot: index === 0
+      }));
     },
     confirmRestoreSnapshot() {
       if (!this.restorePreviewRow) {
         return;
       }
       this.restoring = true;
+      const requestSeq = ++this.restoreActionSeq;
       Api.agent.restoreAgentSnapshot(this.agentId, this.restorePreviewRow.id, ({ data }) => {
+        if (requestSeq !== this.restoreActionSeq) {
+          return;
+        }
         this.restoring = false;
         if (data.code === 0) {
           this.$message.success(this.$t("agentSnapshot.restoreSuccess"));
           this.restorePreviewVisible = false;
           this.detailVisible = false;
           this.$emit("restored");
+          this.historyAnchorVersionNo = null;
           this.fetchSnapshots();
         } else {
-          this.$message.error(data.msg || this.$t("agentSnapshot.restoreFailed"));
+          this.$message.error(this.restoreFailedMessage(data));
         }
       });
+    },
+    deleteSnapshot(row) {
+      if (!this.canDeleteSnapshot(row)) {
+        return;
+      }
+      this.$confirm(
+        this.$t("agentSnapshot.deleteConfirm", { version: row.versionNo }),
+        this.$t("common.warning"),
+        {
+          confirmButtonText: this.$t("common.confirm"),
+          cancelButtonText: this.$t("common.cancel"),
+          type: "warning"
+        }
+      ).then(() => {
+        const requestSeq = ++this.deleteActionSeq;
+        this.deletingSnapshotId = row.id;
+        Api.agent.deleteAgentSnapshot(this.agentId, row.id, ({ data }) => {
+          if (requestSeq !== this.deleteActionSeq) {
+            return;
+          }
+          this.deletingSnapshotId = null;
+          if (data.code === 0) {
+            this.$message.success(this.$t("agentSnapshot.deleteSuccess"));
+            const savedRowsOnPage = this.snapshots.filter((item) => !item.isCurrentVersion);
+            if (savedRowsOnPage.length <= 1 && this.page > 1) {
+              this.page -= 1;
+            }
+            this.fetchSnapshots();
+          } else {
+            this.$message.error(data.msg || this.$t("agentSnapshot.deleteFailed"));
+          }
+        });
+      }).catch(() => {});
     },
     hasAfterSnapshotData(snapshot) {
       return !!(
@@ -701,8 +846,9 @@ export default {
       );
     },
     resolveCurrentVersionNo() {
-      if (this.currentVersionNo) {
-        return this.currentVersionNo;
+      const propVersionNo = Number(this.currentVersionNo);
+      if (Number.isFinite(propVersionNo) && propVersionNo > 0) {
+        return propVersionNo;
       }
 
       const currentRow = this.snapshots.find((item) => item.isCurrentVersion);
@@ -710,12 +856,7 @@ export default {
         return currentRow.versionNo;
       }
 
-      const maxVersionNo = Math.max(
-        ...this.snapshots
-          .filter((item) => !item.isCurrentVersion)
-          .map((item) => Number(item.versionNo) || 0)
-      );
-      return maxVersionNo > 0 ? maxVersionNo + 1 : 1;
+      return null;
     },
     formatPaneTitle(label, versionNo) {
       return versionNo ? `${label} #${versionNo}` : label;
@@ -745,7 +886,7 @@ export default {
     },
     fetchSnapshotRows(params) {
       return new Promise((resolve, reject) => {
-        Api.agent.getAgentSnapshots(this.agentId, params, ({ data }) => {
+        Api.agent.getAgentSnapshots(this.agentId, this.snapshotQueryParams(params), ({ data }) => {
           if (data.code === 0) {
             resolve(data.data || { list: [], total: 0 });
           } else {
@@ -753,6 +894,15 @@ export default {
           }
         });
       });
+    },
+    snapshotQueryParams(params = {}) {
+      if (!this.historyAnchorVersionNo) {
+        return params;
+      }
+      return {
+        ...params,
+        maxVersionNo: String(this.historyAnchorVersionNo)
+      };
     },
     applyPreviousChangedFields(rows, sourceRows) {
       return rows.map((row) => {
@@ -763,27 +913,38 @@ export default {
             changedFields: []
           };
         }
-        const previousRow = sourceRows.find((item) => Number(item.versionNo) === versionNo - 1);
+        const previousRow = this.findPreviousSnapshotRow(row, sourceRows);
         return {
           ...row,
+          previousSnapshotId: previousRow?.id || null,
+          previousVersionNo: previousRow?.versionNo || null,
           changedFields: previousRow?.changedFields || []
         };
       });
     },
+    findPreviousSnapshotRow(row, sourceRows) {
+      const versionNo = Number(row?.versionNo);
+      if (!Number.isFinite(versionNo)) {
+        return null;
+      }
+      return (sourceRows || []).find((item) => {
+        return !item.isCurrentVersion && Number(item.versionNo) < versionNo;
+      }) || null;
+    },
     buildCurrentVersionRow(latestSnapshot) {
       const latestVersionNo = Number(latestSnapshot?.versionNo) || 0;
       const propVersionNo = Number(this.currentVersionNo);
-      const inferredVersionNo = latestVersionNo + 1 || 1;
-      const currentVersionNo = Number.isFinite(propVersionNo) && propVersionNo > latestVersionNo
-        ? propVersionNo
-        : inferredVersionNo;
+      if (!Number.isFinite(propVersionNo) || propVersionNo <= latestVersionNo) {
+        return null;
+      }
       return {
         id: "__current__",
         agentId: this.agentId,
-        versionNo: currentVersionNo,
+        versionNo: propVersionNo,
         source: "current",
         createdAt: latestSnapshot?.createdAt || null,
         changedFields: latestSnapshot?.changedFields || [],
+        fieldOrder: latestSnapshot?.fieldOrder || [],
         isCurrentVersion: true,
         previousVersionNo: latestVersionNo || null,
         previousSnapshotId: latestSnapshot?.id || null
@@ -797,9 +958,8 @@ export default {
     },
     buildCurrentVersionDiffSnapshot(row) {
       const currentVersionNo = Number(row.versionNo);
-      const previousVersionNo = currentVersionNo - 1;
       return Promise.all([
-        this.fetchSnapshotDetailByVersion(previousVersionNo),
+        this.fetchPreviousSnapshotDetail(row),
         this.fetchCurrentAgentData()
       ]).then(([previousSnapshot, currentData]) => ({
         ...row,
@@ -807,25 +967,40 @@ export default {
         changedFields: previousSnapshot.changedFields || [],
         snapshotData: previousSnapshot.snapshotData || {},
         afterSnapshotData: currentData,
-        beforeVersionNo: previousVersionNo,
-        afterVersionNo: currentVersionNo
+        beforeVersionNo: previousSnapshot.versionNo,
+        afterVersionNo: currentVersionNo,
+        fieldOrder: previousSnapshot.fieldOrder || row.fieldOrder || []
       }));
     },
     buildSavedVersionDiffSnapshot(row) {
       const versionNo = Number(row.versionNo);
-      const previousVersionNo = versionNo - 1;
       return Promise.all([
         this.fetchSnapshotDetail(row.id),
-        this.fetchSnapshotDetailByVersion(previousVersionNo)
+        this.fetchPreviousSnapshotDetail(row)
       ]).then(([selectedSnapshot, previousSnapshot]) => ({
         ...selectedSnapshot,
         versionNo,
         changedFields: previousSnapshot.changedFields || [],
         snapshotData: previousSnapshot.snapshotData || {},
         afterSnapshotData: selectedSnapshot.snapshotData || {},
-        beforeVersionNo: previousVersionNo,
-        afterVersionNo: versionNo
+        beforeVersionNo: previousSnapshot.versionNo,
+        afterVersionNo: versionNo,
+        fieldOrder: selectedSnapshot.fieldOrder || previousSnapshot.fieldOrder || row.fieldOrder || []
       }));
+    },
+    fetchPreviousSnapshotDetail(row) {
+      if (row?.previousSnapshotId) {
+        return this.fetchSnapshotDetail(row.previousSnapshotId);
+      }
+      if (row?.previousVersionNo) {
+        return this.fetchSnapshotDetailByVersion(row.previousVersionNo);
+      }
+      return this.fetchSnapshotRowBeforeVersion(row?.versionNo).then((previousRow) => {
+        if (!previousRow?.id) {
+          return Promise.reject(new Error("previous snapshot not found"));
+        }
+        return this.fetchSnapshotDetail(previousRow.id);
+      });
     },
     fetchSnapshotDetailByVersion(versionNo) {
       return this.fetchSnapshotRowByVersion(versionNo).then((row) => {
@@ -866,6 +1041,17 @@ export default {
           return (fallbackData.list || []).find((item) => Number(item.versionNo) === version) || null;
         });
       });
+    },
+    fetchSnapshotRowBeforeVersion(versionNo) {
+      const cached = this.findPreviousSnapshotRow({ versionNo }, this.snapshots);
+      if (cached) {
+        return Promise.resolve(cached);
+      }
+
+      return this.fetchSnapshotRows({
+        page: "1",
+        limit: String(Math.max(this.historyTotal, this.limit, 1))
+      }).then((data) => this.findPreviousSnapshotRow({ versionNo }, data.list || []));
     },
     ensurePluginMetadata() {
       if (this.pluginMetadataLoaded) {
@@ -927,7 +1113,7 @@ export default {
 
       this.modelMetadataLoading = Promise.all(fetchers)
         .then((groups) => {
-          const metadata = { ...FALLBACK_MODEL_NAMES };
+          const metadata = {};
           groups.flat().forEach((item) => {
             if (item.id) {
               metadata[item.id] = item.name || item.id;
@@ -1166,13 +1352,13 @@ export default {
       const name = this.functionDisplayName(pluginId);
       const statusMap = {
         added: {
-          badge: "已开启"
+          badge: this.$t("agentSnapshot.function.added")
         },
         removed: {
-          badge: "已关闭"
+          badge: this.$t("agentSnapshot.function.removed")
         },
         updated: {
-          badge: "参数变更"
+          badge: this.$t("agentSnapshot.function.updated")
         }
       };
       return {
@@ -1188,18 +1374,18 @@ export default {
       if (!func) {
         return {
           active: false,
-          status: "未开启",
+          status: this.$t("agentSnapshot.function.disabled"),
           params: [],
-          note: "未开启此功能"
+          note: this.$t("agentSnapshot.function.disabledNote")
         };
       }
 
       const params = this.functionParamRows(pluginId, func.params, changedParamKeys);
       return {
         active: true,
-        status: "已开启",
+        status: this.$t("agentSnapshot.function.enabled"),
         params,
-        note: params.length ? "" : "无需配置参数"
+        note: params.length ? "" : this.$t("agentSnapshot.function.noParams")
       };
     },
     changedFunctionParamKeys(pluginId, beforeParams, afterParams) {
@@ -1235,11 +1421,12 @@ export default {
     },
     functionDisplayName(pluginId) {
       const meta = this.resolveFunctionMeta(pluginId);
-      return meta?.name || FALLBACK_PLUGIN_NAMES[pluginId] || pluginId || this.$t("agentSnapshot.emptyValue");
+      return meta?.name || this.translateKey(FALLBACK_PLUGIN_NAME_KEYS[pluginId], pluginId)
+        || pluginId || this.$t("agentSnapshot.emptyValue");
     },
     functionParamLabel(pluginId, key) {
       const field = this.functionFields(pluginId).find((item) => item.key === key);
-      return field?.label || FALLBACK_FIELD_LABELS[key] || key;
+      return field?.label || this.translateKey(FALLBACK_FIELD_LABEL_KEYS[key], key) || key;
     },
     functionFields(pluginId) {
       const meta = this.resolveFunctionMeta(pluginId);
@@ -1273,7 +1460,7 @@ export default {
       const lines = String(value).replace(/\r\n/g, "\n").split("\n");
       const html = [];
       let paragraph = [];
-      let listType = null;
+      const listStack = [];
 
       const closeParagraph = () => {
         if (paragraph.length) {
@@ -1281,59 +1468,89 @@ export default {
           paragraph = [];
         }
       };
-      const closeList = () => {
-        if (listType) {
-          html.push(`</${listType}>`);
-          listType = null;
+      const closeOneList = () => {
+        const list = listStack.pop();
+        if (!list) {
+          return;
+        }
+        if (list.liOpen) {
+          html.push("</li>");
+        }
+        html.push(`</${list.type}>`);
+      };
+      const closeLists = () => {
+        while (listStack.length) {
+          closeOneList();
         }
       };
-      const openList = (type) => {
-        if (listType !== type) {
-          closeList();
-          html.push(`<${type}>`);
-          listType = type;
+      const openList = (type, indent) => {
+        html.push(`<${type}>`);
+        listStack.push({ type, indent, liOpen: false });
+      };
+      const alignList = (type, indent) => {
+        while (listStack.length && indent < listStack[listStack.length - 1].indent) {
+          closeOneList();
         }
+
+        let current = listStack[listStack.length - 1];
+        if (current && indent === current.indent && type !== current.type) {
+          closeOneList();
+        }
+
+        current = listStack[listStack.length - 1];
+        if (!current || indent > current.indent || indent !== current.indent) {
+          openList(type, indent);
+        }
+      };
+      const addListItem = (type, indent, text) => {
+        closeParagraph();
+        alignList(type, indent);
+        const current = listStack[listStack.length - 1];
+        if (current.liOpen) {
+          html.push("</li>");
+        }
+        html.push(`<li>${this.renderInlineMarkdown(text)}`);
+        current.liOpen = true;
       };
 
       lines.forEach((rawLine) => {
-        const line = rawLine.trim();
+        const normalizedLine = rawLine.replace(/\t/g, "  ");
+        const line = normalizedLine.trim();
         if (!line) {
           closeParagraph();
-          closeList();
+          closeLists();
           return;
         }
 
         const heading = line.match(/^(#{1,6})\s+(.+)$/);
         if (heading) {
           closeParagraph();
-          closeList();
+          closeLists();
           const level = Math.min(heading[1].length, 4);
           html.push(`<h${level}>${this.renderInlineMarkdown(heading[2])}</h${level}>`);
           return;
         }
 
-        const unordered = line.match(/^[-*+]\s+(.+)$/);
+        const indent = normalizedLine.match(/^ */)[0].length;
+        const listContent = normalizedLine.slice(indent);
+        const unordered = listContent.match(/^[-*+]\s+(.+)$/);
         if (unordered) {
-          closeParagraph();
-          openList("ul");
-          html.push(`<li>${this.renderInlineMarkdown(unordered[1])}</li>`);
+          addListItem("ul", indent, unordered[1]);
           return;
         }
 
-        const ordered = line.match(/^\d+\.\s+(.+)$/);
+        const ordered = listContent.match(/^\d+\.\s+(.+)$/);
         if (ordered) {
-          closeParagraph();
-          openList("ol");
-          html.push(`<li>${this.renderInlineMarkdown(ordered[1])}</li>`);
+          addListItem("ol", indent, ordered[1]);
           return;
         }
 
-        closeList();
+        closeLists();
         paragraph.push(line);
       });
 
       closeParagraph();
-      closeList();
+      closeLists();
       return html.join("");
     },
     renderInlineMarkdown(value) {
@@ -1351,13 +1568,19 @@ export default {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
     },
-    resolveDiffFields(beforeData, afterData, changedFields) {
-      const directFields = changedFields
+    restoreFailedMessage(data) {
+      return data?.msg
+        ? `${this.$t("agentSnapshot.restoreFailedRollback")}: ${data.msg}`
+        : this.$t("agentSnapshot.restoreFailedRollback");
+    },
+    resolveDiffFields(beforeData, afterData, changedFields = [], fieldOrder = []) {
+      const safeChangedFields = Array.isArray(changedFields) ? changedFields : [];
+      const directFields = safeChangedFields
         .filter((field) => field && field !== "restore")
         .map((field) => this.canonicalField(field));
-      const candidates = directFields.length > 0 && !changedFields.includes("restore")
+      const candidates = directFields.length > 0 && !safeChangedFields.includes("restore")
         ? directFields
-        : this.snapshotFieldOrder();
+        : this.snapshotFieldOrder(fieldOrder, beforeData, afterData);
 
       return Array.from(new Set(candidates)).filter((field) => {
         return !this.isSameValue(
@@ -1366,38 +1589,19 @@ export default {
         );
       });
     },
-    snapshotFieldOrder() {
-      return [
-        "agentCode",
-        "agentName",
-        "asrModelId",
-        "vadModelId",
-        "llmModelId",
-        "slmModelId",
-        "vllmModelId",
-        "ttsModelId",
-        "ttsVoiceId",
-        "ttsLanguage",
-        "ttsVolume",
-        "ttsRate",
-        "ttsPitch",
-        "memModelId",
-        "intentModelId",
-        "chatHistoryConf",
-        "systemPrompt",
-        "summaryMemory",
-        "langCode",
-        "language",
-        "sort",
-        "functions",
-        "contextProviders",
-        "correctWordFileIds",
-        "tagNames",
-        "tagIds"
-      ];
+    snapshotFieldOrder(fieldOrder = [], beforeData = {}, afterData = {}) {
+      const backendOrder = Array.isArray(fieldOrder) ? fieldOrder : [];
+      if (backendOrder.length) {
+        return backendOrder.map((field) => this.canonicalField(field));
+      }
+      const dataFields = [
+        ...Object.keys(beforeData || {}),
+        ...Object.keys(afterData || {})
+      ].map((field) => this.canonicalField(field));
+      return Array.from(new Set(dataFields)).filter((field) => field !== "tags");
     },
     canonicalField(field) {
-      return field === "tags" ? "tagNames" : field;
+      return field === "tags" || field === "tagIds" ? "tagNames" : field;
     },
     getFieldValue(data, field) {
       if (!data) {
@@ -1434,7 +1638,8 @@ export default {
         return this.voiceDisplayName(data.ttsModelId, value);
       }
       if (field === "chatHistoryConf") {
-        return CHAT_HISTORY_CONF_LABELS[value] || CHAT_HISTORY_CONF_LABELS[Number(value)] || this.formatValue(value);
+        return this.translateKey(CHAT_HISTORY_CONF_LABEL_KEYS[value] || CHAT_HISTORY_CONF_LABEL_KEYS[Number(value)])
+          || this.formatValue(value);
       }
       return this.formatValue(value);
     },
@@ -1442,13 +1647,14 @@ export default {
       if (value === null || value === undefined || value === "") {
         return this.$t("agentSnapshot.emptyValue");
       }
-      return this.modelNameMap[value] || FALLBACK_MODEL_NAMES[value] || String(value);
+      return this.modelNameMap[value] || this.translateKey(FALLBACK_MODEL_NAME_KEYS[value], String(value)) || String(value);
     },
     voiceDisplayName(modelId, value) {
       if (value === null || value === undefined || value === "") {
         return this.$t("agentSnapshot.emptyValue");
       }
-      return this.voiceNameMap[`${modelId}:${value}`] || this.voiceNameMap[value] || String(value);
+      return this.voiceNameMap[`${modelId}:${value}`] || this.voiceNameMap[value]
+        || this.translateKey(FALLBACK_VOICE_NAME_KEYS[value], String(value)) || String(value);
     },
     formatValue(value) {
       if (value === null || value === undefined || value === "") {
@@ -1481,6 +1687,9 @@ export default {
     fieldLabel(field) {
       const key = `agentSnapshot.field.${field}`;
       return this.$te && this.$te(key) ? this.$t(key) : field;
+    },
+    translateKey(key, fallback = "") {
+      return key && this.$te && this.$te(key) ? this.$t(key) : fallback;
     }
   }
 };
@@ -1540,6 +1749,10 @@ export default {
   background: #fbfffa;
 }
 
+.snapshot-delete-button {
+  color: #f56c6c;
+}
+
 .field-tags {
   display: flex;
   flex-wrap: wrap;
@@ -1562,6 +1775,10 @@ export default {
   overflow: auto;
   padding-right: 2px;
   @include scrollbar-style;
+}
+
+.restore-risk-alert {
+  margin-top: 14px;
 }
 
 .detail-summary {

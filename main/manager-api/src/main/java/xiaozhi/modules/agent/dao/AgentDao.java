@@ -36,4 +36,11 @@ public interface AgentDao extends BaseDao<AgentEntity> {
      * @param agentId 智能体ID
      */
     AgentInfoVO selectAgentInfoById(@Param("agentId") String agentId);
+
+    /**
+     * 锁定智能体主记录，用于串行化同一智能体的配置写入
+     *
+     * @param agentId 智能体ID
+     */
+    AgentEntity selectByIdForUpdate(@Param("agentId") String agentId);
 }

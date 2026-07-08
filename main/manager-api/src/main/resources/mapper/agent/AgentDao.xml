@@ -36,9 +36,12 @@
         <result column="updater" property="updater"/>
         <result column="updatedAt" property="updatedAt"/>
         <collection property="functions"
-                    ofType="xiaozhi.modules.agent.entity.AgentPluginMapping"
-                    column="{agentId=id}"
-                    select="selectAgentFunctionsByAgentId"/>
+                    ofType="xiaozhi.modules.agent.entity.AgentPluginMapping">
+            <id column="functionId" property="id"/>
+            <result column="functionAgentId" property="agentId"/>
+            <result column="pluginId" property="pluginId"/>
+            <result column="paramInfo" property="paramInfo"/>
+        </collection>
     </resultMap>
 
     <select id="selectAgentInfoById" resultMap="AgentInfoMap">
@@ -68,17 +71,22 @@
                a.creator,
                a.created_at        AS createdAt,
                a.updater,
-               a.updated_at        AS updatedAt
+               a.updated_at        AS updatedAt,
+               f.id                AS functionId,
+               f.agent_id          AS functionAgentId,
+               f.plugin_id         AS pluginId,
+               f.param_info        AS paramInfo
         FROM ai_agent a
+        LEFT JOIN ai_agent_plugin_mapping f ON f.agent_id = a.id
         WHERE a.id = #{agentId}
+        ORDER BY f.id ASC
     </select>
 
-    <select id="selectAgentFunctionsByAgentId" resultType="xiaozhi.modules.agent.entity.AgentPluginMapping">
-        SELECT id,
-               agent_id   AS agentId,
-               plugin_id  AS pluginId,
-               param_info AS paramInfo
-        FROM ai_agent_plugin_mapping
-        WHERE agent_id = #{agentId}
+    <select id="selectByIdForUpdate" resultType="xiaozhi.modules.agent.entity.AgentEntity">
+        SELECT *
+        FROM ai_agent
+        WHERE id = #{agentId}
+        FOR UPDATE
     </select>
+
 </mapper>

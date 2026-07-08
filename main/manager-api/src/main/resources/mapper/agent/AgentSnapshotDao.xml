@@ -16,6 +16,8 @@
                snapshot_data  AS snapshotData,
                changed_fields AS changedFields,
                source,
+               restore_from_snapshot_id AS restoreFromSnapshotId,
+               restore_from_version_no  AS restoreFromVersionNo,
                creator,
                created_at     AS createdAt
         FROM ai_agent_snapshot
@@ -24,5 +26,20 @@
         ORDER BY version_no ASC
         LIMIT 1
     </select>
+
+    <delete id="deleteOlderThanKeepLimit">
+        DELETE FROM ai_agent_snapshot
+        WHERE agent_id = #{agentId}
+          AND id NOT IN (
+              SELECT id
+              FROM (
+                  SELECT id
+                  FROM ai_agent_snapshot
+                  WHERE agent_id = #{agentId}
+                  ORDER BY version_no DESC
+                  LIMIT #{keepLimit}
+              ) retained_snapshots
+          )
+    </delete>
 
 </mapper>

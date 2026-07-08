@@ -1,13 +1,12 @@
 package xiaozhi.modules.agent.controller;
 
-import java.util.Map;
-
 import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +16,7 @@ import xiaozhi.common.exception.RenException;
 import xiaozhi.common.page.PageData;
 import xiaozhi.common.user.UserDetail;
 import xiaozhi.common.utils.Result;
+import xiaozhi.modules.agent.dto.AgentSnapshotPageDTO;
 import xiaozhi.modules.agent.service.AgentService;
 import xiaozhi.modules.agent.service.AgentSnapshotService;
 import xiaozhi.modules.agent.vo.AgentSnapshotVO;
@@ -35,7 +35,7 @@ public class AgentSnapshotController {
     @RequiresPermissions("sys:role:normal")
     public Result<PageData<AgentSnapshotVO>> page(
             @PathVariable String agentId,
-            @RequestParam Map<String, Object> params) {
+            @ParameterObject AgentSnapshotPageDTO params) {
         checkPermission(agentId);
         return new Result<PageData<AgentSnapshotVO>>().ok(agentSnapshotService.page(agentId, params));
     }
@@ -54,6 +54,15 @@ public class AgentSnapshotController {
     public Result<Void> restore(@PathVariable String agentId, @PathVariable String snapshotId) {
         checkPermission(agentId);
         agentSnapshotService.restoreSnapshot(agentId, snapshotId);
+        return new Result<>();
+    }
+
+    @DeleteMapping("/{snapshotId}")
+    @Operation(summary = "删除智能体历史快照")
+    @RequiresPermissions("sys:role:normal")
+    public Result<Void> deleteSnapshot(@PathVariable String agentId, @PathVariable String snapshotId) {
+        checkPermission(agentId);
+        agentSnapshotService.deleteSnapshot(agentId, snapshotId);
         return new Result<>();
     }
 

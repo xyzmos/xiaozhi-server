@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.AllArgsConstructor;
@@ -111,6 +110,7 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         // 查询替换词文件ID列表
         List<String> correctWordFileIds = correctWordFileService.getAgentCorrectWordFileIds(id);
         agent.setCorrectWordFileIds(correctWordFileIds);
+        agent.setCurrentVersionNo(agentSnapshotService.getCurrentVersionNo(id));
 
         // 无需额外查询插件列表，已通过SQL查询出来
         return agent;
@@ -137,10 +137,30 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteAgentByUserId(Long userId) {
-        UpdateWrapper<AgentEntity> wrapper = new UpdateWrapper<>();
-        wrapper.eq("user_id", userId);
-        baseDao.delete(wrapper);
+        List<AgentEntity> agents = baseDao.selectList(new QueryWrapper<AgentEntity>()
+                .select("id")
+                .eq("user_id", userId));
+        for (AgentEntity agent : agents) {
+            deleteAgent(agent.getId());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAgent(String agentId) {
+        if (agentDao.selectByIdForUpdate(agentId) == null) {
+            return;
+        }
+        deviceService.deleteByAgentId(agentId);
+        agentChatHistoryService.deleteByAgentId(agentId, true, true);
+        agentPluginMappingService.deleteByAgentId(agentId);
+        agentContextProviderService.deleteByAgentId(agentId);
+        correctWordFileService.deleteMappingsByAgentId(agentId);
+        agentTagService.deleteAgentTags(agentId);
+        agentSnapshotService.deleteByAgentId(agentId);
+        deleteById(agentId);
     }
 
     @Override
@@ -285,11 +305,12 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateAgentById(String agentId, AgentUpdateDTO dto, boolean createSnapshot) {
-        // 先查询现有实体
-        AgentEntity existingEntity = this.getAgentById(agentId);
-        if (existingEntity == null) {
+        if (agentDao.selectByIdForUpdate(agentId) == null) {
             throw new RenException(ErrorCode.AGENT_NOT_FOUND);
         }
+
+        // 锁定后查询现有实体和关联配置
+        AgentEntity existingEntity = this.getAgentById(agentId);
 
         if (createSnapshot) {
             agentSnapshotService.createSnapshot(agentId, "config", dto);
@@ -448,7 +469,7 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
             agentTagService.saveAgentTags(agentId, dto.getTagIds(), dto.getTagNames());
         }
 
-        boolean b = validateLLMIntentParams(dto.getLlmModelId(), dto.getIntentModelId());
+        boolean b = validateLLMIntentParams(existingEntity.getLlmModelId(), existingEntity.getIntentModelId());
         if (!b) {
             throw new RenException(ErrorCode.LLM_INTENT_PARAMS_MISMATCH);
         }

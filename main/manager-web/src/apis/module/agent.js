@@ -127,6 +127,21 @@ export default {
                 });
             }).send();
     },
+    // 删除智能体配置快照
+    deleteAgentSnapshot(agentId, snapshotId, callback) {
+        RequestService.sendRequest()
+            .url(`${getServiceUrl()}/agent/${agentId}/snapshots/${snapshotId}`)
+            .method('DELETE')
+            .success((res) => {
+                RequestService.clearRequestTime();
+                callback(res);
+            })
+            .networkFail(() => {
+                RequestService.reAjaxFun(() => {
+                    this.deleteAgentSnapshot(agentId, snapshotId, callback);
+                });
+            }).send();
+    },
     // 新增方法：获取智能体模板
     getAgentTemplate(callback) {  // 移除templateName参数
         RequestService.sendRequest()
