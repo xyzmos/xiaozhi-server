@@ -10,7 +10,11 @@ import xiaozhi.modules.agent.entity.AgentSnapshotEntity;
 public interface AgentSnapshotDao extends BaseDao<AgentSnapshotEntity> {
     Integer selectMaxVersionNo(@Param("agentId") String agentId);
 
+    AgentSnapshotEntity selectLatestSnapshot(@Param("agentId") String agentId);
+
     AgentSnapshotEntity selectNextSnapshot(@Param("agentId") String agentId, @Param("versionNo") Integer versionNo);
+
+    int insertWithNextVersion(@Param("snapshot") AgentSnapshotEntity snapshot);
 
     int deleteOlderThanKeepLimit(@Param("agentId") String agentId, @Param("keepLimit") int keepLimit);
 }

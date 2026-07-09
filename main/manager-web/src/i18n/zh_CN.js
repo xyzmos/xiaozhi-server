@@ -881,6 +881,8 @@ export default {
   'agentSnapshot.before': '变化前',
   'agentSnapshot.after': '变化后',
   'agentSnapshot.emptyValue': '无',
+  'agentSnapshot.secretRedacted': '密钥已脱敏',
+  'agentSnapshot.configValue': '配置值',
   'agentSnapshot.noChangedContent': '暂无可展示的变更内容',
   'agentSnapshot.noFunctionChange': '功能配置无变化',
   'agentSnapshot.beforeChange': '变化前',

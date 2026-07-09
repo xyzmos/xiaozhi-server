@@ -26,7 +26,7 @@
             <div class="version-cell">
               <span>#{{ scope.row.versionNo }}</span>
               <span
-                v-if="scope.row.isCurrentVersion"
+                v-if="scope.row.isLatestSnapshot"
                 class="latest-version-icon"
                 :title="$t('agentSnapshot.currentVersion')"
               ></span>
@@ -130,7 +130,59 @@
             class="diff-item"
           >
             <div class="diff-field">{{ item.label }}</div>
-            <div v-if="item.displayType === 'functions'" class="function-change-view">
+            <div v-if="item.single" class="diff-values is-single" :class="{ 'is-complex': item.complex }">
+              <div class="diff-pane diff-after">
+                <div class="diff-pane-title">{{ item.valueTitle }}</div>
+                <div v-if="item.displayType === 'functions'" class="function-change-view is-single">
+                  <div v-if="item.functionStates.length" class="function-toggle-list">
+                    <div
+                      v-for="(functionState, stateIndex) in item.functionStates"
+                      :key="`function-state-${item.field}-${functionState.pluginId}-${stateIndex}`"
+                      class="function-toggle-card is-single"
+                    >
+                      <div class="function-toggle-head">
+                        <span class="function-dot"></span>
+                        <div class="function-change-title-wrap">
+                          <div class="function-change-title-row">
+                            <span class="function-change-name">{{ functionState.name }}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        class="function-state-pane is-after is-enabled"
+                      >
+                        <div class="function-state-title">
+                          <span>{{ item.valueTitle }}</span>
+                          <span class="function-state-badge">{{ functionState.status }}</span>
+                        </div>
+                        <div v-if="functionState.params.length" class="function-state-params">
+                          <div
+                            v-for="param in functionState.params"
+                            :key="`${functionState.pluginId}-single-${param.key}`"
+                            class="function-param-row"
+                          >
+                            <span class="param-key">{{ param.label }}</span>
+                            <span class="param-value">{{ param.value }}</span>
+                          </div>
+                        </div>
+                        <div v-else class="function-state-empty">{{ functionState.note }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="value-empty">{{ $t('agentSnapshot.emptyValue') }}</div>
+                </div>
+                <div v-else class="diff-value" :class="valueClass(item)">
+                  <div
+                    v-if="item.displayType === 'markdown'"
+                    class="markdown-body"
+                    v-html="renderMarkdownValue(item.afterValue)"
+                  ></div>
+                  <pre v-else class="diff-text">{{ item.afterText }}</pre>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="item.displayType === 'functions'" class="function-change-view">
               <div v-if="item.functionChanges.length" class="function-toggle-list">
                 <div
                   v-for="(change, changeIndex) in item.functionChanges"
@@ -453,6 +505,7 @@ const CHAT_HISTORY_CONF_LABEL_KEYS = {
   1: "agentSnapshot.chatHistoryConf.text",
   2: "agentSnapshot.chatHistoryConf.textVoice"
 };
+const SNAPSHOT_SECRET_REDACTED = "__SNAPSHOT_SECRET_REDACTED__";
 
 export default {
   name: "AgentSnapshotDialog",
@@ -528,7 +581,18 @@ export default {
       );
     },
     snapshotDiffs() {
-      if (!this.currentSnapshot || !this.hasAfterSnapshotData(this.currentSnapshot)) {
+      if (!this.currentSnapshot) {
+        return [];
+      }
+
+      if (this.currentSnapshot.isSingleSnapshot) {
+        return this.buildSingleConfigItems(
+          this.currentSnapshot.snapshotData || {},
+          this.currentSnapshot.fieldOrder || []
+        );
+      }
+
+      if (!this.hasAfterSnapshotData(this.currentSnapshot)) {
         return [];
       }
 
@@ -561,7 +625,9 @@ export default {
       );
     },
     restoreWillClearChatHistory() {
-      return this.restorePreviewSnapshot?.afterSnapshotData?.memModelId === "Memory_nomem";
+      const beforeMemModelId = this.restorePreviewSnapshot?.beforeSnapshotData?.memModelId;
+      const afterMemModelId = this.restorePreviewSnapshot?.afterSnapshotData?.memModelId;
+      return beforeMemModelId !== "Memory_nomem" && afterMemModelId === "Memory_nomem";
     },
     restoreTargetVersion() {
       return this.restorePreviewSnapshot?.versionNo || this.restorePreviewRow?.versionNo || "";
@@ -579,6 +645,28 @@ export default {
     this.cancelPendingSnapshotRequests();
   },
   methods: {
+    buildSingleConfigItems(snapshotData = {}, fieldOrder = []) {
+      const fields = Array.from(new Set(this.snapshotFieldOrder(fieldOrder, {}, snapshotData)));
+      return fields.map((field) => {
+        const value = this.getFieldValue(snapshotData, field);
+        const displayType = this.displayType(field);
+        return {
+          field,
+          label: this.fieldLabel(field),
+          beforeValue: null,
+          afterValue: value,
+          beforeText: "",
+          afterText: this.formatDisplayValue(field, value, snapshotData),
+          displayType,
+          single: true,
+          valueTitle: this.$t("agentSnapshot.configValue"),
+          functionStates: displayType === "functions"
+            ? this.buildSingleFunctionStates(value)
+            : [],
+          complex: this.isComplexValue(value)
+        };
+      });
+    },
     buildDiffs(beforeData, afterData, changedFields, options = {}) {
       const fields = this.resolveDiffFields(beforeData, afterData, changedFields, options.fieldOrder);
       return fields.map((field) => {
@@ -625,22 +713,19 @@ export default {
       this.deletingSnapshotId = null;
     },
     snapshotRowKey(row) {
-      if (row?.isCurrentVersion) {
-        return "current-version";
-      }
       return row?.id || `${row?.versionNo || ""}-${row?.createdAt || ""}`;
     },
     snapshotRowClassName({ row }) {
-      return row?.isCurrentVersion ? "current-version-row" : "";
+      return row?.isLatestSnapshot ? "current-version-row" : "";
     },
     canViewSnapshot(row) {
-      return !!row && (row.isCurrentVersion || row.previousSnapshotId || row.previousVersionNo);
+      return !!row?.id;
     },
     canRestoreSnapshot(row) {
-      return !!row && !row.isCurrentVersion;
+      return !!row && !row.isLatestSnapshot;
     },
     canDeleteSnapshot(row) {
-      return !!row && !row.isCurrentVersion && !row.isLatestSnapshot;
+      return !!row && !row.isLatestSnapshot;
     },
     fetchSnapshots(options = {}) {
       if (!this.agentId) {
@@ -673,24 +758,12 @@ export default {
             if (!this.historyAnchorVersionNo && historyRows[0]?.versionNo) {
               this.historyAnchorVersionNo = Number(historyRows[0].versionNo);
             }
-            const currentRow = this.buildCurrentVersionRow(historyRows[0]);
-            const historyOffset = currentRow ? 1 : 0;
             this.historyTotal = data.data?.total || 0;
-            this.total = this.historyTotal + historyOffset;
-            if (this.page === 1) {
-              const firstPageRows = historyRows.slice(0, currentRow ? this.limit - 1 : this.limit);
-              this.snapshots = [
-                ...(currentRow ? [currentRow] : []),
-                ...this.applyPreviousChangedFields(firstPageRows, historyRows)
-              ];
-            } else {
-              const historyStart = Math.max(displayStart - historyOffset, 0);
-              const historyEnd = Math.max(displayEnd - historyOffset, 0);
-              this.snapshots = this.applyPreviousChangedFields(
-                historyRows.slice(historyStart, historyEnd),
-                historyRows
-              );
-            }
+            this.total = this.historyTotal;
+            this.snapshots = this.applyPreviousChangedFields(
+              historyRows.slice(displayStart, displayEnd),
+              historyRows
+            );
           } else {
             this.$message.error(data.msg || this.$t("agentSnapshot.fetchFailed"));
           }
@@ -827,8 +900,7 @@ export default {
           this.deletingSnapshotId = null;
           if (data.code === 0) {
             this.$message.success(this.$t("agentSnapshot.deleteSuccess"));
-            const savedRowsOnPage = this.snapshots.filter((item) => !item.isCurrentVersion);
-            if (savedRowsOnPage.length <= 1 && this.page > 1) {
+            if (this.snapshots.length <= 1 && this.page > 1) {
               this.page -= 1;
             }
             this.fetchSnapshots();
@@ -851,9 +923,9 @@ export default {
         return propVersionNo;
       }
 
-      const currentRow = this.snapshots.find((item) => item.isCurrentVersion);
-      if (currentRow?.versionNo) {
-        return currentRow.versionNo;
+      const latestRow = this.snapshots.find((item) => item.isLatestSnapshot) || this.snapshots[0];
+      if (latestRow?.versionNo) {
+        return latestRow.versionNo;
       }
 
       return null;
@@ -907,10 +979,10 @@ export default {
     applyPreviousChangedFields(rows, sourceRows) {
       return rows.map((row) => {
         const versionNo = Number(row.versionNo);
-        if (!Number.isFinite(versionNo) || versionNo <= 1) {
+        if (!Number.isFinite(versionNo)) {
           return {
             ...row,
-            changedFields: []
+            changedFields: row.changedFields || []
           };
         }
         const previousRow = this.findPreviousSnapshotRow(row, sourceRows);
@@ -918,7 +990,7 @@ export default {
           ...row,
           previousSnapshotId: previousRow?.id || null,
           previousVersionNo: previousRow?.versionNo || null,
-          changedFields: previousRow?.changedFields || []
+          changedFields: row.changedFields || []
         };
       });
     },
@@ -928,78 +1000,83 @@ export default {
         return null;
       }
       return (sourceRows || []).find((item) => {
-        return !item.isCurrentVersion && Number(item.versionNo) < versionNo;
+        return Number(item.versionNo) < versionNo;
       }) || null;
     },
-    buildCurrentVersionRow(latestSnapshot) {
-      const latestVersionNo = Number(latestSnapshot?.versionNo) || 0;
-      const propVersionNo = Number(this.currentVersionNo);
-      if (!Number.isFinite(propVersionNo) || propVersionNo <= latestVersionNo) {
-        return null;
-      }
-      return {
-        id: "__current__",
-        agentId: this.agentId,
-        versionNo: propVersionNo,
-        source: "current",
-        createdAt: latestSnapshot?.createdAt || null,
-        changedFields: latestSnapshot?.changedFields || [],
-        fieldOrder: latestSnapshot?.fieldOrder || [],
-        isCurrentVersion: true,
-        previousVersionNo: latestVersionNo || null,
-        previousSnapshotId: latestSnapshot?.id || null
-      };
-    },
     buildVersionDiffSnapshot(row) {
-      if (row?.isCurrentVersion) {
-        return this.buildCurrentVersionDiffSnapshot(row);
-      }
       return this.buildSavedVersionDiffSnapshot(row);
-    },
-    buildCurrentVersionDiffSnapshot(row) {
-      const currentVersionNo = Number(row.versionNo);
-      return Promise.all([
-        this.fetchPreviousSnapshotDetail(row),
-        this.fetchCurrentAgentData()
-      ]).then(([previousSnapshot, currentData]) => ({
-        ...row,
-        versionNo: currentVersionNo,
-        changedFields: previousSnapshot.changedFields || [],
-        snapshotData: previousSnapshot.snapshotData || {},
-        afterSnapshotData: currentData,
-        beforeVersionNo: previousSnapshot.versionNo,
-        afterVersionNo: currentVersionNo,
-        fieldOrder: previousSnapshot.fieldOrder || row.fieldOrder || []
-      }));
     },
     buildSavedVersionDiffSnapshot(row) {
       const versionNo = Number(row.versionNo);
-      return Promise.all([
-        this.fetchSnapshotDetail(row.id),
-        this.fetchPreviousSnapshotDetail(row)
-      ]).then(([selectedSnapshot, previousSnapshot]) => ({
+      const displayVersionNo = Number.isFinite(versionNo) ? versionNo : row.versionNo;
+      return this.fetchSnapshotDetail(row.id).then((selectedSnapshot) => {
+        if (!this.hasPreviousSnapshot(row)) {
+          return this.buildSingleSnapshotDetail(selectedSnapshot, row, displayVersionNo);
+        }
+
+        return this.fetchPreviousSnapshotDetail(row).then((previousSnapshot) => {
+          if (!previousSnapshot?.id) {
+            return this.buildSingleSnapshotDetail(selectedSnapshot, row, displayVersionNo);
+          }
+          const adjacentVersion = this.isAdjacentVersion(previousSnapshot.versionNo, displayVersionNo);
+          return {
+            ...selectedSnapshot,
+            versionNo: displayVersionNo,
+            changedFields: adjacentVersion ? (selectedSnapshot.changedFields || row.changedFields || []) : [],
+            snapshotData: previousSnapshot.snapshotData || {},
+            afterSnapshotData: selectedSnapshot.snapshotData || {},
+            beforeVersionNo: previousSnapshot.versionNo,
+            afterVersionNo: displayVersionNo,
+            fieldOrder: selectedSnapshot.fieldOrder || previousSnapshot.fieldOrder || row.fieldOrder || []
+          };
+        });
+      });
+    },
+    buildSingleSnapshotDetail(selectedSnapshot, row, displayVersionNo) {
+      return {
         ...selectedSnapshot,
-        versionNo,
-        changedFields: previousSnapshot.changedFields || [],
-        snapshotData: previousSnapshot.snapshotData || {},
+        versionNo: displayVersionNo,
+        isSingleSnapshot: true,
+        changedFields: selectedSnapshot.changedFields || row.changedFields || [],
+        snapshotData: selectedSnapshot.snapshotData || {},
         afterSnapshotData: selectedSnapshot.snapshotData || {},
-        beforeVersionNo: previousSnapshot.versionNo,
-        afterVersionNo: versionNo,
-        fieldOrder: selectedSnapshot.fieldOrder || previousSnapshot.fieldOrder || row.fieldOrder || []
-      }));
+        afterVersionNo: displayVersionNo,
+        fieldOrder: selectedSnapshot.fieldOrder || row.fieldOrder || []
+      };
+    },
+    isAdjacentVersion(beforeVersionNo, afterVersionNo) {
+      const beforeVersion = Number(beforeVersionNo);
+      const afterVersion = Number(afterVersionNo);
+      return Number.isFinite(beforeVersion) && Number.isFinite(afterVersion) && afterVersion - beforeVersion === 1;
+    },
+    hasPreviousSnapshot(row) {
+      const versionNo = Number(row?.versionNo);
+      return !!(
+        row?.previousSnapshotId ||
+        row?.previousVersionNo ||
+        (Number.isFinite(versionNo) && versionNo > 1)
+      );
     },
     fetchPreviousSnapshotDetail(row) {
       if (row?.previousSnapshotId) {
-        return this.fetchSnapshotDetail(row.previousSnapshotId);
+        return this.fetchSnapshotDetail(row.previousSnapshotId)
+          .catch(() => this.fetchPreviousSnapshotDetailWithoutId(row));
       }
+      return this.fetchPreviousSnapshotDetailWithoutId(row);
+    },
+    fetchPreviousSnapshotDetailWithoutId(row) {
       if (row?.previousVersionNo) {
-        return this.fetchSnapshotDetailByVersion(row.previousVersionNo);
+        return this.fetchSnapshotDetailByVersion(row.previousVersionNo)
+          .catch(() => this.fetchNearestPreviousSnapshotDetail(row));
       }
+      return this.fetchNearestPreviousSnapshotDetail(row);
+    },
+    fetchNearestPreviousSnapshotDetail(row) {
       return this.fetchSnapshotRowBeforeVersion(row?.versionNo).then((previousRow) => {
         if (!previousRow?.id) {
-          return Promise.reject(new Error("previous snapshot not found"));
+          return null;
         }
-        return this.fetchSnapshotDetail(previousRow.id);
+        return this.fetchSnapshotDetail(previousRow.id).catch(() => null);
       });
     },
     fetchSnapshotDetailByVersion(versionNo) {
@@ -1017,7 +1094,7 @@ export default {
       }
 
       const cached = this.snapshots.find((item) => {
-        return !item.isCurrentVersion && Number(item.versionNo) === version;
+        return Number(item.versionNo) === version;
       });
       if (cached) {
         return Promise.resolve(cached);
@@ -1388,6 +1465,15 @@ export default {
         note: params.length ? "" : this.$t("agentSnapshot.function.noParams")
       };
     },
+    buildSingleFunctionStates(value) {
+      return this.normalizeFunctions(value).map((func) => ({
+        pluginId: func.pluginId,
+        name: func.name,
+        status: this.$t("agentSnapshot.function.enabled"),
+        params: func.params,
+        note: func.params.length ? "" : this.$t("agentSnapshot.function.noParams")
+      }));
+    },
     changedFunctionParamKeys(pluginId, beforeParams, afterParams) {
       const safeBeforeParams = beforeParams || {};
       const safeAfterParams = afterParams || {};
@@ -1447,17 +1533,19 @@ export default {
       if (value === null || value === undefined || value === "") {
         return this.$t("agentSnapshot.emptyValue");
       }
-      if (typeof value === "object") {
-        return JSON.stringify(value);
+      const displayValue = this.localizedSnapshotDisplayValue(value);
+      if (typeof displayValue === "object") {
+        return JSON.stringify(displayValue);
       }
-      return String(value);
+      return String(displayValue);
     },
     renderMarkdownValue(value) {
-      if (value === null || value === undefined || String(value).trim() === "") {
+      const displayValue = this.localizedSnapshotDisplayValue(value);
+      if (displayValue === null || displayValue === undefined || String(displayValue).trim() === "") {
         return `<span class="markdown-empty">${this.escapeHtml(this.$t("agentSnapshot.emptyValue"))}</span>`;
       }
 
-      const lines = String(value).replace(/\r\n/g, "\n").split("\n");
+      const lines = String(displayValue).replace(/\r\n/g, "\n").split("\n");
       const html = [];
       let paragraph = [];
       const listStack = [];
@@ -1616,7 +1704,29 @@ export default {
       return data[field];
     },
     isSameValue(left, right) {
-      return JSON.stringify(this.normalizeValue(left)) === JSON.stringify(this.normalizeValue(right));
+      return this.isEquivalentValue(this.normalizeValue(left), this.normalizeValue(right));
+    },
+    isEquivalentValue(left, right) {
+      if (left === SNAPSHOT_SECRET_REDACTED || right === SNAPSHOT_SECRET_REDACTED) {
+        return true;
+      }
+      if (Array.isArray(left) || Array.isArray(right)) {
+        if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+          return false;
+        }
+        return left.every((item, index) => this.isEquivalentValue(item, right[index]));
+      }
+      if (this.isPlainObject(left) || this.isPlainObject(right)) {
+        if (!this.isPlainObject(left) || !this.isPlainObject(right)) {
+          return false;
+        }
+        const keys = Array.from(new Set([
+          ...Object.keys(left),
+          ...Object.keys(right)
+        ]));
+        return keys.every((key) => this.isEquivalentValue(left[key], right[key]));
+      }
+      return left === right;
     },
     normalizeValue(value) {
       if (Array.isArray(value)) {
@@ -1629,6 +1739,9 @@ export default {
         }, {});
       }
       return value === undefined ? null : value;
+    },
+    isPlainObject(value) {
+      return value !== null && typeof value === "object" && !Array.isArray(value);
     },
     formatDisplayValue(field, value, data = {}) {
       if (MODEL_FIELD_TYPES[field]) {
@@ -1663,13 +1776,29 @@ export default {
       if (Array.isArray(value) && value.length === 0) {
         return this.$t("agentSnapshot.emptyValue");
       }
-      if (Array.isArray(value) && value.every((item) => this.isPrimitiveValue(item))) {
-        return value.join(", ");
+      const displayValue = this.localizedSnapshotDisplayValue(value);
+      if (Array.isArray(displayValue) && displayValue.every((item) => this.isPrimitiveValue(item))) {
+        return displayValue.join(", ");
       }
-      if (this.isComplexValue(value)) {
-        return JSON.stringify(value, null, 2);
+      if (this.isComplexValue(displayValue)) {
+        return JSON.stringify(displayValue, null, 2);
       }
-      return String(value);
+      return String(displayValue);
+    },
+    localizedSnapshotDisplayValue(value) {
+      if (value === SNAPSHOT_SECRET_REDACTED) {
+        return this.$t("agentSnapshot.secretRedacted");
+      }
+      if (Array.isArray(value)) {
+        return value.map((item) => this.localizedSnapshotDisplayValue(item));
+      }
+      if (value && typeof value === "object") {
+        return Object.keys(value).reduce((result, key) => {
+          result[key] = this.localizedSnapshotDisplayValue(value[key]);
+          return result;
+        }, {});
+      }
+      return value;
     },
     isPrimitiveValue(value) {
       return value === null || ["string", "number", "boolean"].includes(typeof value);
@@ -1821,6 +1950,10 @@ export default {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
+.diff-values.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .diff-pane {
   min-width: 0;
   padding: 12px 14px;
@@ -1829,6 +1962,10 @@ export default {
 
 .diff-after {
   border-left: 1px solid #e9e9e9;
+}
+
+.diff-values.is-single .diff-after {
+  border-left: 0;
 }
 
 .diff-pane-title {
@@ -1883,6 +2020,10 @@ export default {
   background: #fff;
 }
 
+.function-change-view.is-single {
+  padding: 0;
+}
+
 .function-toggle-list {
   display: flex;
   flex-direction: column;
@@ -1910,6 +2051,10 @@ export default {
 .function-toggle-card.is-updated {
   border-color: #dfe7ff;
   background: #fbfdff;
+}
+
+.function-toggle-card.is-single .function-state-pane {
+  margin-top: 10px;
 }
 
 .function-toggle-head {

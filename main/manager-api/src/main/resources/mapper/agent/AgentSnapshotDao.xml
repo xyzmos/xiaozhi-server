@@ -8,6 +8,24 @@
         WHERE agent_id = #{agentId}
     </select>
 
+    <select id="selectLatestSnapshot" resultType="xiaozhi.modules.agent.entity.AgentSnapshotEntity">
+        SELECT id,
+               agent_id       AS agentId,
+               user_id        AS userId,
+               version_no     AS versionNo,
+               snapshot_data  AS snapshotData,
+               changed_fields AS changedFields,
+               source,
+               restore_from_snapshot_id AS restoreFromSnapshotId,
+               restore_from_version_no  AS restoreFromVersionNo,
+               creator,
+               created_at     AS createdAt
+        FROM ai_agent_snapshot
+        WHERE agent_id = #{agentId}
+        ORDER BY version_no DESC
+        LIMIT 1
+    </select>
+
     <select id="selectNextSnapshot" resultType="xiaozhi.modules.agent.entity.AgentSnapshotEntity">
         SELECT id,
                agent_id       AS agentId,
@@ -26,6 +44,35 @@
         ORDER BY version_no ASC
         LIMIT 1
     </select>
+
+    <insert id="insertWithNextVersion">
+        INSERT INTO ai_agent_snapshot (
+            id,
+            agent_id,
+            user_id,
+            version_no,
+            snapshot_data,
+            changed_fields,
+            source,
+            restore_from_snapshot_id,
+            restore_from_version_no,
+            creator,
+            created_at
+        )
+        SELECT #{snapshot.id},
+               #{snapshot.agentId},
+               #{snapshot.userId},
+               COALESCE(MAX(version_no), 0) + 1,
+               #{snapshot.snapshotData},
+               #{snapshot.changedFields},
+               #{snapshot.source},
+               #{snapshot.restoreFromSnapshotId},
+               #{snapshot.restoreFromVersionNo},
+               #{snapshot.creator},
+               #{snapshot.createdAt}
+        FROM ai_agent_snapshot
+        WHERE agent_id = #{snapshot.agentId}
+    </insert>
 
     <delete id="deleteOlderThanKeepLimit">
         DELETE FROM ai_agent_snapshot

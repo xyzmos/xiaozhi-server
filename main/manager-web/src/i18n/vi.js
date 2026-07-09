@@ -831,6 +831,8 @@ export default {
   'agentSnapshot.before': 'Trước',
   'agentSnapshot.after': 'Sau',
   'agentSnapshot.emptyValue': 'Không có',
+  'agentSnapshot.secretRedacted': 'Khóa bí mật đã được ẩn',
+  'agentSnapshot.configValue': 'Giá trị cấu hình',
   'agentSnapshot.noChangedContent': 'Không có thay đổi để hiển thị',
   'agentSnapshot.noFunctionChange': 'Không có thay đổi chức năng',
   'agentSnapshot.beforeChange': 'Trước thay đổi',

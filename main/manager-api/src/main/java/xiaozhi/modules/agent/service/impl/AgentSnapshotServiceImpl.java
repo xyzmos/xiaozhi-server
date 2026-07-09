@@ -82,11 +82,20 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createSnapshot(String agentId, String source, AgentUpdateDTO pendingUpdate) {
+    public void createSnapshot(String agentId, String source) {
+        lockAgent(agentId);
         AgentInfoVO agent = getAgentInfo(agentId);
         AgentSnapshotDataDTO snapshotData = buildSnapshotData(agent);
-        List<String> changedFields = getChangedFields(snapshotData, pendingUpdate);
-        if (pendingUpdate != null && changedFields.isEmpty()) {
+        AgentSnapshotEntity previousSnapshot = agentSnapshotDao.selectLatestSnapshot(agentId);
+        List<String> changedFields;
+        if (previousSnapshot == null) {
+            changedFields = List.of("initial");
+        } else {
+            AgentSnapshotDataDTO previousData = JsonUtils.parseObject(previousSnapshot.getSnapshotData(),
+                    AgentSnapshotDataDTO.class);
+            changedFields = getChangedFields(previousData, snapshotData);
+        }
+        if (changedFields.isEmpty()) {
             return;
         }
 
@@ -96,7 +105,6 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PageData<AgentSnapshotVO> page(String agentId, AgentSnapshotPageDTO params) {
-        ensureInitialSnapshot(agentId);
         AgentSnapshotPageDTO pageParams = params == null ? new AgentSnapshotPageDTO() : params;
         Page<AgentSnapshotEntity> page = new Page<>(pageParams.pageOrDefault(), pageParams.limitOrDefault());
         page.addOrder(OrderItem.desc("version_no"));
@@ -134,8 +142,9 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         AgentSnapshotDataDTO currentData = buildSnapshotData(currentAgent);
         AgentSnapshotDataDTO restoreData = preserveCurrentSensitiveValues(data, currentData);
         List<String> changedFields = getChangedFields(currentData, restoreData);
-        insertSnapshot(agentId, currentAgent.getUserId(), "restore", currentData, changedFields,
-                snapshot.getId(), snapshot.getVersionNo());
+        if (changedFields.isEmpty()) {
+            return;
+        }
 
         applyAgentFields(agent, restoreData);
         validateRestoreParams(agent);
@@ -148,6 +157,8 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         restoreContextProviders(agentId, restoreData.getContextProviders());
         correctWordFileService.saveAgentCorrectWords(agentId, nullToEmpty(restoreData.getCorrectWordFileIds()));
         restoreTags(agentId, restoreData);
+        insertSnapshot(agentId, currentAgent.getUserId(), "restore", restoreData, changedFields,
+                snapshot.getId(), snapshot.getVersionNo());
     }
 
     @Override
@@ -164,7 +175,7 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
     @Override
     public Integer getCurrentVersionNo(String agentId) {
         Integer maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
-        return (maxVersionNo == null ? 0 : maxVersionNo) + 1;
+        return maxVersionNo == null ? 0 : maxVersionNo;
     }
 
     @Override
@@ -181,9 +192,9 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
     private void insertSnapshot(String agentId, Long userId, String source, AgentSnapshotDataDTO snapshotData,
             List<String> changedFields, String restoreFromSnapshotId, Integer restoreFromVersionNo) {
         AgentSnapshotEntity entity = new AgentSnapshotEntity();
+        entity.setId(UUID.randomUUID().toString().replace("-", ""));
         entity.setAgentId(agentId);
         entity.setUserId(userId);
-        entity.setVersionNo(allocateVersionNo(agentId));
         entity.setSnapshotData(JsonUtils.toJsonString(redactSnapshotData(snapshotData)));
         entity.setChangedFields(JsonUtils.toJsonString(changedFields));
         entity.setSource(StringUtils.defaultIfBlank(source, "config"));
@@ -191,37 +202,21 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         entity.setRestoreFromVersionNo(restoreFromVersionNo);
         entity.setCreator(SecurityUser.getUserId());
         entity.setCreatedAt(new Date());
-        agentSnapshotDao.insert(entity);
+        int inserted = agentSnapshotDao.insertWithNextVersion(entity);
+        if (inserted != 1) {
+            throw new RenException("快照版本号生成失败");
+        }
         pruneSnapshots(agentId);
     }
 
-    private void ensureInitialSnapshot(String agentId) {
-        Integer maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
-        if (maxVersionNo != null && maxVersionNo > 0) {
-            return;
-        }
-        AgentEntity agent = agentDao.selectByIdForUpdate(agentId);
-        if (agent == null) {
+    private void lockAgent(String agentId) {
+        if (agentDao.selectByIdForUpdate(agentId) == null) {
             throw new RenException(ErrorCode.AGENT_NOT_FOUND);
         }
-        maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
-        if (maxVersionNo != null && maxVersionNo > 0) {
-            return;
-        }
-        AgentInfoVO agentInfo = getAgentInfo(agentId);
-        insertSnapshot(agentId, agentInfo.getUserId(), "initial", buildSnapshotData(agentInfo), List.of("initial"));
     }
 
     private void pruneSnapshots(String agentId) {
         agentSnapshotDao.deleteOlderThanKeepLimit(agentId, MAX_SNAPSHOTS_PER_AGENT);
-    }
-
-    private Integer allocateVersionNo(String agentId) {
-        Integer maxVersionNo = agentSnapshotDao.selectMaxVersionNo(agentId);
-        if (maxVersionNo == null || maxVersionNo < 0) {
-            throw new RenException("快照版本号生成失败");
-        }
-        return maxVersionNo + 1;
     }
 
     private AgentSnapshotEntity getSnapshotEntity(String agentId, String snapshotId) {
@@ -434,7 +429,8 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
         }
         map.forEach((key, value) -> {
             if (key != null) {
-                result.put(String.valueOf(key), normalizeValue(value));
+                String keyText = String.valueOf(key);
+                result.put(keyText, isSensitiveKey(keyText) ? SECRET_PLACEHOLDER : normalizeValue(value));
             }
         });
         return result;

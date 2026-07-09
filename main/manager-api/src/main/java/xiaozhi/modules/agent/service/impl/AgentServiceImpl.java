@@ -311,9 +311,8 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
 
         // 锁定后查询现有实体和关联配置
         AgentEntity existingEntity = this.getAgentById(agentId);
-
-        if (createSnapshot) {
-            agentSnapshotService.createSnapshot(agentId, "config", dto);
+        if (createSnapshot && agentSnapshotService.getCurrentVersionNo(agentId) == 0) {
+            agentSnapshotService.createSnapshot(agentId, "initial");
         }
 
         // 只更新提供的非空字段
@@ -474,6 +473,9 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
             throw new RenException(ErrorCode.LLM_INTENT_PARAMS_MISMATCH);
         }
         this.updateById(existingEntity);
+        if (createSnapshot) {
+            agentSnapshotService.createSnapshot(agentId, "config");
+        }
     }
 
     /**

@@ -831,6 +831,8 @@ export default {
   'agentSnapshot.before': 'Vorher',
   'agentSnapshot.after': 'Nachher',
   'agentSnapshot.emptyValue': 'Keine',
+  'agentSnapshot.secretRedacted': 'Geheimer Schlüssel maskiert',
+  'agentSnapshot.configValue': 'Konfigurationswert',
   'agentSnapshot.noChangedContent': 'Keine anzeigbaren Änderungen',
   'agentSnapshot.noFunctionChange': 'Keine Funktionsänderungen',
   'agentSnapshot.beforeChange': 'Vor der Änderung',

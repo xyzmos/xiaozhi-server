@@ -6,10 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,6 +26,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import xiaozhi.common.utils.JsonUtils;
@@ -41,6 +44,7 @@ import xiaozhi.modules.agent.entity.AgentEntity;
 import xiaozhi.modules.agent.entity.AgentSnapshotEntity;
 import xiaozhi.modules.agent.entity.AgentTagEntity;
 import xiaozhi.modules.agent.service.AgentContextProviderService;
+import xiaozhi.modules.agent.service.AgentSnapshotService;
 import xiaozhi.modules.agent.vo.AgentSnapshotVO;
 import xiaozhi.modules.agent.vo.AgentInfoVO;
 import xiaozhi.modules.correctword.service.CorrectWordFileService;
@@ -179,6 +183,40 @@ class AgentSnapshotServiceImplTest {
     }
 
     @Test
+    void firstAgentSaveKeepsInitialBaselineBeforePersistingNewState() {
+        AgentDao agentDao = mock(AgentDao.class);
+        AgentContextProviderService contextProviderService = mock(AgentContextProviderService.class);
+        CorrectWordFileService correctWordFileService = mock(CorrectWordFileService.class);
+        AgentSnapshotService snapshotService = mock(AgentSnapshotService.class);
+        AgentServiceImpl service = new AgentServiceImpl(agentDao, null, null, null, null, null, null, null,
+                null, null, contextProviderService, null, correctWordFileService, snapshotService);
+        ReflectionTestUtils.setField(service, "baseDao", agentDao);
+
+        String agentId = "agent-id";
+        AgentEntity lockedAgent = new AgentEntity();
+        lockedAgent.setId(agentId);
+        AgentInfoVO currentAgent = new AgentInfoVO();
+        currentAgent.setId(agentId);
+        currentAgent.setAgentName("old-name");
+        AgentUpdateDTO update = new AgentUpdateDTO();
+        update.setAgentName("new-name");
+
+        when(agentDao.selectByIdForUpdate(agentId)).thenReturn(lockedAgent);
+        when(agentDao.selectAgentInfoById(agentId)).thenReturn(currentAgent);
+        when(snapshotService.getCurrentVersionNo(agentId)).thenReturn(0);
+        when(contextProviderService.getByAgentId(agentId)).thenReturn(null);
+        when(correctWordFileService.getAgentCorrectWordFileIds(agentId)).thenReturn(List.of());
+        when(agentDao.updateById(any())).thenReturn(1);
+
+        service.updateAgentById(agentId, update);
+
+        InOrder inOrder = inOrder(agentDao, snapshotService);
+        inOrder.verify(snapshotService).createSnapshot(agentId, "initial");
+        inOrder.verify(agentDao).updateById(argThat(agent -> "new-name".equals(agent.getAgentName())));
+        inOrder.verify(snapshotService).createSnapshot(agentId, "config");
+    }
+
+    @Test
     void agentSnapshotFieldAppliesRestorableAgentFields() {
         AgentSnapshotDataDTO data = new AgentSnapshotDataDTO();
         data.setAgentName("restored-name");
@@ -218,40 +256,38 @@ class AgentSnapshotServiceImplTest {
     }
 
     @Test
-    void versionAllocationDoesNotDependOnSequenceTable() throws Exception {
-        String xml = Files.readString(Path.of("src/main/resources/mapper/agent/AgentSnapshotDao.xml"));
+    void snapshotInsertAllocatesVersionInSingleSqlStatement() throws Exception {
+        String xml = normalizeWhitespace(Files.readString(Path.of("src/main/resources/mapper/agent/AgentSnapshotDao.xml")));
         String dao = Files.readString(Path.of("src/main/java/xiaozhi/modules/agent/dao/AgentSnapshotDao.java"));
-        String createMigration = Files.readString(Path.of("src/main/resources/db/changelog/202607071530.sql"));
-        String master = Files.readString(Path.of("src/main/resources/db/changelog/db.changelog-master.yaml"));
 
-        assertFalse(xml.contains("ai_agent_snapshot_sequence"));
+        assertTrue(dao.contains("insertWithNextVersion"));
+        assertTrue(xml.contains("<insert id=\"insertWithNextVersion\">"));
+        assertTrue(xml.contains("INSERT INTO ai_agent_snapshot"));
+        assertTrue(xml.contains("COALESCE(MAX(version_no), 0) + 1"));
         assertFalse(xml.contains("LAST_INSERT_ID"));
-        assertFalse(dao.contains("allocateVersionNo"));
-        assertFalse(dao.contains("selectLastInsertId"));
-        assertFalse(createMigration.contains("ai_agent_snapshot_sequence"));
-        assertFalse(master.contains("202607081430.sql"));
+        assertFalse(xml.contains("ai_agent_snapshot_sequence"));
     }
 
     @Test
-    void snapshotMigrationAddsRestoreTraceAndUserIndex() throws Exception {
-        String sql = Files.readString(Path.of("src/main/resources/db/changelog/202607081150.sql"));
-        String defaultSql = Files.readString(Path.of("src/main/resources/db/changelog/202607081230.sql"));
+    void snapshotMigrationIsMergedIntoSingleChangeLog() throws Exception {
+        String sql = Files.readString(Path.of("src/main/resources/db/changelog/202607071530.sql"));
         String master = Files.readString(Path.of("src/main/resources/db/changelog/db.changelog-master.yaml"));
 
         assertTrue(sql.contains("restore_from_snapshot_id"));
         assertTrue(sql.contains("restore_from_version_no"));
         assertTrue(sql.contains("idx_snapshot_user_created_at"));
-        assertTrue(master.contains("202607081150.sql"));
-        assertTrue(defaultSql.contains("DEFAULT (JSON_OBJECT())"));
-        assertTrue(master.contains("202607081230.sql"));
+        assertTrue(sql.contains("DEFAULT (JSON_OBJECT())"));
+        assertTrue(master.contains("202607071530.sql"));
+        assertFalse(master.contains("202607081150.sql"));
+        assertFalse(master.contains("202607081230.sql"));
     }
 
     @Test
     void selectNextSnapshotLoadsRestoreTraceColumns() throws Exception {
-        String xml = Files.readString(Path.of("src/main/resources/mapper/agent/AgentSnapshotDao.xml"));
+        String xml = normalizeWhitespace(Files.readString(Path.of("src/main/resources/mapper/agent/AgentSnapshotDao.xml")));
 
         assertTrue(xml.contains("restore_from_snapshot_id AS restoreFromSnapshotId"));
-        assertTrue(xml.contains("restore_from_version_no  AS restoreFromVersionNo"));
+        assertTrue(xml.contains("restore_from_version_no AS restoreFromVersionNo"));
     }
 
     @Test
@@ -296,7 +332,35 @@ class AgentSnapshotServiceImplTest {
     }
 
     @Test
-    void pageCreatesInitialSnapshotWhenAgentHasNoHistory() {
+    void pageDoesNotCreateInitialSnapshotWhenAgentHasNoHistory() {
+        AgentSnapshotDao snapshotDao = mock(AgentSnapshotDao.class);
+        AgentDao agentDao = mock(AgentDao.class);
+        AgentSnapshotServiceImpl service = new AgentSnapshotServiceImpl(snapshotDao, agentDao, null, null, null,
+                null, null, null, null, null);
+
+        when(snapshotDao.selectPage(any(), any())).thenReturn(new Page<AgentSnapshotEntity>(1, 10));
+
+        service.page("agent-id", new AgentSnapshotPageDTO());
+
+        verify(agentDao, never()).selectByIdForUpdate(any());
+        verify(snapshotDao, never()).selectMaxVersionNo(any());
+        verify(snapshotDao, never()).insertWithNextVersion(any());
+        verify(snapshotDao, never()).deleteOlderThanKeepLimit(any(), anyInt());
+    }
+
+    @Test
+    void getCurrentVersionNoReturnsPersistedMaxVersion() {
+        AgentSnapshotDao snapshotDao = mock(AgentSnapshotDao.class);
+        AgentSnapshotServiceImpl service = new AgentSnapshotServiceImpl(snapshotDao, null, null, null, null,
+                null, null, null, null, null);
+
+        when(snapshotDao.selectMaxVersionNo("agent-id")).thenReturn(7);
+
+        assertEquals(7, service.getCurrentVersionNo("agent-id"));
+    }
+
+    @Test
+    void createSnapshotStoresCurrentStateAsInitialVersionWhenHistoryIsEmpty() {
         AgentSnapshotDao snapshotDao = mock(AgentSnapshotDao.class);
         AgentDao agentDao = mock(AgentDao.class);
         AgentTagDao tagDao = mock(AgentTagDao.class);
@@ -311,17 +375,19 @@ class AgentSnapshotServiceImplTest {
         agentInfo.setId("agent-id");
         agentInfo.setUserId(7L);
         agentInfo.setAgentName("agent");
-        when(snapshotDao.selectMaxVersionNo("agent-id")).thenReturn(0, 0, 0);
         when(agentDao.selectByIdForUpdate("agent-id")).thenReturn(lockedAgent);
         when(agentDao.selectAgentInfoById("agent-id")).thenReturn(agentInfo);
+        when(snapshotDao.selectLatestSnapshot("agent-id")).thenReturn(null);
+        when(snapshotDao.insertWithNextVersion(any())).thenReturn(1);
         when(correctWordFileService.getAgentCorrectWordFileIds("agent-id")).thenReturn(List.of());
+        when(contextProviderService.getByAgentId("agent-id")).thenReturn(null);
         when(tagDao.selectByAgentId("agent-id")).thenReturn(List.of());
-        when(snapshotDao.selectPage(any(), any())).thenReturn(new Page<AgentSnapshotEntity>(1, 10));
 
-        service.page("agent-id", new AgentSnapshotPageDTO());
+        service.createSnapshot("agent-id", "config");
 
-        verify(snapshotDao, times(3)).selectMaxVersionNo("agent-id");
-        verify(snapshotDao).insert(argThat(snapshot -> Integer.valueOf(1).equals(snapshot.getVersionNo())));
+        verify(snapshotDao).insertWithNextVersion(argThat(snapshot -> "config".equals(snapshot.getSource())
+                && snapshot.getVersionNo() == null
+                && snapshot.getChangedFields().contains("initial")));
         verify(snapshotDao).deleteOlderThanKeepLimit("agent-id", 100);
     }
 
@@ -376,5 +442,9 @@ class AgentSnapshotServiceImplTest {
         data.setFunctions(List.of(function));
         data.setContextProviders(List.of(provider));
         return data;
+    }
+
+    private String normalizeWhitespace(String value) {
+        return value.replaceAll("\\s+", " ").trim();
     }
 }
