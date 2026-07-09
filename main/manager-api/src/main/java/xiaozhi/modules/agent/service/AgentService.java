@@ -61,6 +61,13 @@ public interface AgentService extends BaseService<AgentEntity> {
     void deleteAgentByUserId(Long userId);
 
     /**
+     * 删除智能体及其关联数据
+     *
+     * @param agentId 智能体ID
+     */
+    void deleteAgent(String agentId);
+
+    /**
      * 获取用户智能体列表
      *
      * @param userId 用户ID
@@ -128,6 +135,15 @@ public interface AgentService extends BaseService<AgentEntity> {
      * @param userId  当前用户ID
      */
     void deleteAgentById(String agentId, Long userId);
+
+    /**
+     * 更新智能体
+     *
+     * @param agentId        智能体ID
+     * @param dto            更新智能体所需的信息
+     * @param createSnapshot 是否创建配置快照
+     */
+    void updateAgentById(String agentId, AgentUpdateDTO dto, boolean createSnapshot);
 
     /**
      * 创建智能体

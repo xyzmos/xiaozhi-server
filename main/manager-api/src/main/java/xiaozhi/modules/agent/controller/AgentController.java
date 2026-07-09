@@ -342,7 +342,10 @@ public class AgentController {
         requireAgentPermission(id);
         List<String> tagIds = (List<String>) params.get("tagIds");
         List<String> tagNames = (List<String>) params.get("tagNames");
-        agentTagService.saveAgentTags(id, tagIds, tagNames);
+        AgentUpdateDTO dto = new AgentUpdateDTO();
+        dto.setTagIds(tagIds);
+        dto.setTagNames(tagNames);
+        agentService.updateAgentById(id, dto);
         return new Result<Void>().ok(null);
     }
 
