@@ -43,9 +43,13 @@ class ASRProvider(ASRProviderBase):
         
         # 内存检测，要求大于2G
         min_mem_bytes = 2 * 1024 * 1024 * 1024
-        total_mem = psutil.virtual_memory().total
-        if total_mem < min_mem_bytes:
-            logger.bind(tag=TAG).error(f"可用内存不足2G，当前仅有 {total_mem / (1024*1024):.2f} MB，可能无法启动FunASR")
+        try:
+            total_mem = psutil.virtual_memory().total
+        except RuntimeError as e:
+            logger.bind(tag=TAG).warning(f"获取系统内存信息失败，跳过FunASR内存检测: {e}")
+        else:
+            if total_mem < min_mem_bytes:
+                logger.bind(tag=TAG).error(f"可用内存不足2G，当前仅有 {total_mem / (1024*1024):.2f} MB，可能无法启动FunASR")
         
         self.interface_type = InterfaceType.LOCAL
         self.model_dir = config.get("model_dir")

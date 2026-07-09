@@ -16,6 +16,9 @@
                   <img loading="lazy" src="@/assets/home/setting-user.png" alt="" />
                 </div>
                 <span class="header-title">{{ form.agentName }}</span>
+                <span v-if="currentVersionNo" class="current-version-tag">
+                  {{ $t("roleConfig.currentVersion", { version: currentVersionNo }) }}
+                </span>
               </div>
               <div class="header-tags">
                 <el-tag
@@ -45,6 +48,9 @@
                   <img loading="lazy" src="@/assets/home/info.png" alt="" />
                   <span>{{ $t("roleConfig.restartNotice") }}</span>
                 </div>
+                <el-button class="history-btn" @click="showSnapshotDialog = true">
+                  {{ $t("roleConfig.snapshotHistory") }}
+                </el-button>
                 <el-button type="primary" class="save-btn" @click="saveConfig">
                   {{ $t("roleConfig.saveConfig") }}
                 </el-button>
@@ -313,7 +319,7 @@
                             placement="top"
                           >
                             <div slot="content">
-                              <div><strong>功能名称:</strong> {{ func.name }}</div>
+                              <div><strong>{{ $t("roleConfig.functionName") }}:</strong> {{ func.name }}</div>
                             </div>
                             <div class="icon-dot">
                               {{ getFunctionDisplayChar(func.name) }}
@@ -457,6 +463,13 @@
       :checked-replacement-word-ids="checkedReplacementWordIds"
       @save="handleTtsSettingsSave"
     />
+      <agent-snapshot-dialog
+        v-if="$route.query.agentId"
+        :visible.sync="showSnapshotDialog"
+        :agent-id="$route.query.agentId"
+        :current-version-no="currentVersionNo"
+        @restored="handleSnapshotRestored"
+      />
     <el-footer>
       <version-footer />
     </el-footer>
@@ -470,6 +483,7 @@ import RequestService from "@/apis/httpRequest";
 import FunctionDialog from "@/components/FunctionDialog.vue";
 import ContextProviderDialog from "@/components/ContextProviderDialog.vue";
 import TtsAdvancedSettings from "@/components/TtsAdvancedSettings.vue";
+import AgentSnapshotDialog from "@/components/AgentSnapshotDialog.vue";
 import HeaderBar from "@/components/HeaderBar.vue";
 import i18n from "@/i18n";
 import featureManager from "@/utils/featureManager"; 
@@ -477,11 +491,12 @@ import VersionFooter from "@/components/VersionFooter.vue";
 
 export default {
   name: "RoleConfigPage",
-  components: { HeaderBar, FunctionDialog, ContextProviderDialog, TtsAdvancedSettings, VersionFooter },
+  components: { HeaderBar, FunctionDialog, ContextProviderDialog, TtsAdvancedSettings, AgentSnapshotDialog, VersionFooter },
   data() {
     return {
       showContextProviderDialog: false,
       showTtsAdvancedDialog: false,
+      showSnapshotDialog: false,
       ttsSettings: {
         volume: 0,
         speed: 0,
@@ -529,6 +544,7 @@ export default {
       voiceOptions: [],
       voiceDetails: {}, // 保存完整的音色信息
       showFunctionDialog: false,
+      currentVersionNo: null,
       currentFunctions: [],
       currentContextProviders: [],
       allFunctions: [],
@@ -546,6 +562,7 @@ export default {
         asr: false, // 语音识别功能状态
       },
       dynamicTags: [],
+      originalTagNames: [],
       inputVisible: false,
       inputValue: '',
       checkedReplacementWordIds: []
@@ -555,14 +572,26 @@ export default {
     goToHome() {
       this.$router.push("/home");
     },
-    async saveConfig() {
-      try {
-        await this.handleSaveAgentTags(this.$route.query.agentId);
-      } catch (error) {
-        console.error('保存标签失败:', error);
-        return;
+    normalizeFunctionParams(params, fallback = {}) {
+      if (params === null || params === undefined || params === '') {
+        return { ...fallback };
       }
-
+      if (typeof params === 'string') {
+        try {
+          const parsed = JSON.parse(params);
+          return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? parsed
+            : { ...fallback };
+        } catch (error) {
+          return { ...fallback };
+        }
+      }
+      if (typeof params === 'object' && !Array.isArray(params)) {
+        return { ...params };
+      }
+      return { ...fallback };
+    },
+    async saveConfig() {
       const configData = {
         agentCode: this.form.agentCode,
         agentName: this.form.agentName,
@@ -585,12 +614,17 @@ export default {
         functions: this.currentFunctions.map((item) => {
           return {
             pluginId: item.id,
-            paramInfo: item.params,
+            paramInfo: this.normalizeFunctionParams(item.params),
           };
         }),
         contextProviders: this.currentContextProviders,
         correctWordFileIds: this.checkedReplacementWordIds,
       };
+      const tagNames = this.dynamicTags.map(tag => tag.tagName);
+      const tagsChanged = !this.isSameStringList(tagNames, this.originalTagNames);
+      if (tagsChanged) {
+        configData.tagNames = tagNames;
+      }
 
       // 只在用户设置了TTS参数时才传递（不为null/undefined）
       if (this.form.ttsVolume !== null && this.form.ttsVolume !== undefined) {
@@ -602,12 +636,20 @@ export default {
       if (this.form.ttsPitch !== null && this.form.ttsPitch !== undefined) {
         configData.ttsPitch = this.form.ttsPitch;
       }
-      Api.agent.updateAgentConfig(this.$route.query.agentId, configData, ({ data }) => {
+      const agentId = this.$route.query.agentId;
+      Api.agent.updateAgentConfig(agentId, configData, ({ data }) => {
         if (data.code === 0) {
-          this.$message.success({
-            message: i18n.t("roleConfig.saveSuccess"),
-            showClose: true,
-          });
+          const afterSave = () => {
+            if (tagsChanged) {
+              this.originalTagNames = [...tagNames];
+            }
+            this.$message.success({
+              message: i18n.t("roleConfig.saveSuccess"),
+              showClose: true,
+            });
+            this.fetchCurrentVersion(agentId);
+          };
+          afterSave();
         } else {
           this.$message.error({
             message: data.msg || i18n.t("roleConfig.saveFailed"),
@@ -616,6 +658,26 @@ export default {
         }
       });
       
+    },
+    handleSnapshotRestored() {
+      const agentId = this.$route.query.agentId;
+      if (agentId) {
+        this.fetchAgentConfig(agentId);
+        this.getAgentTags(agentId);
+        this.fetchCurrentVersion(agentId);
+      }
+    },
+    fetchCurrentVersion(agentId) {
+      if (!agentId) {
+        this.currentVersionNo = null;
+        return;
+      }
+
+      Api.agent.getDeviceConfig(agentId, ({ data }) => {
+        if (data.code === 0) {
+          this.currentVersionNo = data.data?.currentVersionNo || null;
+        }
+      });
     },
     resetConfig() {
       this.$confirm(i18n.t("roleConfig.confirmReset"), i18n.t("message.info"), {
@@ -754,7 +816,7 @@ export default {
                 id: mapping.pluginId,
                 name: meta.name,
                 // 后端如果还有 paramInfo 字段就用 mapping.paramInfo，否则用 meta.params 默认值
-                params: mapping.paramInfo || { ...meta.params },
+                params: this.normalizeFunctionParams(mapping.paramInfo, meta.params),
                 fieldsMeta: meta.fieldsMeta, // 保留以便对话框渲染 tooltip
               };
             });
@@ -806,7 +868,7 @@ export default {
               });
               this.$set(this.modelOptions, model.type, LLMdata);
             } else {
-              this.$message.error(data.msg || "获取LLM模型列表失败");
+              this.$message.error(data.msg || i18n.t("roleConfig.fetchModelsFailed"));
             }
           });
         }
@@ -1329,7 +1391,7 @@ export default {
     handleInputConfirm() {
       let inputValue = this.inputValue;
       if (inputValue) {
-        const tag = { id: new Date().getTime(), tagName: inputValue };
+        const tag = { id: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tagName: inputValue };
         this.dynamicTags.push(tag);
       }
       this.inputVisible = false;
@@ -1339,14 +1401,21 @@ export default {
       Api.agent.getAgentTags(agentId, ({ data }) => {
         if (data.code === 0) {
           this.dynamicTags = data.data || [];
+          this.originalTagNames = this.dynamicTags.map(tag => tag.tagName);
         }
       });
     },
-    handleSaveAgentTags(agentId) {
+    isSameStringList(left, right) {
+      if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+        return false;
+      }
+      return left.every((value, index) => value === right[index]);
+    },
+    handleSaveAgentTags(agentId, tagNames = this.dynamicTags.map(tag => tag.tagName)) {
       return new Promise((resolve, reject) => {
-        const tagNames = this.dynamicTags.map(tag => tag.tagName);
         Api.agent.saveAgentTags(agentId, { tagNames }, ({ data }) => {
           if (data.code === 0) {
+            this.originalTagNames = [...tagNames];
             resolve();
           } else {
             reject(data.msg);
@@ -1382,6 +1451,7 @@ export default {
       this.fetchAgentConfig(agentId);
       this.getAgentTags(agentId);
       this.fetchAllFunctions();
+      this.fetchCurrentVersion(agentId);
     }
     this.fetchModelOptions();
     this.fetchTemplates();
@@ -1505,6 +1575,18 @@ export default {
 
 .header-tags .el-tag {
   flex-shrink: 0;
+}
+
+.current-version-tag {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border: 1px solid #dfe7ff;
+  border-radius: 999px;
+  background: #f4f7ff;
+  color: #5778ff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .more-tag {
@@ -1779,6 +1861,16 @@ export default {
   background: #5778ff;
   color: white;
   border: none;
+  border-radius: 18px;
+  padding: 8px 16px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.header-actions .history-btn {
+  background: #ffffff;
+  color: #4d5b7c;
+  border: 1px solid #d8dce8;
   border-radius: 18px;
   padding: 8px 16px;
   height: 32px;
