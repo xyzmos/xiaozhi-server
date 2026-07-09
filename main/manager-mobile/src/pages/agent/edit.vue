@@ -169,6 +169,28 @@ function handleInputConfirm() {
 // 是否禁用历史记忆输入框
 const isMemoryDisabled = computed(() => formData.value.memModelId !== 'Memory_mem_local_short')
 
+function normalizeFunctionParams(paramInfo: any) {
+  if (!paramInfo)
+    return {}
+  if (typeof paramInfo === 'string') {
+    try {
+      const parsed = JSON.parse(paramInfo)
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+    }
+    catch {
+      return {}
+    }
+  }
+  return typeof paramInfo === 'object' && !Array.isArray(paramInfo) ? { ...paramInfo } : {}
+}
+
+function normalizeAgentFunctions(functions: any[] = []) {
+  return functions.map(item => ({
+    ...item,
+    paramInfo: normalizeFunctionParams(item.paramInfo),
+  }))
+}
+
 // 打开上下文源编辑弹窗
 function openContextProviderDialog() {
   uni.navigateTo({
@@ -191,11 +213,12 @@ async function loadAgentDetail() {
     loading.value = true
     tempSummaryMemory.value = ''
     const detail = await getAgentDetail(agentId.value)
-    formData.value = { ...detail }
+    const normalizedFunctions = normalizeAgentFunctions(detail.functions || [])
+    formData.value = { ...detail, functions: normalizedFunctions }
 
     // 更新插件store
     pluginStore.setCurrentAgentId(agentId.value)
-    pluginStore.setCurrentFunctions(detail.functions || [])
+    pluginStore.setCurrentFunctions(normalizedFunctions)
 
     // 更新语速音调
     speedPitchStore.updateSpeedPitch({
@@ -626,6 +649,7 @@ async function saveAgent() {
       ...speedPitchStore.speedPitch,
       ttsLanguage: formData.value.language,
       contextProviders: providerStore.providers,
+      functions: normalizeAgentFunctions(formData.value.functions || []),
     }
     await updateAgent(agentId.value, saveData)
     loadAgentDetail()
@@ -663,7 +687,7 @@ function handleTools() {
 
   // 确保store中有最新数据
   pluginStore.setCurrentAgentId(agentId.value)
-  pluginStore.setCurrentFunctions(formData.value.functions || [])
+  pluginStore.setCurrentFunctions(normalizeAgentFunctions(formData.value.functions || []))
   pluginStore.setAllFunctions(allFunctions.value)
 
   uni.navigateTo({
@@ -688,7 +712,7 @@ async function handleUpdateAgentTags() {
 
 // 监听store中的插件配置变化
 watch(() => pluginStore.currentFunctions, (newFunctions) => {
-  formData.value.functions = newFunctions
+  formData.value.functions = normalizeAgentFunctions(newFunctions || [])
 }, { deep: true })
 
 onMounted(async () => {
