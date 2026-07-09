@@ -186,13 +186,19 @@ class MemoryProvider(MemoryProviderBase):
                     messages.append({"role": message.role, "content": content})
 
                 # Add memory using PowerMem SDK
-                result = self.memory_client.add(
-                    messages=messages,
-                    user_id=self.role_id
-                )
-                # Handle both sync and async returns
-                if asyncio.iscoroutine(result):
-                    result = await result
+                if self.enable_user_profile:
+                    # UserMemory uses sync add
+                    result = await asyncio.to_thread(
+                        self.memory_client.add,
+                        messages=messages,
+                        user_id=self.role_id
+                    )
+                else:
+                    # AsyncMemory uses async add
+                    result = await self.memory_client.add(
+                        messages=messages,
+                        user_id=self.role_id
+                    )
 
                 logger.bind(tag=TAG).debug(f"Save memory result: {result}")
 

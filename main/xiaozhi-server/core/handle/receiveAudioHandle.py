@@ -14,9 +14,9 @@ from core.handle.sendAudioHandle import send_stt_message, SentenceType
 TAG = __name__
 
 
-async def handleAudioMessage(conn: "ConnectionHandler", audio):
+async def handleAudioMessage(conn: "ConnectionHandler", pcm_frame):
     # 当前片段是否有人说话
-    have_voice = conn.vad.is_vad(conn, audio)
+    have_voice = conn.vad.is_vad(conn, pcm_frame)
     # 如果设备刚刚被唤醒，短暂忽略VAD检测
     if hasattr(conn, "just_woken_up") and conn.just_woken_up:
         have_voice = False
@@ -24,10 +24,14 @@ async def handleAudioMessage(conn: "ConnectionHandler", audio):
         if not hasattr(conn, "vad_resume_task") or conn.vad_resume_task.done():
             conn.vad_resume_task = asyncio.create_task(resume_vad_detection(conn))
         return
+    # 服务端AEC功能需要实时触发打断
+    if conn.client_aec and have_voice:
+        if conn.client_is_speaking and conn.client_listen_mode != "manual":
+            await handleAbortMessage(conn)
     # 设备长时间空闲检测，用于say goodbye
     await no_voice_close_connect(conn, have_voice)
     # 接收音频
-    await conn.asr.receive_audio(conn, audio, have_voice)
+    await conn.asr.receive_audio(conn, pcm_frame, have_voice)
 
 
 async def resume_vad_detection(conn: "ConnectionHandler"):
