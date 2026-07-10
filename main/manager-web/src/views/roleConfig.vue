@@ -51,7 +51,12 @@
                 <el-button class="history-btn" @click="showSnapshotDialog = true">
                   {{ $t("roleConfig.snapshotHistory") }}
                 </el-button>
-                <el-button type="primary" class="save-btn" @click="saveConfig">
+                <el-button
+                  type="primary"
+                  class="save-btn"
+                  :disabled="voiceOptionsLoading"
+                  @click="saveConfig"
+                >
                   {{ $t("roleConfig.saveConfig") }}
                 </el-button>
                 <el-button class="reset-btn" @click="resetConfig">{{
@@ -367,7 +372,7 @@
                             v-model="selectedLanguage"
                             :placeholder="$t('roleConfig.selectLanguage')"
                             class="form-select language-select"
-                            @change="filterVoicesByLanguage"
+                            @change="handleLanguageChange"
                           >
                             <el-option
                               v-for="(lang, index) in languageOptions"
@@ -392,6 +397,7 @@
                             filterable
                             :placeholder="$t('roleConfig.pleaseSelect')"
                             class="form-select"
+                            @change="handleVoiceChange"
                           >
                             <el-option
                               v-for="(item, index) in voiceOptions"
@@ -556,6 +562,10 @@ export default {
       // 语言筛选相关状态
       languageOptions: [], // 语言选项列表
       selectedLanguage: '', // 当前选中的语言
+      ttsLanguageTouched: false,
+      ttsVoiceTouched: false,
+      voiceFetchSeq: 0,
+      voiceOptionsLoading: false,
       // 功能状态
       featureStatus: {
         vad: false, // 语言检测活动功能状态
@@ -592,6 +602,9 @@ export default {
       return { ...fallback };
     },
     async saveConfig() {
+      if (this.voiceOptionsLoading) {
+        return;
+      }
       const configData = {
         agentCode: this.form.agentCode,
         agentName: this.form.agentName,
@@ -601,8 +614,6 @@ export default {
         slmModelId: this.form.model.slmModelId,
         vllmModelId: this.form.model.vllmModelId,
         ttsModelId: this.form.model.ttsModelId,
-        ttsVoiceId: this.form.ttsVoiceId,
-        ttsLanguage: this.selectedLanguage,
         chatHistoryConf: this.form.chatHistoryConf,
         memModelId: this.form.model.memModelId,
         intentModelId: this.form.model.intentModelId,
@@ -625,6 +636,17 @@ export default {
       if (tagsChanged) {
         configData.tagNames = tagNames;
       }
+      if (this.shouldSubmitTtsLanguage()) {
+        configData.ttsLanguage = this.selectedLanguage;
+      }
+      if (this.ttsVoiceTouched && this.form.ttsVoiceId !== null && this.form.ttsVoiceId !== undefined) {
+        configData.ttsVoiceId = this.form.ttsVoiceId;
+      }
+      const submittedTtsLanguageTouched = this.ttsLanguageTouched;
+      const submittedTtsVoiceTouched = this.ttsVoiceTouched;
+      const submittedTtsLanguage = configData.ttsLanguage;
+      const submittedTtsVoiceId = configData.ttsVoiceId;
+      const submittedVoiceFetchSeq = this.voiceFetchSeq;
 
       // 只在用户设置了TTS参数时才传递（不为null/undefined）
       if (this.form.ttsVolume !== null && this.form.ttsVolume !== undefined) {
@@ -642,6 +664,17 @@ export default {
           const afterSave = () => {
             if (tagsChanged) {
               this.originalTagNames = [...tagNames];
+            }
+            if (submittedVoiceFetchSeq === this.voiceFetchSeq
+              && submittedTtsLanguageTouched
+              && this.selectedLanguage === submittedTtsLanguage) {
+              this.form.ttsLanguage = submittedTtsLanguage;
+              this.ttsLanguageTouched = false;
+            }
+            if (submittedVoiceFetchSeq === this.voiceFetchSeq
+              && submittedTtsVoiceTouched
+              && this.form.ttsVoiceId === submittedTtsVoiceId) {
+              this.ttsVoiceTouched = false;
             }
             this.$message.success({
               message: i18n.t("roleConfig.saveSuccess"),
@@ -686,10 +719,14 @@ export default {
         type: "warning",
       })
         .then(() => {
+          this.selectedLanguage = "";
+          this.ttsLanguageTouched = true;
+          this.ttsVoiceTouched = true;
           this.form = {
             agentCode: "",
             agentName: "",
             ttsVoiceId: "",
+            ttsLanguage: "",
             chatHistoryConf: 0,
             systemPrompt: "",
             summaryMemory: "",
@@ -707,6 +744,7 @@ export default {
               intentModelId: "",
             },
           };
+          this.fetchVoiceOptions("");
           this.dynamicTags = [];
           this.currentFunctions = [];
           this.$message.success({
@@ -745,6 +783,7 @@ export default {
       }
     },
     applyTemplateData(templateData) {
+      const currentLanguage = this.selectedLanguage;
       this.form = {
         ...this.form,
         agentName: templateData.agentName || this.form.agentName,
@@ -764,11 +803,28 @@ export default {
           intentModelId: templateData.intentModelId || this.form.model.intentModelId,
         },
       };
+      if (templateData.ttsLanguage) {
+        this.selectedLanguage = templateData.ttsLanguage;
+        this.ttsLanguageTouched = true;
+      }
+      if (templateData.ttsModelId || templateData.ttsVoiceId || templateData.ttsLanguage) {
+        if (templateData.ttsModelId || templateData.ttsVoiceId) {
+          this.ttsVoiceTouched = true;
+        }
+        this.ttsLanguageTouched = true;
+        this.fetchVoiceOptions(this.form.model.ttsModelId, {
+          autoSelectVoice: true,
+          preferredLanguage: templateData.ttsLanguage || (templateData.ttsVoiceId ? "" : currentLanguage),
+          preferredVoiceId: templateData.ttsVoiceId || ""
+        });
+      }
     },
     fetchAgentConfig(agentId) {
       Api.agent.getDeviceConfig(agentId, ({ data }) => {
         if (data.code === 0) {
           this.tempSummaryMemory = "";
+          this.ttsLanguageTouched = false;
+          this.ttsVoiceTouched = false;
           this.form = {
             ...this.form,
             ...data.data,
@@ -783,6 +839,10 @@ export default {
               intentModelId: data.data.intentModelId,
             },
           };
+          this.fetchVoiceOptions(data.data.ttsModelId, {
+            preferredLanguage: data.data.ttsLanguage,
+            preferredVoiceId: data.data.ttsVoiceId
+          });
 
           // 同步TTS设置到ttsSettings
           this.ttsSettings = {
@@ -874,15 +934,22 @@ export default {
         }
       });
     },
-    fetchVoiceOptions(modelId) {
+    fetchVoiceOptions(modelId, options = {}) {
+      const requestSeq = ++this.voiceFetchSeq;
       if (!modelId) {
+        this.voiceOptionsLoading = false;
         this.voiceOptions = [];
         this.voiceDetails = {};
         this.languageOptions = [];
         this.selectedLanguage = '';
         return;
       }
+      this.voiceOptionsLoading = true;
       Api.model.getModelVoices(modelId, "", ({ data }) => {
+        if (requestSeq !== this.voiceFetchSeq) {
+          return;
+        }
+        this.voiceOptionsLoading = false;
         if (data.code === 0 && data.data) {
           // 保存完整的音色信息
           this.voiceDetails = data.data.reduce((acc, voice) => {
@@ -904,15 +971,27 @@ export default {
             label: lang
           }));
 
-          // 使用后端返回的用户选择的语言，如果没有则使用第一个语言选项
-          if (this.form.ttsLanguage && this.languageOptions.some(option => option.value === this.form.ttsLanguage)) {
+          // 优先保留调用方指定或后端保存的语言，其次使用当前音色的默认语言
+          const requestedLanguage = options.preferredLanguage;
+          const preferredVoiceLanguage = options.preferredVoiceId
+            ? this.getVoiceDefaultLanguage(options.preferredVoiceId)
+            : "";
+          if (requestedLanguage && this.languageOptions.some(option => option.value === requestedLanguage)) {
+            this.selectedLanguage = requestedLanguage;
+          } else if (preferredVoiceLanguage && this.languageOptions.some(option => option.value === preferredVoiceLanguage)) {
+            this.selectedLanguage = preferredVoiceLanguage;
+          } else if (this.form.ttsLanguage && this.languageOptions.some(option => option.value === this.form.ttsLanguage)) {
             this.selectedLanguage = this.form.ttsLanguage;
+          } else if (this.getVoiceDefaultLanguage(this.form.ttsVoiceId)) {
+            this.selectedLanguage = this.getVoiceDefaultLanguage(this.form.ttsVoiceId);
           } else if (this.languageOptions.length > 0) {
             this.selectedLanguage = this.languageOptions[0].value;
+          } else {
+            this.selectedLanguage = "";
           }
 
           // 根据选中的语言筛选音色
-          this.filterVoicesByLanguage();
+          this.filterVoicesByLanguage(options);
         } else {
           this.voiceOptions = [];
           this.voiceDetails = {};
@@ -921,9 +1000,19 @@ export default {
         }
       });
     },
+    getVoiceDefaultLanguage(voiceId) {
+      if (!voiceId || !this.voiceDetails || !this.voiceDetails[voiceId]?.languages) {
+        return "";
+      }
+      const languages = this.voiceDetails[voiceId].languages
+        .split(/[、；;,，]/)
+        .map(lang => lang.trim())
+        .filter(Boolean);
+      return languages[0] || "";
+    },
     
     // 根据语言筛选音色
-    filterVoicesByLanguage() {
+    filterVoicesByLanguage(options = {}) {
       if (!this.voiceDetails || Object.keys(this.voiceDetails).length === 0) {
         this.voiceOptions = [];
         return;
@@ -954,8 +1043,9 @@ export default {
       const currentVoiceSupportsLanguage = this.form.ttsVoiceId &&
         filteredVoices.some(voice => voice.id === this.form.ttsVoiceId);
 
-      if (!currentVoiceSupportsLanguage) {
+      if (!currentVoiceSupportsLanguage && options.autoSelectVoice) {
         this.form.ttsVoiceId = filteredVoices.length > 0 ? filteredVoices[0].id : '';
+        this.ttsVoiceTouched = true;
       }
 
       // 同步到ttsSettings（如果值为null，使用0作为显示默认值，但不修改form中的值）
@@ -964,6 +1054,21 @@ export default {
         speed: this.form.ttsRate !== null && this.form.ttsRate !== undefined ? this.form.ttsRate : 0,
         pitch: this.form.ttsPitch !== null && this.form.ttsPitch !== undefined ? this.form.ttsPitch : 0
       };
+    },
+    handleLanguageChange() {
+      this.ttsLanguageTouched = true;
+      this.form.ttsLanguage = this.selectedLanguage;
+      this.filterVoicesByLanguage({ autoSelectVoice: true });
+    },
+    handleVoiceChange() {
+      this.ttsVoiceTouched = true;
+      if (this.selectedLanguage) {
+        this.form.ttsLanguage = this.selectedLanguage;
+        this.ttsLanguageTouched = true;
+      }
+    },
+    shouldSubmitTtsLanguage() {
+      return this.ttsLanguageTouched;
     },
 
     getFunctionDisplayChar(name) {
@@ -1006,6 +1111,17 @@ export default {
         // 当LLM类型改变时，更新意图识别选项的可见性
         this.updateIntentOptionsVisibility();
       }
+      if (type === "TTS") {
+        const preferredLanguage = this.selectedLanguage;
+        this.ttsLanguageTouched = true;
+        this.ttsVoiceTouched = true;
+        this.form.ttsVoiceId = "";
+        this.form.ttsLanguage = "";
+        this.fetchVoiceOptions(value, {
+          autoSelectVoice: true,
+          preferredLanguage
+        });
+      }
     },
     fetchAllFunctions() {
       return new Promise((resolve, reject) => {
@@ -1042,13 +1158,20 @@ export default {
       this.showTtsAdvancedDialog = true;
     },
     handleTtsSettingsSave(settings) {
-      const { replacementWordIds, ...ttsSettings } = settings;
+      const { replacementWordIds, changedTtsFields = [], ...ttsSettings } = settings;
       this.checkedReplacementWordIds = replacementWordIds;
       // 保存TTS设置
       this.ttsSettings = ttsSettings;
-      this.form.ttsVolume = ttsSettings.volume;
-      this.form.ttsRate = ttsSettings.speed;
-      this.form.ttsPitch = ttsSettings.pitch;
+      const changedFields = new Set(changedTtsFields);
+      if (changedFields.has("volume")) {
+        this.form.ttsVolume = ttsSettings.volume;
+      }
+      if (changedFields.has("speed")) {
+        this.form.ttsRate = ttsSettings.speed;
+      }
+      if (changedFields.has("pitch")) {
+        this.form.ttsPitch = ttsSettings.pitch;
+      }
     },
     handleUpdateContext(providers) {
       this.currentContextProviders = providers;
@@ -1423,27 +1546,6 @@ export default {
         });
       });
     }
-  },
-  watch: {
-    "form.model.ttsModelId": {
-      handler(newVal, oldVal) {
-        if (oldVal && newVal !== oldVal) {
-          this.form.ttsVoiceId = "";
-          this.fetchVoiceOptions(newVal);
-        } else {
-          this.fetchVoiceOptions(newVal);
-        }
-      },
-      immediate: true,
-    },
-    voiceOptions: {
-      handler(newVal) {
-        if (newVal && newVal.length > 0 && !this.form.ttsVoiceId) {
-          this.form.ttsVoiceId = newVal[0].value;
-        }
-      },
-      immediate: true,
-    },
   },
   async mounted() {
     const agentId = this.$route.query.agentId;

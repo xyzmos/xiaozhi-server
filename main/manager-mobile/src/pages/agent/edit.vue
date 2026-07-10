@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import type { AgentDetail, ModelOption, PluginDefinition, RoleTemplate } from '@/api/agent/types'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { getAgentDetail, getAgentTags, getAllLanguage, getModelOptions, getPluginFunctions, getRoleTemplates, updateAgent, updateAgentTags } from '@/api/agent/agent'
+import { getAgentDetail, getAgentTags, getAllLanguage, getModelOptions, getPluginFunctions, getRoleTemplates, updateAgent } from '@/api/agent/agent'
 import { t } from '@/i18n'
 import { usePluginStore, useProvider, useSpeedPitch } from '@/store'
 import { toast } from '@/utils/toast'
+import AgentSnapshotPanel from './components/AgentSnapshotPanel.vue'
 
 defineOptions({
   name: 'AgentEdit',
@@ -64,6 +65,8 @@ const selectedTemplateId = ref('')
 // 加载状态
 const loading = ref(false)
 const saving = ref(false)
+const showSnapshotPanel = ref(false)
+const currentVersionNo = ref<number | null>(null)
 
 // 模型选项数据
 const modelOptions = ref<{
@@ -79,9 +82,9 @@ const modelOptions = ref<{
 })
 
 // 音色选项数据
-const voiceOptions = ref([])
+const voiceOptions = ref<any[]>([])
 // 保存完整的音色信息
-const voiceDetails = ref({})
+const voiceDetails = ref<Record<string, any>>({})
 
 // 上报模式选项数据
 const reportOptions = [
@@ -110,9 +113,15 @@ const allFunctions = ref<PluginDefinition[]>([])
 const dynamicTags = ref([])
 const inputValue = ref('')
 const inputVisible = ref(false)
-const languageOptions = ref([])
+const languageOptions = ref<any[]>([])
 const isVisibleReport = ref(false)
 const tempSummaryMemory = ref('')
+const selectedTtsLanguage = ref('')
+const ttsLanguageTouched = ref(false)
+const ttsVoiceTouched = ref(false)
+const ttsOptionsLoading = ref(false)
+const originalTagNames = ref<string[]>([])
+let ttsOptionsRequestSequence = 0
 
 // 音频播放相关
 const audioRef = ref<UniApp.InnerAudioContext | null>(null)
@@ -212,9 +221,14 @@ async function loadAgentDetail() {
   try {
     loading.value = true
     tempSummaryMemory.value = ''
+    ttsLanguageTouched.value = false
+    ttsVoiceTouched.value = false
+    ttsOptionsRequestSequence += 1
+    ttsOptionsLoading.value = false
     const detail = await getAgentDetail(agentId.value)
     const normalizedFunctions = normalizeAgentFunctions(detail.functions || [])
     formData.value = { ...detail, functions: normalizedFunctions }
+    currentVersionNo.value = detail.currentVersionNo || null
 
     // 更新插件store
     pluginStore.setCurrentAgentId(agentId.value)
@@ -222,17 +236,27 @@ async function loadAgentDetail() {
 
     // 更新语速音调
     speedPitchStore.updateSpeedPitch({
-      ttsVolume: detail.ttsVolume || 0,
-      ttsRate: detail.ttsRate || 0,
-      ttsPitch: detail.ttsPitch || 0,
+      ttsVolume: detail.ttsVolume ?? 0,
+      ttsRate: detail.ttsRate ?? 0,
+      ttsPitch: detail.ttsPitch ?? 0,
     })
+    speedPitchStore.resetChangedFields()
 
     // 加载上下文配置
     providerStore.updateProviders(detail.contextProviders || [])
 
     // 如果有TTS模型，加载对应的音色选项
     if (detail.ttsModelId) {
-      await fetchAllLanguag(detail.ttsModelId)
+      await fetchAllLanguag(detail.ttsModelId, {
+        preferredLanguage: detail.ttsLanguage,
+        preferredVoiceId: detail.ttsVoiceId,
+      })
+    }
+    else {
+      voiceOptions.value = []
+      voiceDetails.value = {}
+      languageOptions.value = []
+      selectedTtsLanguage.value = ''
     }
 
     // 等待模型选项加载完成后再更新显示名称
@@ -344,7 +368,13 @@ async function loadModelOptions() {
 }
 
 // 根据语言筛选音色
-function filterVoicesByLanguage() {
+interface VoiceSelectionOptions {
+  autoSelectVoice?: boolean
+  preferredLanguage?: string | null
+  preferredVoiceId?: string | null
+}
+
+function filterVoicesByLanguage(options: VoiceSelectionOptions = {}) {
   if (!voiceDetails.value || Object.keys(voiceDetails.value).length === 0) {
     voiceOptions.value = []
     return
@@ -358,7 +388,7 @@ function filterVoicesByLanguage() {
       return false
     }
     const languagesArray = voice.languages.split(/[、；;,，]/).map(lang => lang.trim()).filter(lang => lang)
-    return languagesArray.includes(formData.value.language)
+    return languagesArray.includes(selectedTtsLanguage.value)
   })
 
   voiceOptions.value = filteredVoices.map(voice => ({
@@ -374,26 +404,37 @@ function filterVoicesByLanguage() {
   const currentVoiceSupportsLanguage = formData.value.ttsVoiceId
     && filteredVoices.some(voice => voice.id === formData.value.ttsVoiceId)
 
-  if (!currentVoiceSupportsLanguage) {
+  if (!currentVoiceSupportsLanguage && options.autoSelectVoice) {
     formData.value.ttsVoiceId = filteredVoices.length > 0 ? filteredVoices[0].id : ''
     displayNames.value.voiceprint = filteredVoices.length > 0 ? filteredVoices[0].name : ''
+    ttsVoiceTouched.value = true
   }
   else {
     displayNames.value.voiceprint = filteredVoices.find(item => item.id === formData.value.ttsVoiceId)?.name
+      || getVoiceDisplayName(formData.value.ttsVoiceId)
   }
+}
 
-  // 同步到ttsSettings（如果值为null，使用0作为显示默认值，但不修改form中的值）
-  speedPitchStore.updateSpeedPitch({
-    ttsVolume: formData.value.ttsVolume !== null && formData.value.ttsVolume !== undefined ? formData.value.ttsVolume : 0,
-    ttsRate: formData.value.ttsRate !== null && formData.value.ttsRate !== undefined ? formData.value.ttsRate : 0,
-    ttsPitch: formData.value.ttsPitch !== null && formData.value.ttsPitch !== undefined ? formData.value.ttsPitch : 0,
-  })
+function getVoiceDefaultLanguage(ttsVoiceId: string) {
+  if (!ttsVoiceId || !voiceDetails.value?.[ttsVoiceId]?.languages) {
+    return ''
+  }
+  const languages = voiceDetails.value[ttsVoiceId].languages
+    .split(/[、；;,，]/)
+    .map(lang => lang.trim())
+    .filter(Boolean)
+  return languages[0] || ''
 }
 
 // 根据语音合成模型加载语言
-async function fetchAllLanguag(ttsModelId: string) {
+async function fetchAllLanguag(ttsModelId: string, options: VoiceSelectionOptions = {}) {
+  const requestId = ++ttsOptionsRequestSequence
+  ttsOptionsLoading.value = true
   try {
     const res = await getAllLanguage(ttsModelId)
+    if (requestId !== ttsOptionsRequestSequence) {
+      return
+    }
     // 保存完整的音色信息
     voiceDetails.value = res.reduce((acc, voice) => {
       acc[voice.id] = voice
@@ -412,21 +453,46 @@ async function fetchAllLanguag(ttsModelId: string) {
       name: lang,
     }))
 
-    // 使用后端返回的用户选择的语言，如果没有则使用第一个语言选项
-    if (formData.value.ttsLanguage && languageOptions.value.some(option => option.value === formData.value.ttsLanguage)) {
-      formData.value.language = formData.value.ttsLanguage
+    const requestedLanguage = options.preferredLanguage
+    const preferredVoiceLanguage = options.preferredVoiceId
+      ? getVoiceDefaultLanguage(options.preferredVoiceId)
+      : ''
+    // 优先使用调用方指定的语言或音色默认语言，再回退到智能体当前配置
+    if (requestedLanguage && languageOptions.value.some(option => option.value === requestedLanguage)) {
+      selectedTtsLanguage.value = requestedLanguage
+      displayNames.value.language = requestedLanguage
+    }
+    else if (preferredVoiceLanguage && languageOptions.value.some(option => option.value === preferredVoiceLanguage)) {
+      selectedTtsLanguage.value = preferredVoiceLanguage
+      displayNames.value.language = preferredVoiceLanguage
+    }
+    else if (formData.value.ttsLanguage && languageOptions.value.some(option => option.value === formData.value.ttsLanguage)) {
+      selectedTtsLanguage.value = formData.value.ttsLanguage
       displayNames.value.language = formData.value.ttsLanguage
     }
+    else if (getVoiceDefaultLanguage(formData.value.ttsVoiceId)) {
+      selectedTtsLanguage.value = getVoiceDefaultLanguage(formData.value.ttsVoiceId)
+      displayNames.value.language = selectedTtsLanguage.value
+    }
     else if (languageOptions.value.length > 0) {
-      formData.value.language = languageOptions.value[0].value
+      selectedTtsLanguage.value = languageOptions.value[0].value
       displayNames.value.language = languageOptions.value[0].value
     }
 
     // 根据选中的语言筛选音色
-    filterVoicesByLanguage()
+    filterVoicesByLanguage(options)
   }
   catch {
-    languageOptions.value = []
+    if (requestId === ttsOptionsRequestSequence) {
+      voiceOptions.value = []
+      voiceDetails.value = {}
+      languageOptions.value = []
+    }
+  }
+  finally {
+    if (requestId === ttsOptionsRequestSequence) {
+      ttsOptionsLoading.value = false
+    }
   }
 }
 
@@ -457,6 +523,8 @@ function selectRoleTemplate(templateId: string) {
   selectedTemplateId.value = templateId
   const template = roleTemplates.value.find(t => t.id === templateId)
   if (template) {
+    const templateTtsLanguage = template.ttsLanguage?.trim() || ''
+    const hasTemplateTtsLanguage = Boolean(templateTtsLanguage)
     formData.value = {
       ...formData.value,
       systemPrompt: template.systemPrompt || formData.value.systemPrompt,
@@ -469,18 +537,34 @@ function selectRoleTemplate(templateId: string) {
       memModelId: template.memModelId || formData.value.memModelId,
       ttsModelId: template.ttsModelId || formData.value.ttsModelId,
       ttsVoiceId: template.ttsVoiceId || formData.value.ttsVoiceId,
+      ttsLanguage: hasTemplateTtsLanguage ? templateTtsLanguage : formData.value.ttsLanguage,
       agentName: template.agentName || formData.value.agentName,
       chatHistoryConf: template.chatHistoryConf || formData.value.chatHistoryConf,
       summaryMemory: template.summaryMemory || formData.value.summaryMemory,
       langCode: template.langCode || formData.value.langCode,
     }
-    fetchAllLanguag(template.ttsModelId || formData.value.ttsModelId)
+    if (hasTemplateTtsLanguage) {
+      selectedTtsLanguage.value = templateTtsLanguage
+      displayNames.value.language = templateTtsLanguage
+    }
+    if (template.ttsModelId || template.ttsVoiceId || hasTemplateTtsLanguage) {
+      ttsLanguageTouched.value = true
+      ttsVoiceTouched.value = true
+    }
+    fetchAllLanguag(template.ttsModelId || formData.value.ttsModelId, {
+      autoSelectVoice: true,
+      preferredLanguage: hasTemplateTtsLanguage ? templateTtsLanguage : '',
+      preferredVoiceId: template.ttsVoiceId,
+    })
     updateDisplayNames()
   }
 }
 
 // 打开选择器
 function openPicker(type: string) {
+  if (ttsOptionsLoading.value && (type === 'tts' || type === 'language' || type === 'voiceprint')) {
+    return
+  }
   pickerShow.value[type] = true
 }
 
@@ -526,16 +610,28 @@ async function onPickerConfirm(type: string, value: any, name: string) {
         tempSummaryMemory.value = ''
       }
       break
-    case 'tts':
+    case 'tts': {
+      const preferredLanguage = selectedTtsLanguage.value
       formData.value.ttsModelId = value
-      await fetchAllLanguag(value)
+      ttsLanguageTouched.value = true
+      ttsVoiceTouched.value = true
+      formData.value.ttsVoiceId = ''
+      await fetchAllLanguag(value, { autoSelectVoice: true, preferredLanguage })
       break
+    }
     case 'language':
-      formData.value.language = value
-      filterVoicesByLanguage()
+      selectedTtsLanguage.value = value
+      formData.value.ttsLanguage = value
+      ttsLanguageTouched.value = true
+      filterVoicesByLanguage({ autoSelectVoice: true })
       break
     case 'voiceprint':
       formData.value.ttsVoiceId = value
+      ttsVoiceTouched.value = true
+      if (selectedTtsLanguage.value) {
+        formData.value.ttsLanguage = selectedTtsLanguage.value
+        ttsLanguageTouched.value = true
+      }
       displayNames.value.voiceprint = name // 确保显示名称正确更新
       break
     case 'report':
@@ -623,6 +719,9 @@ function getModelDisplayName(modelType: string, modelId: string) {
 
 // 保存智能体
 async function saveAgent() {
+  if (ttsOptionsLoading.value) {
+    return
+  }
   if (!formData.value.agentName?.trim()) {
     toast.warning(t('agent.pleaseInputAgentName'))
     return
@@ -634,25 +733,45 @@ async function saveAgent() {
   }
 
   try {
-    await handleUpdateAgentTags()
-  }
-  catch (err) {
-    toast.error(err)
-    return
-  }
-
-  try {
     saving.value = true
+    const tagNames = dynamicTags.value.map(tag => tag.tagName)
+    const tagsChanged = !isSameStringList(tagNames, originalTagNames.value)
     // 构建保存数据，包含上下文配置和语音设置
-    const saveData = {
+    const saveData: Record<string, any> = {
       ...formData.value,
-      ...speedPitchStore.speedPitch,
-      ttsLanguage: formData.value.language,
       contextProviders: providerStore.providers,
       functions: normalizeAgentFunctions(formData.value.functions || []),
     }
+    delete saveData.ttsVolume
+    delete saveData.ttsRate
+    delete saveData.ttsPitch
+    delete saveData.ttsLanguage
+    delete saveData.ttsVoiceId
+    if (ttsLanguageTouched.value) {
+      saveData.ttsLanguage = selectedTtsLanguage.value
+    }
+    if (ttsVoiceTouched.value) {
+      saveData.ttsVoiceId = formData.value.ttsVoiceId
+    }
+    const changedTtsFields = new Set(speedPitchStore.changedFields)
+    if (changedTtsFields.has('ttsVolume')) {
+      saveData.ttsVolume = speedPitchStore.speedPitch.ttsVolume
+    }
+    if (changedTtsFields.has('ttsRate')) {
+      saveData.ttsRate = speedPitchStore.speedPitch.ttsRate
+    }
+    if (changedTtsFields.has('ttsPitch')) {
+      saveData.ttsPitch = speedPitchStore.speedPitch.ttsPitch
+    }
+    if (tagsChanged) {
+      saveData.tagNames = tagNames
+    }
     await updateAgent(agentId.value, saveData)
-    loadAgentDetail()
+    if (tagsChanged) {
+      originalTagNames.value = [...tagNames]
+    }
+    speedPitchStore.resetChangedFields()
+    await loadAgentDetail()
 
     toast.success(t('agent.saveSuccess'))
   }
@@ -700,14 +819,23 @@ async function loadAgentTags() {
   try {
     const res = await getAgentTags(agentId.value)
     dynamicTags.value = res || []
+    originalTagNames.value = dynamicTags.value.map(tag => tag.tagName)
   }
   catch (error) {}
 }
 
-// 更新智能体标签
-async function handleUpdateAgentTags() {
-  const tagNames = dynamicTags.value.map(tag => tag.tagName)
-  await updateAgentTags(agentId.value, { tagNames })
+async function handleSnapshotRestored() {
+  await Promise.all([
+    loadAgentDetail(),
+    loadAgentTags(),
+  ])
+}
+
+function isSameStringList(left: string[], right: string[]) {
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+    return false
+  }
+  return left.every((value, index) => value === right[index])
 }
 
 // 监听store中的插件配置变化
@@ -734,6 +862,25 @@ onMounted(async () => {
 
 <template>
   <view class="bg-[#f5f7fb] px-[20rpx]">
+    <view class="mb-[24rpx] flex items-center justify-between border border-[#eeeeee] rounded-[20rpx] bg-white p-[24rpx]" style="box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);">
+      <view>
+        <text class="block text-[32rpx] text-[#232338] font-bold">
+          {{ t('agent.editTitle') }}
+        </text>
+        <text v-if="currentVersionNo" class="mt-[8rpx] block text-[24rpx] text-[#65686f]">
+          {{ t('agentSnapshot.currentVersion') }} #{{ currentVersionNo }}
+        </text>
+      </view>
+      <wd-button
+        size="small"
+        type="primary"
+        custom-class="!bg-[#336cff] !h-[64rpx] !rounded-[32rpx]"
+        @click="showSnapshotPanel = true"
+      >
+        {{ t('agentSnapshot.title') }}
+      </wd-button>
+    </view>
+
     <!-- 基础信息标题
     <view class="pb-[20rpx] first:pt-[20rpx]">
       <text class="text-[32rpx] text-[#232338] font-bold">
@@ -1008,7 +1155,7 @@ onMounted(async () => {
       <wd-button
         type="primary"
         :loading="saving"
-        :disabled="saving"
+        :disabled="saving || ttsOptionsLoading"
         custom-class="w-full h-[80rpx] rounded-[16rpx] text-[30rpx] font-semibold bg-[#336cff] active:bg-[#2d5bd1]"
         @click="saveAgent"
       >
@@ -1108,6 +1255,12 @@ onMounted(async () => {
       :actions="reportOptions"
       @close="onPickerCancel('report')"
       @select="({ item }) => onPickerConfirm('report', item.value, item.name)"
+    />
+    <AgentSnapshotPanel
+      v-model:visible="showSnapshotPanel"
+      :agent-id="agentId"
+      :current-version-no="currentVersionNo"
+      @restored="handleSnapshotRestored"
     />
   </view>
 </template>

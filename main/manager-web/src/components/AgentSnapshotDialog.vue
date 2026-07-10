@@ -8,6 +8,13 @@
       @open="open"
       @close="close"
     >
+      <template slot="title">
+        <div class="snapshot-dialog-title">
+          <i class="el-icon-time snapshot-title-icon" aria-hidden="true"></i>
+          <span>{{ $t('agentSnapshot.title') }}</span>
+        </div>
+      </template>
+
       <el-table
         v-loading="loading"
         :data="snapshots"
@@ -116,6 +123,13 @@
       width="860px"
       class="snapshot-detail-dialog"
     >
+      <template slot="title">
+        <div class="snapshot-dialog-title">
+          <i class="el-icon-time snapshot-title-icon" aria-hidden="true"></i>
+          <span>{{ detailDialogTitle }}</span>
+        </div>
+      </template>
+
       <div v-loading="detailLoading" class="snapshot-diff">
         <template v-if="currentSnapshot && snapshotDiffs.length">
           <div class="detail-summary">
@@ -289,6 +303,13 @@
       width="860px"
       class="snapshot-detail-dialog"
     >
+      <template slot="title">
+        <div class="snapshot-dialog-title">
+          <i class="el-icon-time snapshot-title-icon" aria-hidden="true"></i>
+          <span>{{ restorePreviewTitle }}</span>
+        </div>
+      </template>
+
       <div v-loading="restorePreviewLoading" class="snapshot-diff">
         <template v-if="restorePreviewSnapshot && restorePreviewDiffs.length">
           <div class="detail-summary">
@@ -418,17 +439,23 @@
           :title="$t('agentSnapshot.restoreMemoryWarning')"
         />
       </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="restorePreviewVisible = false">
+      <span slot="footer" class="snapshot-dialog-footer">
+        <el-button
+          class="snapshot-footer-button snapshot-footer-cancel"
+          @click="restorePreviewVisible = false"
+        >
           {{ $t('button.cancel') }}
         </el-button>
         <el-button
-          type="primary"
+          class="snapshot-footer-button snapshot-footer-confirm"
           :loading="restoring"
           :disabled="restorePreviewLoading || !restorePreviewSnapshot || restorePreviewDiffs.length === 0"
           @click="confirmRestoreSnapshot"
         >
-          {{ $t('agentSnapshot.confirmRestore') }}
+          <span class="confirm-inner">
+            <i class="el-icon-refresh-left confirm-icon" aria-hidden="true"></i>
+            {{ $t('agentSnapshot.confirmRestore') }}
+          </span>
         </el-button>
       </span>
     </el-dialog>
@@ -437,6 +464,7 @@
 
 <script>
 import Api from "@/apis/api";
+import correctWord from "@/apis/module/correctWord";
 import { formatDate } from "@/utils/date";
 
 const FALLBACK_PLUGIN_NAME_KEYS = {
@@ -545,6 +573,9 @@ export default {
       voiceNameMap: {},
       voiceMetadataLoading: {},
       loadedVoiceModelIds: {},
+      correctWordNameMap: {},
+      correctWordMetadataLoaded: false,
+      correctWordMetadataLoading: null,
       snapshotFetchSeq: 0,
       detailFetchSeq: 0,
       restorePreviewFetchSeq: 0,
@@ -598,12 +629,13 @@ export default {
 
       const beforeData = this.currentSnapshot.snapshotData || {};
       const afterData = this.currentSnapshot.afterSnapshotData || {};
-      return this.buildDiffs(beforeData, afterData, this.currentSnapshot.changedFields || [], {
+      return this.buildDiffs(beforeData, afterData, this.currentSnapshot.changedFields, {
         beforeLabel: this.$t("agentSnapshot.beforeChange"),
         afterLabel: this.$t("agentSnapshot.afterChange"),
         beforeVersionNo: this.currentSnapshot.beforeVersionNo,
         afterVersionNo: this.currentSnapshot.afterVersionNo || this.currentSnapshot.versionNo,
-        fieldOrder: this.currentSnapshot.fieldOrder
+        fieldOrder: this.currentSnapshot.fieldOrder,
+        forceCompare: Boolean(this.currentSnapshot.forceCompare)
       });
     },
     restorePreviewDiffs() {
@@ -620,7 +652,8 @@ export default {
           afterLabel: this.$t("agentSnapshot.afterRestore"),
           beforeVersionNo: this.restorePreviewSnapshot.beforeVersionNo || this.resolveCurrentVersionNo(),
           afterVersionNo: this.restorePreviewSnapshot.afterVersionNo || this.restorePreviewSnapshot.versionNo,
-          fieldOrder: this.restorePreviewSnapshot.fieldOrder
+          fieldOrder: this.restorePreviewSnapshot.fieldOrder,
+          forceCompare: true
         }
       );
     },
@@ -668,7 +701,13 @@ export default {
       });
     },
     buildDiffs(beforeData, afterData, changedFields, options = {}) {
-      const fields = this.resolveDiffFields(beforeData, afterData, changedFields, options.fieldOrder);
+      const fields = this.resolveDiffFields(
+        beforeData,
+        afterData,
+        changedFields,
+        options.fieldOrder,
+        options.forceCompare
+      );
       return fields.map((field) => {
         const beforeValue = this.getFieldValue(beforeData, field);
         const afterValue = this.getFieldValue(afterData, field);
@@ -1023,6 +1062,7 @@ export default {
             ...selectedSnapshot,
             versionNo: displayVersionNo,
             changedFields: adjacentVersion ? (selectedSnapshot.changedFields || row.changedFields || []) : [],
+            forceCompare: !adjacentVersion,
             snapshotData: previousSnapshot.snapshotData || {},
             afterSnapshotData: selectedSnapshot.snapshotData || {},
             beforeVersionNo: previousSnapshot.versionNo,
@@ -1210,8 +1250,43 @@ export default {
       const afterData = snapshot.afterSnapshotData || {};
       return Promise.all([
         this.ensureModelMetadata(),
-        this.ensureVoiceMetadataForData(beforeData, afterData)
+        this.ensureVoiceMetadataForData(beforeData, afterData),
+        this.ensureCorrectWordMetadataForData(beforeData, afterData)
       ]);
+    },
+    ensureCorrectWordMetadataForData(...dataList) {
+      const hasCorrectWordIds = dataList.some((data) => {
+        return Array.isArray(data?.correctWordFileIds) && data.correctWordFileIds.length > 0;
+      });
+      return hasCorrectWordIds ? this.ensureCorrectWordMetadata() : Promise.resolve();
+    },
+    ensureCorrectWordMetadata() {
+      if (this.correctWordMetadataLoaded) {
+        return Promise.resolve();
+      }
+      if (this.correctWordMetadataLoading) {
+        return this.correctWordMetadataLoading;
+      }
+
+      this.correctWordMetadataLoading = new Promise((resolve) => {
+        correctWord.selectAll(({ data }) => {
+          if (data.code === 0) {
+            const metadata = {};
+            (data.data || []).forEach((item) => {
+              if (item.id) {
+                metadata[item.id] = item.fileName || item.id;
+              }
+            });
+            this.correctWordNameMap = metadata;
+            this.correctWordMetadataLoaded = true;
+          }
+          resolve();
+        });
+      }).finally(() => {
+        this.correctWordMetadataLoading = null;
+      });
+
+      return this.correctWordMetadataLoading;
     },
     ensureVoiceMetadataForData(...dataList) {
       const modelIds = Array.from(new Set(
@@ -1661,17 +1736,21 @@ export default {
         ? `${this.$t("agentSnapshot.restoreFailedRollback")}: ${data.msg}`
         : this.$t("agentSnapshot.restoreFailedRollback");
     },
-    resolveDiffFields(beforeData, afterData, changedFields = [], fieldOrder = []) {
-      const safeChangedFields = Array.isArray(changedFields) ? changedFields : [];
+    resolveDiffFields(beforeData, afterData, changedFields = null, fieldOrder = [], forceCompare = false) {
+      const hasBackendChangedFields = Array.isArray(changedFields);
+      const safeChangedFields = hasBackendChangedFields ? changedFields : [];
       const directFields = safeChangedFields
         .filter((field) => field && field !== "restore")
         .map((field) => this.canonicalField(field));
-      const candidates = directFields.length > 0 && !safeChangedFields.includes("restore")
-        ? directFields
-        : this.snapshotFieldOrder(fieldOrder, beforeData, afterData);
+      if (!forceCompare && hasBackendChangedFields) {
+        return Array.from(new Set(directFields));
+      }
+
+      const candidates = this.snapshotFieldOrder(fieldOrder, beforeData, afterData);
 
       return Array.from(new Set(candidates)).filter((field) => {
-        return !this.isSameValue(
+        return !this.isSameFieldValue(
+          field,
           this.getFieldValue(beforeData, field),
           this.getFieldValue(afterData, field)
         );
@@ -1705,6 +1784,52 @@ export default {
     },
     isSameValue(left, right) {
       return this.isEquivalentValue(this.normalizeValue(left), this.normalizeValue(right));
+    },
+    isSameFieldValue(field, left, right) {
+      return this.isEquivalentValue(
+        this.normalizeValueForField(field, left),
+        this.normalizeValueForField(field, right)
+      );
+    },
+    normalizeValueForField(field, value) {
+      if (field === "functions") {
+        return this.normalizeFunctionMap(value);
+      }
+      if (field === "contextProviders") {
+        return this.normalizeSortedJsonList(value);
+      }
+      if (["ttsVolume", "ttsRate", "ttsPitch"].includes(field)) {
+        return this.normalizeDefaultTtsNumber(value);
+      }
+      if (field === "summaryMemory") {
+        return value === null || value === undefined || String(value).trim() === "" ? "" : String(value);
+      }
+      if (field === "correctWordFileIds" || field === "tagNames") {
+        return Array.isArray(value)
+          ? value.filter((item) => item !== null && item !== undefined && String(item).trim() !== "")
+            .map((item) => String(item))
+            .sort()
+          : [];
+      }
+      return this.normalizeValue(value);
+    },
+    normalizeSortedJsonList(value) {
+      if (!Array.isArray(value)) {
+        return [];
+      }
+      return value
+        .map((item) => this.normalizeValue(item))
+        .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+    },
+    normalizeDefaultTtsNumber(value) {
+      if (value === null || value === undefined || String(value).trim() === "") {
+        return 0;
+      }
+      if (typeof value === "number") {
+        return Math.trunc(value);
+      }
+      const text = String(value).trim();
+      return /^[+-]?\d+$/.test(text) ? Number.parseInt(text, 10) : text;
     },
     isEquivalentValue(left, right) {
       if (left === SNAPSHOT_SECRET_REDACTED || right === SNAPSHOT_SECRET_REDACTED) {
@@ -1754,6 +1879,9 @@ export default {
         return this.translateKey(CHAT_HISTORY_CONF_LABEL_KEYS[value] || CHAT_HISTORY_CONF_LABEL_KEYS[Number(value)])
           || this.formatValue(value);
       }
+      if (field === "correctWordFileIds") {
+        return this.correctWordDisplayNames(value);
+      }
       return this.formatValue(value);
     },
     modelDisplayName(value) {
@@ -1768,6 +1896,14 @@ export default {
       }
       return this.voiceNameMap[`${modelId}:${value}`] || this.voiceNameMap[value]
         || this.translateKey(FALLBACK_VOICE_NAME_KEYS[value], String(value)) || String(value);
+    },
+    correctWordDisplayNames(value) {
+      if (!Array.isArray(value) || value.length === 0) {
+        return this.$t("agentSnapshot.emptyValue");
+      }
+      return value
+        .map((id) => this.correctWordNameMap[id] || id)
+        .join(", ");
     },
     formatValue(value) {
       if (value === null || value === undefined || value === "") {
@@ -1846,12 +1982,140 @@ export default {
   font-weight: 500;
 }
 
+.snapshot-dialog-title {
+  display: inline-flex;
+  align-items: center;
+  font-size: 18px;
+
+  > span {
+    line-height: 18px;
+    font-weight: 500;
+  }
+}
+
+.snapshot-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  color: #4a7cfd;
+  font-size: 24px;
+  line-height: 1;
+}
+
+::v-deep .el-dialog__headerbtn {
+  top: 12px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+  .el-dialog__close {
+    position: static;
+    color: #666;
+    font-size: 18px;
+    transform: none;
+  }
+
+  &:hover {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+
+    .el-dialog__close {
+      color: #333;
+    }
+  }
+}
+
 ::v-deep .el-dialog__body {
   padding: 20px;
 }
 
 ::v-deep .el-dialog__footer {
   padding: 12px 20px 16px;
+}
+
+.snapshot-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.snapshot-footer-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  height: 36px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+
+  & + .snapshot-footer-button {
+    margin-left: 0;
+  }
+}
+
+.snapshot-footer-cancel {
+  border: 1px solid #d7e1ff;
+  background: #f7f9ff;
+  color: #4a7cfd;
+
+  &:hover,
+  &:focus {
+    border-color: #4a7cfd;
+    background: #eef4ff;
+    color: #4a7cfd;
+    box-shadow: 0 2px 8px rgba(74, 124, 253, 0.14);
+    transform: translateY(-2px);
+  }
+}
+
+.snapshot-footer-confirm {
+  border: none;
+  background: linear-gradient(to right, #4a7cfd, #8154fc);
+  color: #fff;
+
+  &:hover,
+  &:focus {
+    border-color: transparent;
+    background: linear-gradient(to right, #4a7cfd, #8154fc);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(74, 124, 253, 0.3);
+    transform: translateY(-2px);
+    opacity: 0.88;
+  }
+
+  &.is-disabled,
+  &.is-disabled:hover,
+  &.is-disabled:focus {
+    border-color: transparent;
+    background: linear-gradient(to right, #a0b4fd, #b8a4fd);
+    color: rgba(255, 255, 255, 0.6);
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+    opacity: 1;
+  }
+}
+
+.confirm-inner {
+  display: inline-flex;
+  align-items: center;
+}
+
+.confirm-icon {
+  margin-right: 5px;
+  font-size: 16px;
 }
 
 .snapshot-table {

@@ -358,8 +358,36 @@ public class AgentSnapshotServiceImpl extends BaseServiceImpl<AgentSnapshotDao, 
             case CONTEXT_PROVIDERS -> normalizeSortedJsonList((List<?>) value);
             case CORRECT_WORD_FILE_IDS -> normalizeStringList((List<String>) value);
             case TAG_NAMES -> normalizeStringList((List<String>) value);
+            case SUMMARY_MEMORY -> normalizeBlankText(value);
+            case TTS_VOLUME, TTS_RATE, TTS_PITCH -> normalizeDefaultTtsNumber(value);
             default -> value;
         };
+    }
+
+    private String normalizeBlankText(Object value) {
+        if (value == null) {
+            return "";
+        }
+        String text = String.valueOf(value);
+        return StringUtils.isBlank(text) ? "" : text;
+    }
+
+    private Object normalizeDefaultTtsNumber(Object value) {
+        if (value == null) {
+            return 0;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        String text = String.valueOf(value);
+        if (StringUtils.isBlank(text)) {
+            return 0;
+        }
+        try {
+            return Integer.valueOf(text.trim());
+        } catch (NumberFormatException ignored) {
+            return text;
+        }
     }
 
     private Map<String, Object> normalizeFunctions(List<AgentUpdateDTO.FunctionInfo> functions) {

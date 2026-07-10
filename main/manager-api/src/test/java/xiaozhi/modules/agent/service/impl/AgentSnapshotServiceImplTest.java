@@ -12,6 +12,8 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -35,19 +37,25 @@ import xiaozhi.modules.agent.Enums.AgentSnapshotField;
 import xiaozhi.modules.agent.dao.AgentDao;
 import xiaozhi.modules.agent.dao.AgentSnapshotDao;
 import xiaozhi.modules.agent.dao.AgentTagDao;
+import xiaozhi.modules.agent.dto.AgentCreateDTO;
 import xiaozhi.modules.agent.dto.AgentSnapshotDataDTO;
 import xiaozhi.modules.agent.dto.AgentSnapshotPageDTO;
 import xiaozhi.modules.agent.dto.AgentSnapshotTagDTO;
 import xiaozhi.modules.agent.dto.AgentUpdateDTO;
 import xiaozhi.modules.agent.dto.ContextProviderDTO;
 import xiaozhi.modules.agent.entity.AgentEntity;
+import xiaozhi.modules.agent.entity.AgentTemplateEntity;
 import xiaozhi.modules.agent.entity.AgentSnapshotEntity;
 import xiaozhi.modules.agent.entity.AgentTagEntity;
+import xiaozhi.modules.agent.service.AgentPluginMappingService;
 import xiaozhi.modules.agent.service.AgentContextProviderService;
 import xiaozhi.modules.agent.service.AgentSnapshotService;
+import xiaozhi.modules.agent.service.AgentTemplateService;
 import xiaozhi.modules.agent.vo.AgentSnapshotVO;
 import xiaozhi.modules.agent.vo.AgentInfoVO;
 import xiaozhi.modules.correctword.service.CorrectWordFileService;
+import xiaozhi.modules.model.service.ModelProviderService;
+import xiaozhi.modules.timbre.service.TimbreService;
 
 class AgentSnapshotServiceImplTest {
 
@@ -172,6 +180,70 @@ class AgentSnapshotServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void blankSummaryMemoryValuesAreNotSnapshotChanges() throws Exception {
+        AgentSnapshotServiceImpl service = new AgentSnapshotServiceImpl(null, null, null, null, null, null, null, null,
+                null, null);
+        Method method = AgentSnapshotServiceImpl.class.getDeclaredMethod("getChangedFields",
+                AgentSnapshotDataDTO.class, AgentSnapshotDataDTO.class);
+        method.setAccessible(true);
+
+        AgentSnapshotDataDTO current = new AgentSnapshotDataDTO();
+        current.setSummaryMemory(null);
+        AgentSnapshotDataDTO next = new AgentSnapshotDataDTO();
+        next.setSummaryMemory("");
+
+        List<String> changedFields = (List<String>) method.invoke(service, current, next);
+
+        assertFalse(changedFields.contains(AgentSnapshotField.SUMMARY_MEMORY.getFieldName()));
+        assertTrue(changedFields.isEmpty());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void emptyTtsAdvancedDefaultsAreNotSnapshotChanges() throws Exception {
+        AgentSnapshotServiceImpl service = new AgentSnapshotServiceImpl(null, null, null, null, null, null, null, null,
+                null, null);
+        Method method = AgentSnapshotServiceImpl.class.getDeclaredMethod("getChangedFields",
+                AgentSnapshotDataDTO.class, AgentSnapshotDataDTO.class);
+        method.setAccessible(true);
+
+        AgentSnapshotDataDTO current = new AgentSnapshotDataDTO();
+        current.setTtsVolume(null);
+        current.setTtsRate(null);
+        current.setTtsPitch(null);
+        AgentSnapshotDataDTO next = new AgentSnapshotDataDTO();
+        next.setTtsVolume(0);
+        next.setTtsRate(0);
+        next.setTtsPitch(0);
+
+        List<String> changedFields = (List<String>) method.invoke(service, current, next);
+
+        assertTrue(changedFields.isEmpty());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void explicitTtsLanguageIsStoredAsSnapshotChangeEvenWhenItMatchesVoiceDefault() throws Exception {
+        AgentSnapshotServiceImpl service = new AgentSnapshotServiceImpl(null, null, null, null, null, null, null, null,
+                null, null);
+        Method method = AgentSnapshotServiceImpl.class.getDeclaredMethod("getChangedFields",
+                AgentSnapshotDataDTO.class, AgentSnapshotDataDTO.class);
+        method.setAccessible(true);
+
+        AgentSnapshotDataDTO current = new AgentSnapshotDataDTO();
+        current.setTtsVoiceId("voice-id");
+        current.setTtsLanguage(null);
+        AgentSnapshotDataDTO next = new AgentSnapshotDataDTO();
+        next.setTtsVoiceId("voice-id");
+        next.setTtsLanguage("普通话");
+
+        List<String> changedFields = (List<String>) method.invoke(service, current, next);
+
+        assertEquals(List.of(AgentSnapshotField.TTS_LANGUAGE.getFieldName()), changedFields);
+    }
+
+    @Test
     void tagOnlySavePathCreatesSnapshot() throws Exception {
         String controller = Files.readString(Path.of("src/main/java/xiaozhi/modules/agent/controller/AgentController.java"));
         String roleConfig = Files.readString(Path.of("../manager-web/src/views/roleConfig.vue"));
@@ -214,6 +286,42 @@ class AgentSnapshotServiceImplTest {
         inOrder.verify(snapshotService).createSnapshot(agentId, "initial");
         inOrder.verify(agentDao).updateById(argThat(agent -> "new-name".equals(agent.getAgentName())));
         inOrder.verify(snapshotService).createSnapshot(agentId, "config");
+    }
+
+    @Test
+    void createAgentPersistsDisplayDefaultsBeforeInitialSnapshot() {
+        AgentDao agentDao = mock(AgentDao.class);
+        TimbreService timbreService = mock(TimbreService.class);
+        AgentPluginMappingService pluginMappingService = mock(AgentPluginMappingService.class);
+        AgentTemplateService templateService = mock(AgentTemplateService.class);
+        ModelProviderService providerService = mock(ModelProviderService.class);
+        AgentSnapshotService snapshotService = mock(AgentSnapshotService.class);
+        AgentServiceImpl service = new AgentServiceImpl(agentDao, null, timbreService, null, null, null,
+                pluginMappingService, null, templateService, providerService, null, null, null, snapshotService);
+        ReflectionTestUtils.setField(service, "baseDao", agentDao);
+
+        AgentTemplateEntity template = new AgentTemplateEntity();
+        template.setTtsModelId("TTS_EdgeTTS");
+        template.setTtsVoiceId("TTS_EdgeTTS0001");
+        template.setMemModelId("Memory_nomem");
+        template.setSummaryMemory(null);
+        when(templateService.getDefaultTemplate()).thenReturn(template);
+
+        when(timbreService.getDefaultLanguageById("TTS_EdgeTTS0001")).thenReturn("普通话");
+        when(agentDao.insert(any())).thenReturn(1);
+
+        AgentCreateDTO dto = new AgentCreateDTO();
+        dto.setAgentName("test123");
+
+        String agentId = service.createAgent(dto);
+
+        InOrder inOrder = inOrder(agentDao, pluginMappingService, snapshotService);
+        inOrder.verify(agentDao).insert(argThat(agent -> "test123".equals(agent.getAgentName())
+                && "普通话".equals(agent.getTtsLanguage())
+                && "".equals(agent.getSummaryMemory())
+                && Integer.valueOf(0).equals(agent.getChatHistoryConf())));
+        inOrder.verify(pluginMappingService).saveBatch(any());
+        inOrder.verify(snapshotService).createSnapshot(agentId, "initial");
     }
 
     @Test
@@ -283,11 +391,15 @@ class AgentSnapshotServiceImplTest {
     }
 
     @Test
-    void selectNextSnapshotLoadsRestoreTraceColumns() throws Exception {
+    void selectNextSnapshotLoadsRestoreTraceColumnsWithoutPreviousVersionQuery() throws Exception {
         String xml = normalizeWhitespace(Files.readString(Path.of("src/main/resources/mapper/agent/AgentSnapshotDao.xml")));
+        String dao = Files.readString(Path.of("src/main/java/xiaozhi/modules/agent/dao/AgentSnapshotDao.java"));
 
         assertTrue(xml.contains("restore_from_snapshot_id AS restoreFromSnapshotId"));
         assertTrue(xml.contains("restore_from_version_no AS restoreFromVersionNo"));
+        assertTrue(xml.contains("version_no &gt; #{versionNo}"));
+        assertFalse(xml.contains("selectPreviousSnapshot"));
+        assertFalse(dao.contains("selectPreviousSnapshot"));
     }
 
     @Test
@@ -329,6 +441,52 @@ class AgentSnapshotServiceImplTest {
 
         assertEquals("target-id", vo.getRestoreFromSnapshotId());
         assertEquals(1, vo.getRestoreFromVersionNo());
+    }
+
+    @Test
+    void toVOKeepsStoredEventFieldsStableAcrossDeletedVersionGapAndMetadataChanges() throws Exception {
+        AgentSnapshotDao snapshotDao = mock(AgentSnapshotDao.class);
+        AgentSnapshotServiceImpl service = new AgentSnapshotServiceImpl(snapshotDao, null, null, null, null, null, null,
+                null, null, null);
+        Method method = AgentSnapshotServiceImpl.class.getDeclaredMethod("toVO",
+                AgentSnapshotEntity.class, boolean.class);
+        method.setAccessible(true);
+
+        AgentSnapshotEntity current = new AgentSnapshotEntity();
+        current.setId("snapshot-id");
+        current.setAgentId("agent-id");
+        current.setVersionNo(3);
+        current.setChangedFields(JsonUtils.toJsonString(List.of("ttsLanguage", "ttsVolume")));
+
+        AgentSnapshotVO vo = (AgentSnapshotVO) method.invoke(service, current, false);
+
+        assertEquals(List.of("ttsLanguage", "ttsVolume"), vo.getChangedFields());
+        verifyNoInteractions(snapshotDao);
+    }
+
+    @Test
+    void pageUsesPersistedChangedFieldsWithoutPerRecordQueries() {
+        AgentSnapshotDao snapshotDao = mock(AgentSnapshotDao.class);
+        AgentSnapshotServiceImpl service = new AgentSnapshotServiceImpl(snapshotDao, null, null, null, null, null, null,
+                null, null, null);
+
+        AgentSnapshotEntity versionFive = new AgentSnapshotEntity();
+        versionFive.setVersionNo(5);
+        versionFive.setChangedFields(JsonUtils.toJsonString(List.of("agentName")));
+        AgentSnapshotEntity versionThree = new AgentSnapshotEntity();
+        versionThree.setVersionNo(3);
+        versionThree.setChangedFields(JsonUtils.toJsonString(List.of("ttsLanguage")));
+        Page<AgentSnapshotEntity> result = new Page<>(1, 10);
+        result.setRecords(List.of(versionFive, versionThree));
+        result.setTotal(2);
+        when(snapshotDao.selectPage(any(), any())).thenReturn(result);
+
+        List<AgentSnapshotVO> records = service.page("agent-id", new AgentSnapshotPageDTO()).getList();
+
+        assertEquals(List.of("agentName"), records.get(0).getChangedFields());
+        assertEquals(List.of("ttsLanguage"), records.get(1).getChangedFields());
+        verify(snapshotDao).selectPage(any(), any());
+        verifyNoMoreInteractions(snapshotDao);
     }
 
     @Test
