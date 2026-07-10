@@ -43,11 +43,8 @@ class MemoryProvider(MemoryProviderBase):
         self.memory_client = None
         self.enable_user_profile = False
         self.last_profile_content = ""  # Cache for user profile from UserMemory
-
         try:
-            # Check if user profile mode is enabled
-            self.enable_user_profile = config.get("enable_user_profile", False)
-            
+            self.enable_user_profile = str(config.get("enable_user_profile", False)).lower() == 'true'
             # Get configuration parameters
             database_provider = config.get("database_provider", "sqlite")
             llm_provider = config.get("llm_provider", "qwen")
