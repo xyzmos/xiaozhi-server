@@ -311,8 +311,9 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
 
         // 锁定后查询现有实体和关联配置
         AgentEntity existingEntity = this.getAgentById(agentId);
-        if (createSnapshot && agentSnapshotService.getCurrentVersionNo(agentId) == 0) {
-            agentSnapshotService.createSnapshot(agentId, "initial");
+        if (createSnapshot) {
+            int currentVersionNo = agentSnapshotService.getCurrentVersionNo(agentId);
+            agentSnapshotService.createSnapshot(agentId, currentVersionNo == 0 ? "initial" : "current");
         }
 
         // 只更新提供的非空字段

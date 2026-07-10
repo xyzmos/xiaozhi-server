@@ -5,6 +5,10 @@
       :visible="visible"
       width="760px"
       class="agent-snapshot-dialog"
+      :before-close="guardRestoreInFlightClose"
+      :close-on-click-modal="!restoring"
+      :close-on-press-escape="!restoring"
+      :show-close="!restoring"
       @open="open"
       @close="close"
     >
@@ -302,6 +306,10 @@
       :visible.sync="restorePreviewVisible"
       width="860px"
       class="snapshot-detail-dialog"
+      :before-close="guardRestoreInFlightClose"
+      :close-on-click-modal="!restoring"
+      :close-on-press-escape="!restoring"
+      :show-close="!restoring"
     >
       <template slot="title">
         <div class="snapshot-dialog-title">
@@ -431,25 +439,34 @@
           :title="$t('agentSnapshot.restoreConfirm', { version: restoreTargetVersion })"
         />
         <el-alert
-          v-if="restoreWillClearChatHistory"
+          v-if="restorePreviewSnapshot"
           class="restore-risk-alert"
           type="warning"
           :closable="false"
           show-icon
-          :title="$t('agentSnapshot.restoreMemoryWarning')"
+          :title="$t('agentSnapshot.unsavedChangesWarning')"
+        />
+        <el-alert
+          v-if="restoreWillClearChatHistory"
+          class="restore-risk-alert"
+          type="error"
+          :closable="false"
+          show-icon
+          :title="$t('agentSnapshot.restoreMemoryDestructiveWarning')"
         />
       </div>
       <span slot="footer" class="snapshot-dialog-footer">
         <el-button
           class="snapshot-footer-button snapshot-footer-cancel"
-          @click="restorePreviewVisible = false"
+          :disabled="restoring"
+          @click="closeRestorePreview"
         >
           {{ $t('button.cancel') }}
         </el-button>
         <el-button
           class="snapshot-footer-button snapshot-footer-confirm"
           :loading="restoring"
-          :disabled="restorePreviewLoading || !restorePreviewSnapshot || restorePreviewDiffs.length === 0"
+          :disabled="restoring || restorePreviewLoading || !restorePreviewSnapshot || restorePreviewDiffs.length === 0"
           @click="confirmRestoreSnapshot"
         >
           <span class="confirm-inner">
@@ -466,6 +483,12 @@
 import Api from "@/apis/api";
 import correctWord from "@/apis/module/correctWord";
 import { formatDate } from "@/utils/date";
+import {
+  hasValidCurrentStateToken,
+  normalizeSnapshotOrderedValue,
+  redactSnapshotDisplayValue,
+  SNAPSHOT_SECRET_REDACTED
+} from "./agentSnapshotDisplayUtils.mjs";
 
 const FALLBACK_PLUGIN_NAME_KEYS = {
   SYSTEM_PLUGIN_WEATHER: "agentSnapshot.plugin.SYSTEM_PLUGIN_WEATHER",
@@ -533,8 +556,6 @@ const CHAT_HISTORY_CONF_LABEL_KEYS = {
   1: "agentSnapshot.chatHistoryConf.text",
   2: "agentSnapshot.chatHistoryConf.textVoice"
 };
-const SNAPSHOT_SECRET_REDACTED = "__SNAPSHOT_SECRET_REDACTED__";
-
 export default {
   name: "AgentSnapshotDialog",
   props: {
@@ -730,9 +751,24 @@ export default {
       });
     },
     close() {
+      if (this.restoring) {
+        return;
+      }
       this.cancelPendingSnapshotRequests();
       this.historyAnchorVersionNo = null;
       this.$emit("update:visible", false);
+    },
+    guardRestoreInFlightClose(done) {
+      if (this.restoring) {
+        return;
+      }
+      done();
+    },
+    closeRestorePreview() {
+      if (this.restoring) {
+        return;
+      }
+      this.restorePreviewVisible = false;
     },
     open() {
       this.historyAnchorVersionNo = null;
@@ -761,7 +797,7 @@ export default {
       return !!row?.id;
     },
     canRestoreSnapshot(row) {
-      return !!row && !row.isLatestSnapshot;
+      return !!row?.id && !row.isLatestSnapshot;
     },
     canDeleteSnapshot(row) {
       return !!row && !row.isLatestSnapshot;
@@ -806,6 +842,13 @@ export default {
           } else {
             this.$message.error(data.msg || this.$t("agentSnapshot.fetchFailed"));
           }
+        },
+        () => {
+          if (requestSeq !== this.snapshotFetchSeq) {
+            return;
+          }
+          this.loading = false;
+          this.$message.error(this.$t("agentSnapshot.fetchFailed"));
         }
       );
     },
@@ -855,16 +898,20 @@ export default {
       this.ensurePluginMetadata();
       this.ensureModelMetadata();
 
-      Promise.all([
-        this.fetchSnapshotDetail(row.id),
-        this.fetchCurrentAgentData()
-      ]).then(([targetSnapshot, currentData]) => {
+      this.fetchSnapshotDetail(row.id).then((targetSnapshot) => {
         if (requestSeq !== this.restorePreviewFetchSeq) {
           return Promise.resolve();
         }
+        if (
+          !this.isPlainObject(targetSnapshot.currentSnapshotData)
+          || !hasValidCurrentStateToken(targetSnapshot.currentStateToken)
+        ) {
+          throw new Error("Snapshot detail is missing its atomic current-state preview");
+        }
         const previewSnapshot = {
           ...targetSnapshot,
-          beforeSnapshotData: currentData,
+          currentStateToken: targetSnapshot.currentStateToken,
+          beforeSnapshotData: targetSnapshot.currentSnapshotData,
           afterSnapshotData: targetSnapshot.snapshotData || {},
           beforeVersionNo: this.resolveCurrentVersionNo(),
           afterVersionNo: targetSnapshot.versionNo,
@@ -895,12 +942,56 @@ export default {
       }));
     },
     confirmRestoreSnapshot() {
-      if (!this.restorePreviewRow) {
+      if (this.restoring || !this.restorePreviewRow) {
+        return;
+      }
+      const snapshotId = this.restorePreviewRow.id;
+      const currentStateToken = this.restorePreviewSnapshot?.currentStateToken;
+      if (!hasValidCurrentStateToken(currentStateToken)) {
+        this.invalidateRestorePreview();
+        this.$message.error(this.$t("agentSnapshot.restoreFailed"));
+        return;
+      }
+
+      if (!this.restoreWillClearChatHistory) {
+        this.submitRestoreSnapshot(snapshotId, currentStateToken);
+        return;
+      }
+
+      this.restoring = true;
+      const requestSeq = ++this.restoreActionSeq;
+      this.$confirm(
+        this.$t("agentSnapshot.restoreMemoryDestructiveWarning"),
+        this.$t("common.warning"),
+        {
+          confirmButtonText: this.$t("common.confirm"),
+          cancelButtonText: this.$t("common.cancel"),
+          type: "error"
+        }
+      ).then(() => {
+        if (requestSeq !== this.restoreActionSeq) {
+          return;
+        }
+        this.submitRestoreSnapshot(snapshotId, currentStateToken, requestSeq);
+      }).catch(() => {
+        if (requestSeq === this.restoreActionSeq) {
+          this.restoring = false;
+        }
+      });
+    },
+    submitRestoreSnapshot(snapshotId, currentStateToken, confirmedRequestSeq = null) {
+      if (!hasValidCurrentStateToken(currentStateToken)) {
+        this.restoring = false;
+        this.invalidateRestorePreview();
+        this.$message.error(this.$t("agentSnapshot.restoreFailed"));
+        return;
+      }
+      const requestSeq = confirmedRequestSeq ?? ++this.restoreActionSeq;
+      if (requestSeq !== this.restoreActionSeq) {
         return;
       }
       this.restoring = true;
-      const requestSeq = ++this.restoreActionSeq;
-      Api.agent.restoreAgentSnapshot(this.agentId, this.restorePreviewRow.id, ({ data }) => {
+      Api.agent.restoreAgentSnapshot(this.agentId, snapshotId, currentStateToken, ({ data }) => {
         if (requestSeq !== this.restoreActionSeq) {
           return;
         }
@@ -908,14 +999,31 @@ export default {
         if (data.code === 0) {
           this.$message.success(this.$t("agentSnapshot.restoreSuccess"));
           this.restorePreviewVisible = false;
+          this.restorePreviewSnapshot = null;
+          this.restorePreviewRow = null;
           this.detailVisible = false;
           this.$emit("restored");
           this.historyAnchorVersionNo = null;
           this.fetchSnapshots();
         } else {
+          this.invalidateRestorePreview();
           this.$message.error(this.restoreFailedMessage(data));
         }
+      }, () => {
+        if (requestSeq !== this.restoreActionSeq) {
+          return;
+        }
+        this.restoring = false;
+        this.invalidateRestorePreview();
+        this.$message.error(this.$t("agentSnapshot.restoreFailed"));
       });
+    },
+    invalidateRestorePreview() {
+      this.restorePreviewFetchSeq += 1;
+      this.restorePreviewLoading = false;
+      this.restorePreviewVisible = false;
+      this.restorePreviewSnapshot = null;
+      this.restorePreviewRow = null;
     },
     deleteSnapshot(row) {
       if (!this.canDeleteSnapshot(row)) {
@@ -946,6 +1054,12 @@ export default {
           } else {
             this.$message.error(data.msg || this.$t("agentSnapshot.deleteFailed"));
           }
+        }, () => {
+          if (requestSeq !== this.deleteActionSeq) {
+            return;
+          }
+          this.deletingSnapshotId = null;
+          this.$message.error(this.$t("agentSnapshot.deleteFailed"));
         });
       }).catch(() => {});
     },
@@ -992,7 +1106,7 @@ export default {
           } else {
             reject(data);
           }
-        });
+        }, reject);
       });
     },
     fetchSnapshotRows(params) {
@@ -1003,7 +1117,7 @@ export default {
           } else {
             reject(data);
           }
-        });
+        }, reject);
       });
     },
     snapshotQueryParams(params = {}) {
@@ -1192,6 +1306,9 @@ export default {
             this.pluginMetadataLoaded = true;
           }
           resolve();
+        }, () => {
+          this.pluginMetadataLoaded = true;
+          resolve();
         });
       }).finally(() => {
         this.pluginMetadataLoading = null;
@@ -1221,9 +1338,9 @@ export default {
           };
 
           if (type === "LLM") {
-            Api.model.getLlmModelCodeList("", callback);
+            Api.model.getLlmModelCodeList("", callback, () => resolve([]));
           } else {
-            Api.model.getModelNames(type, "", callback);
+            Api.model.getModelNames(type, "", callback, () => resolve([]));
           }
         });
       });
@@ -1281,6 +1398,10 @@ export default {
             this.correctWordMetadataLoaded = true;
           }
           resolve();
+        }, () => {
+          // 权限不足或元数据服务不可用时保留原始 ID，不扩大文件列表的访问边界。
+          this.correctWordMetadataLoaded = true;
+          resolve();
         });
       }).finally(() => {
         this.correctWordMetadataLoading = null;
@@ -1324,6 +1445,12 @@ export default {
               };
             }
             resolve();
+          }, () => {
+            this.loadedVoiceModelIds = {
+              ...this.loadedVoiceModelIds,
+              [modelId]: true
+            };
+            resolve();
           });
         }).finally(() => {
           const { [modelId]: dropped, ...rest } = this.voiceMetadataLoading;
@@ -1358,7 +1485,7 @@ export default {
           } else {
             reject(data);
           }
-        });
+        }, reject);
       });
       const tagsPromise = this.fetchCurrentAgentTags();
 
@@ -1378,7 +1505,7 @@ export default {
           } else {
             reject(data);
           }
-        });
+        }, reject);
       });
     },
     normalizeAgentData(data) {
@@ -1576,7 +1703,7 @@ export default {
       return paramKeys.map((key) => ({
         key,
         label: this.functionParamLabel(pluginId, key),
-        value: this.formatFunctionParamValue(normalizedParams[key]),
+        value: this.formatFunctionParamValue(normalizedParams[key], key),
         changed: changedParamKeys.includes(key)
       }));
     },
@@ -1604,11 +1731,11 @@ export default {
         return item.id === pluginId || item.providerCode === pluginId || item.name === pluginId;
       }) || null;
     },
-    formatFunctionParamValue(value) {
+    formatFunctionParamValue(value, key = "") {
       if (value === null || value === undefined || value === "") {
         return this.$t("agentSnapshot.emptyValue");
       }
-      const displayValue = this.localizedSnapshotDisplayValue(value);
+      const displayValue = this.localizedSnapshotDisplayValue(value, key);
       if (typeof displayValue === "object") {
         return JSON.stringify(displayValue);
       }
@@ -1796,7 +1923,7 @@ export default {
         return this.normalizeFunctionMap(value);
       }
       if (field === "contextProviders") {
-        return this.normalizeSortedJsonList(value);
+        return normalizeSnapshotOrderedValue(Array.isArray(value) ? value : []);
       }
       if (["ttsVolume", "ttsRate", "ttsPitch"].includes(field)) {
         return this.normalizeDefaultTtsNumber(value);
@@ -1813,17 +1940,9 @@ export default {
       }
       return this.normalizeValue(value);
     },
-    normalizeSortedJsonList(value) {
-      if (!Array.isArray(value)) {
-        return [];
-      }
-      return value
-        .map((item) => this.normalizeValue(item))
-        .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
-    },
     normalizeDefaultTtsNumber(value) {
       if (value === null || value === undefined || String(value).trim() === "") {
-        return 0;
+        return null;
       }
       if (typeof value === "number") {
         return Math.trunc(value);
@@ -1854,16 +1973,7 @@ export default {
       return left === right;
     },
     normalizeValue(value) {
-      if (Array.isArray(value)) {
-        return value.map((item) => this.normalizeValue(item));
-      }
-      if (value && typeof value === "object") {
-        return Object.keys(value).sort().reduce((result, key) => {
-          result[key] = this.normalizeValue(value[key]);
-          return result;
-        }, {});
-      }
-      return value === undefined ? null : value;
+      return normalizeSnapshotOrderedValue(value);
     },
     isPlainObject(value) {
       return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -1882,7 +1992,7 @@ export default {
       if (field === "correctWordFileIds") {
         return this.correctWordDisplayNames(value);
       }
-      return this.formatValue(value);
+      return this.formatValue(value, field);
     },
     modelDisplayName(value) {
       if (value === null || value === undefined || value === "") {
@@ -1905,14 +2015,14 @@ export default {
         .map((id) => this.correctWordNameMap[id] || id)
         .join(", ");
     },
-    formatValue(value) {
+    formatValue(value, parentKey = "") {
       if (value === null || value === undefined || value === "") {
         return this.$t("agentSnapshot.emptyValue");
       }
       if (Array.isArray(value) && value.length === 0) {
         return this.$t("agentSnapshot.emptyValue");
       }
-      const displayValue = this.localizedSnapshotDisplayValue(value);
+      const displayValue = this.localizedSnapshotDisplayValue(value, parentKey);
       if (Array.isArray(displayValue) && displayValue.every((item) => this.isPrimitiveValue(item))) {
         return displayValue.join(", ");
       }
@@ -1921,20 +2031,12 @@ export default {
       }
       return String(displayValue);
     },
-    localizedSnapshotDisplayValue(value) {
-      if (value === SNAPSHOT_SECRET_REDACTED) {
-        return this.$t("agentSnapshot.secretRedacted");
-      }
-      if (Array.isArray(value)) {
-        return value.map((item) => this.localizedSnapshotDisplayValue(item));
-      }
-      if (value && typeof value === "object") {
-        return Object.keys(value).reduce((result, key) => {
-          result[key] = this.localizedSnapshotDisplayValue(value[key]);
-          return result;
-        }, {});
-      }
-      return value;
+    localizedSnapshotDisplayValue(value, parentKey = "") {
+      return redactSnapshotDisplayValue(
+        value,
+        this.$t("agentSnapshot.secretRedacted"),
+        parentKey
+      );
     },
     isPrimitiveValue(value) {
       return value === null || ["string", "number", "boolean"].includes(typeof value);

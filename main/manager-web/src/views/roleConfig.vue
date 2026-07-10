@@ -6,7 +6,7 @@
       <h2 class="page-title">{{ $t("roleConfig.title") }}</h2>
     </div>
 
-    <div class="main-wrapper">
+    <div class="main-wrapper" v-loading="agentReloading">
       <div class="content-panel">
         <div class="content-area">
           <el-card class="config-card" shadow="never">
@@ -54,7 +54,7 @@
                 <el-button
                   type="primary"
                   class="save-btn"
-                  :disabled="voiceOptionsLoading"
+                  :disabled="configInteractionBlocked"
                   @click="saveConfig"
                 >
                   {{ $t("roleConfig.saveConfig") }}
@@ -304,6 +304,7 @@
                         <el-select
                           v-model="form.model[model.key]"
                           filterable
+                          :disabled="model.type === 'TTS' && voiceOptionsLoading"
                           :placeholder="$t('roleConfig.pleaseSelect')"
                           class="form-select"
                           @change="handleModelChange(model.type, $event)"
@@ -370,6 +371,7 @@
                         <div class="model-select-wrapper">
                           <el-select
                             v-model="selectedLanguage"
+                            :disabled="voiceOptionsLoading"
                             :placeholder="$t('roleConfig.selectLanguage')"
                             class="form-select language-select"
                             @change="handleLanguageChange"
@@ -395,6 +397,7 @@
                           <el-select
                             v-model="form.ttsVoiceId"
                             filterable
+                            :disabled="voiceOptionsLoading"
                             :placeholder="$t('roleConfig.pleaseSelect')"
                             class="form-select"
                             @change="handleVoiceChange"
@@ -566,6 +569,18 @@ export default {
       ttsVoiceTouched: false,
       voiceFetchSeq: 0,
       voiceOptionsLoading: false,
+      lastValidTtsDraft: null,
+      agentReloading: false,
+      agentReloadSeq: 0,
+      agentConfigFetchSeq: 0,
+      agentTagsFetchSeq: 0,
+      currentVersionFetchSeq: 0,
+      agentConfigLoaded: false,
+      agentFunctionsLoaded: false,
+      agentTagsLoaded: false,
+      currentVersionLoaded: false,
+      pluginMetadataReady: false,
+      pluginMetadataLoading: null,
       // 功能状态
       featureStatus: {
         vad: false, // 语言检测活动功能状态
@@ -577,6 +592,15 @@ export default {
       inputValue: '',
       checkedReplacementWordIds: []
     };
+  },
+  computed: {
+    configInteractionBlocked() {
+      return this.agentReloading
+        || this.voiceOptionsLoading
+        || !this.agentConfigLoaded
+        || !this.agentFunctionsLoaded
+        || !this.agentTagsLoaded;
+    }
   },
   methods: {
     goToHome() {
@@ -602,7 +626,7 @@ export default {
       return { ...fallback };
     },
     async saveConfig() {
-      if (this.voiceOptionsLoading) {
+      if (this.configInteractionBlocked) {
         return;
       }
       const configData = {
@@ -676,6 +700,9 @@ export default {
               && this.form.ttsVoiceId === submittedTtsVoiceId) {
               this.ttsVoiceTouched = false;
             }
+            if (submittedVoiceFetchSeq === this.voiceFetchSeq) {
+              this.lastValidTtsDraft = this.captureTtsDraft();
+            }
             this.$message.success({
               message: i18n.t("roleConfig.saveSuccess"),
               showClose: true,
@@ -692,24 +719,77 @@ export default {
       });
       
     },
+    async reloadAgentPage(agentId, options = {}) {
+      if (!agentId) {
+        return false;
+      }
+      const requestSeq = ++this.agentReloadSeq;
+      this.agentReloading = true;
+      if (options.closeEditors) {
+        this.showSnapshotDialog = false;
+        this.showFunctionDialog = false;
+        this.showContextProviderDialog = false;
+        this.showTtsAdvancedDialog = false;
+        this.inputVisible = false;
+      }
+
+      const results = await Promise.all([
+        this.fetchAgentConfig(agentId, { showError: false }),
+        this.getAgentTags(agentId, { showError: false }),
+        this.fetchCurrentVersion(agentId, { showError: false })
+      ]);
+      if (requestSeq !== this.agentReloadSeq) {
+        return false;
+      }
+
+      this.agentReloading = false;
+      if (!this.pluginMetadataReady && this.agentConfigLoaded) {
+        this.$message.error(i18n.t("roleConfig.fetchPluginsFailed"));
+      } else if (!results.every(Boolean)) {
+        this.$message.error(i18n.t("roleConfig.fetchConfigFailed"));
+      }
+      return results.every(Boolean);
+    },
     handleSnapshotRestored() {
       const agentId = this.$route.query.agentId;
       if (agentId) {
-        this.fetchAgentConfig(agentId);
-        this.getAgentTags(agentId);
-        this.fetchCurrentVersion(agentId);
+        this.reloadAgentPage(agentId, { closeEditors: true });
       }
     },
-    fetchCurrentVersion(agentId) {
+    fetchCurrentVersion(agentId, options = {}) {
+      const requestSeq = ++this.currentVersionFetchSeq;
+      this.currentVersionLoaded = false;
       if (!agentId) {
         this.currentVersionNo = null;
-        return;
+        this.currentVersionLoaded = true;
+        return Promise.resolve(true);
       }
 
-      Api.agent.getDeviceConfig(agentId, ({ data }) => {
-        if (data.code === 0) {
-          this.currentVersionNo = data.data?.currentVersionNo || null;
-        }
+      return new Promise((resolve) => {
+        const handleFailure = (error) => {
+          if (requestSeq !== this.currentVersionFetchSeq) {
+            resolve(false);
+            return;
+          }
+          this.currentVersionLoaded = false;
+          if (options.showError !== false) {
+            this.$message.error(error?.data?.msg || i18n.t("roleConfig.fetchConfigFailed"));
+          }
+          resolve(false);
+        };
+        Api.agent.getDeviceConfig(agentId, ({ data }) => {
+          if (requestSeq !== this.currentVersionFetchSeq) {
+            resolve(false);
+            return;
+          }
+          if (data?.code === 0) {
+            this.currentVersionNo = data.data?.currentVersionNo || null;
+            this.currentVersionLoaded = true;
+            resolve(true);
+          } else {
+            handleFailure(data);
+          }
+        }, handleFailure);
       });
     },
     resetConfig() {
@@ -783,6 +863,7 @@ export default {
       }
     },
     applyTemplateData(templateData) {
+      const rollbackState = this.cloneTtsDraft(this.lastValidTtsDraft) || this.captureTtsDraft();
       const currentLanguage = this.selectedLanguage;
       this.form = {
         ...this.form,
@@ -805,90 +886,151 @@ export default {
       };
       if (templateData.ttsLanguage) {
         this.selectedLanguage = templateData.ttsLanguage;
-        this.ttsLanguageTouched = true;
       }
       if (templateData.ttsModelId || templateData.ttsVoiceId || templateData.ttsLanguage) {
-        if (templateData.ttsModelId || templateData.ttsVoiceId) {
-          this.ttsVoiceTouched = true;
-        }
-        this.ttsLanguageTouched = true;
         this.fetchVoiceOptions(this.form.model.ttsModelId, {
           autoSelectVoice: true,
           preferredLanguage: templateData.ttsLanguage || (templateData.ttsVoiceId ? "" : currentLanguage),
-          preferredVoiceId: templateData.ttsVoiceId || ""
+          preferredVoiceId: templateData.ttsVoiceId || "",
+          rollbackState,
+          markTouched: true
         });
       }
     },
-    fetchAgentConfig(agentId) {
-      Api.agent.getDeviceConfig(agentId, ({ data }) => {
-        if (data.code === 0) {
-          this.tempSummaryMemory = "";
-          this.ttsLanguageTouched = false;
-          this.ttsVoiceTouched = false;
-          this.form = {
-            ...this.form,
-            ...data.data,
-            model: {
-              ttsModelId: data.data.ttsModelId,
-              vadModelId: data.data.vadModelId,
-              asrModelId: data.data.asrModelId,
-              llmModelId: data.data.llmModelId,
-              slmModelId: data.data.slmModelId,
-              vllmModelId: data.data.vllmModelId,
-              memModelId: data.data.memModelId,
-              intentModelId: data.data.intentModelId,
-            },
+    buildCurrentFunctions(savedMappings) {
+      if (!Array.isArray(savedMappings)) {
+        throw new TypeError("Invalid agent function mappings");
+      }
+      return savedMappings.map((mapping) => {
+        const pluginId = mapping.pluginId || mapping.id;
+        const meta = this.pluginMetadataReady
+          ? this.allFunctions.find((item) => item.id === pluginId)
+          : null;
+        return {
+          id: pluginId,
+          name: meta?.name || mapping.name || pluginId,
+          params: this.normalizeFunctionParams(mapping.paramInfo ?? mapping.params, meta?.params || {}),
+          fieldsMeta: meta?.fieldsMeta || []
+        };
+      }).filter((item) => item.id);
+    },
+    enrichCurrentFunctionsWithMetadata() {
+      if (!this.agentFunctionsLoaded || !this.pluginMetadataReady) {
+        return;
+      }
+      this.currentFunctions = this.currentFunctions.map((item) => {
+        const meta = this.allFunctions.find((candidate) => candidate.id === item.id);
+        if (!meta) {
+          return {
+            ...item,
+            params: this.normalizeFunctionParams(item.params),
+            fieldsMeta: item.fieldsMeta || []
           };
-          this.fetchVoiceOptions(data.data.ttsModelId, {
-            preferredLanguage: data.data.ttsLanguage,
-            preferredVoiceId: data.data.ttsVoiceId
-          });
-
-          // 同步TTS设置到ttsSettings
-          this.ttsSettings = {
-            volume: this.form.ttsVolume || 0,
-            speed: this.form.ttsRate || 0,
-            pitch: this.form.ttsPitch || 0
-          };
-          // 同步替换词到checkedReplacementWordIds
-          this.checkedReplacementWordIds = data.data.correctWordFileIds || [];
-
-          // 后端只给了最小映射：[{ id, agentId, pluginId }, ...]
-          const savedMappings = data.data.functions || [];
-          
-          // 加载上下文配置
-          this.currentContextProviders = data.data.contextProviders || [];
-
-          // 先保证 allFunctions 已经加载（如果没有，则先 fetchAllFunctions）
-          const ensureFuncs = this.allFunctions.length
-            ? Promise.resolve()
-            : this.fetchAllFunctions();
-
-          ensureFuncs.then(() => {
-            // 合并：按照 pluginId（id 字段）把全量元数据信息补齐
-            this.currentFunctions = savedMappings.map((mapping) => {
-              const meta = this.allFunctions.find((f) => f.id === mapping.pluginId);
-              if (!meta) {
-                // 插件定义没找到，退化处理
-                return { id: mapping.pluginId, name: mapping.pluginId, params: {} };
-              }
-              return {
-                id: mapping.pluginId,
-                name: meta.name,
-                // 后端如果还有 paramInfo 字段就用 mapping.paramInfo，否则用 meta.params 默认值
-                params: this.normalizeFunctionParams(mapping.paramInfo, meta.params),
-                fieldsMeta: meta.fieldsMeta, // 保留以便对话框渲染 tooltip
-              };
-            });
-            // 备份原始，以备取消时恢复
-            this.originalFunctions = JSON.parse(JSON.stringify(this.currentFunctions));
-
-            // 确保意图识别选项的可见性正确
-            this.updateIntentOptionsVisibility();
-          });
-        } else {
-          this.$message.error(data.msg || i18n.t("roleConfig.fetchConfigFailed"));
         }
+        return {
+          ...item,
+          name: meta.name || item.name || item.id,
+          params: this.normalizeFunctionParams(item.params, meta.params),
+          fieldsMeta: meta.fieldsMeta || []
+        };
+      });
+      this.originalFunctions = JSON.parse(JSON.stringify(this.currentFunctions));
+    },
+    fetchAgentConfig(agentId, options = {}) {
+      const requestSeq = ++this.agentConfigFetchSeq;
+      this.agentConfigLoaded = false;
+      this.agentFunctionsLoaded = false;
+      this.voiceFetchSeq += 1;
+      this.voiceOptionsLoading = false;
+
+      return new Promise((resolve) => {
+        const handleFailure = (error) => {
+          if (requestSeq !== this.agentConfigFetchSeq) {
+            resolve(false);
+            return;
+          }
+          this.agentConfigLoaded = false;
+          this.agentFunctionsLoaded = false;
+          if (options.showError !== false) {
+            this.$message.error(error?.data?.msg || i18n.t("roleConfig.fetchConfigFailed"));
+          }
+          resolve(false);
+        };
+
+        Api.agent.getDeviceConfig(agentId, ({ data }) => {
+          if (requestSeq !== this.agentConfigFetchSeq) {
+            resolve(false);
+            return;
+          }
+          if (data?.code !== 0 || !data.data) {
+            handleFailure(data);
+            return;
+          }
+
+          try {
+            const agentData = data.data;
+            if (agentData.functions != null && !Array.isArray(agentData.functions)) {
+              throw new TypeError("Invalid agent function mappings");
+            }
+            if (agentData.contextProviders != null && !Array.isArray(agentData.contextProviders)) {
+              throw new TypeError("Invalid context providers");
+            }
+            if (agentData.correctWordFileIds != null && !Array.isArray(agentData.correctWordFileIds)) {
+              throw new TypeError("Invalid correct-word mappings");
+            }
+            this.tempSummaryMemory = "";
+            this.ttsLanguageTouched = false;
+            this.ttsVoiceTouched = false;
+            this.form = {
+              ...this.form,
+              ...agentData,
+              model: {
+                ttsModelId: agentData.ttsModelId,
+                vadModelId: agentData.vadModelId,
+                asrModelId: agentData.asrModelId,
+                llmModelId: agentData.llmModelId,
+                slmModelId: agentData.slmModelId,
+                vllmModelId: agentData.vllmModelId,
+                memModelId: agentData.memModelId,
+                intentModelId: agentData.intentModelId,
+              },
+            };
+            this.selectedLanguage = agentData.ttsLanguage || "";
+            this.voiceOptions = [];
+            this.voiceDetails = {};
+            this.languageOptions = [];
+            this.lastValidTtsDraft = this.captureTtsDraft();
+            this.fetchVoiceOptions(agentData.ttsModelId, {
+              preferredLanguage: agentData.ttsLanguage,
+              preferredVoiceId: agentData.ttsVoiceId
+            });
+
+            this.ttsSettings = {
+              volume: this.form.ttsVolume || 0,
+              speed: this.form.ttsRate || 0,
+              pitch: this.form.ttsPitch || 0
+            };
+            this.checkedReplacementWordIds = agentData.correctWordFileIds || [];
+            this.currentContextProviders = agentData.contextProviders || [];
+            this.currentFunctions = this.buildCurrentFunctions(agentData.functions || []);
+            this.originalFunctions = JSON.parse(JSON.stringify(this.currentFunctions));
+            this.agentFunctionsLoaded = true;
+            this.agentConfigLoaded = true;
+
+            const metadataPromise = this.pluginMetadataReady
+              ? Promise.resolve(true)
+              : this.fetchAllFunctions({ showError: options.showError });
+            metadataPromise.then((metadataReady) => {
+              if (requestSeq === this.agentConfigFetchSeq && metadataReady) {
+                this.enrichCurrentFunctionsWithMetadata();
+                this.updateIntentOptionsVisibility();
+              }
+              resolve(true);
+            }).catch(handleFailure);
+          } catch (error) {
+            handleFailure(error);
+          }
+        }, handleFailure);
       });
     },
     fetchModelOptions() {
@@ -942,6 +1084,7 @@ export default {
         this.voiceDetails = {};
         this.languageOptions = [];
         this.selectedLanguage = '';
+        this.lastValidTtsDraft = this.captureTtsDraft();
         return;
       }
       this.voiceOptionsLoading = true;
@@ -949,56 +1092,164 @@ export default {
         if (requestSeq !== this.voiceFetchSeq) {
           return;
         }
-        this.voiceOptionsLoading = false;
-        if (data.code === 0 && data.data) {
-          // 保存完整的音色信息
-          this.voiceDetails = data.data.reduce((acc, voice) => {
-            acc[voice.id] = voice;
-            return acc;
-          }, {});
-          
-          // 提取所有语言选项并去重
-          const allLanguages = new Set();
-          data.data.forEach(voice => {
-            if (voice.languages) {
-              const languagesArray = voice.languages.split(/[、；;,，]/).map(lang => lang.trim()).filter(lang => lang);
-              languagesArray.forEach(lang => allLanguages.add(lang));
-            }
-          });
-
-          this.languageOptions = Array.from(allLanguages).map(lang => ({
-            value: lang,
-            label: lang
-          }));
-
-          // 优先保留调用方指定或后端保存的语言，其次使用当前音色的默认语言
-          const requestedLanguage = options.preferredLanguage;
-          const preferredVoiceLanguage = options.preferredVoiceId
-            ? this.getVoiceDefaultLanguage(options.preferredVoiceId)
-            : "";
-          if (requestedLanguage && this.languageOptions.some(option => option.value === requestedLanguage)) {
-            this.selectedLanguage = requestedLanguage;
-          } else if (preferredVoiceLanguage && this.languageOptions.some(option => option.value === preferredVoiceLanguage)) {
-            this.selectedLanguage = preferredVoiceLanguage;
-          } else if (this.form.ttsLanguage && this.languageOptions.some(option => option.value === this.form.ttsLanguage)) {
-            this.selectedLanguage = this.form.ttsLanguage;
-          } else if (this.getVoiceDefaultLanguage(this.form.ttsVoiceId)) {
-            this.selectedLanguage = this.getVoiceDefaultLanguage(this.form.ttsVoiceId);
-          } else if (this.languageOptions.length > 0) {
-            this.selectedLanguage = this.languageOptions[0].value;
-          } else {
-            this.selectedLanguage = "";
-          }
-
-          // 根据选中的语言筛选音色
-          this.filterVoicesByLanguage(options);
-        } else {
-          this.voiceOptions = [];
-          this.voiceDetails = {};
-          this.languageOptions = [];
-          this.selectedLanguage = '';
+        const draft = data.code === 0
+          ? this.buildTtsDraft(modelId, data.data, options)
+          : null;
+        if (!draft) {
+          this.handleVoiceOptionsFailure(requestSeq, options.rollbackState);
+          return;
         }
+        this.applyTtsDraft(draft, options);
+        this.voiceOptionsLoading = false;
+        this.lastValidTtsDraft = this.captureTtsDraft();
+      }, () => {
+        this.handleVoiceOptionsFailure(requestSeq, options.rollbackState);
       });
+    },
+    cloneTtsDraft(draft) {
+      return draft ? JSON.parse(JSON.stringify(draft)) : null;
+    },
+    captureTtsDraft() {
+      return {
+        modelId: this.form.model.ttsModelId,
+        language: this.selectedLanguage,
+        storedLanguage: this.form.ttsLanguage,
+        voiceId: this.form.ttsVoiceId,
+        languageTouched: this.ttsLanguageTouched,
+        voiceTouched: this.ttsVoiceTouched,
+        voiceOptions: this.cloneTtsDraft(this.voiceOptions) || [],
+        voiceDetails: this.cloneTtsDraft(this.voiceDetails) || {},
+        languageOptions: this.cloneTtsDraft(this.languageOptions) || []
+      };
+    },
+    restoreTtsDraft(draft) {
+      const restored = this.cloneTtsDraft(draft);
+      if (!restored) {
+        return false;
+      }
+      this.form.model.ttsModelId = restored.modelId;
+      this.selectedLanguage = restored.language;
+      this.form.ttsLanguage = restored.storedLanguage;
+      this.form.ttsVoiceId = restored.voiceId;
+      this.ttsLanguageTouched = restored.languageTouched;
+      this.ttsVoiceTouched = restored.voiceTouched;
+      this.voiceOptions = restored.voiceOptions;
+      this.voiceDetails = restored.voiceDetails;
+      this.languageOptions = restored.languageOptions;
+      this.lastValidTtsDraft = restored;
+      return true;
+    },
+    splitVoiceLanguages(voice) {
+      return voice && voice.languages
+        ? voice.languages.split(/[、；;,，]/).map(lang => lang.trim()).filter(Boolean)
+        : [];
+    },
+    buildTtsDraft(modelId, voices, options = {}) {
+      if (!Array.isArray(voices) || voices.length === 0) {
+        return null;
+      }
+      const voiceDetails = voices.reduce((result, voice) => {
+        if (voice && voice.id) {
+          result[voice.id] = voice;
+        }
+        return result;
+      }, {});
+      const validVoices = Object.values(voiceDetails);
+      if (validVoices.length === 0) {
+        return null;
+      }
+
+      const allLanguages = new Set();
+      validVoices.forEach((voice) => {
+        this.splitVoiceLanguages(voice).forEach((language) => allLanguages.add(language));
+      });
+      const languageOptions = Array.from(allLanguages).map((language) => ({
+        value: language,
+        label: language
+      }));
+      const languageExists = (language) => language
+        && languageOptions.some((option) => option.value === language);
+      const preferredVoiceId = options.preferredVoiceId || this.form.ttsVoiceId;
+      const preferredVoiceLanguage = this.splitVoiceLanguages(voiceDetails[preferredVoiceId])[0] || "";
+      const languageCandidates = [
+        options.preferredLanguage,
+        preferredVoiceLanguage,
+        this.form.ttsLanguage,
+        this.selectedLanguage,
+        languageOptions[0]?.value
+      ];
+      const preferredVoiceHasNoLanguage = Boolean(
+        voiceDetails[preferredVoiceId]
+        && this.splitVoiceLanguages(voiceDetails[preferredVoiceId]).length === 0
+      );
+      let language = options.preferredLanguage === "" && preferredVoiceHasNoLanguage
+        ? ""
+        : languageCandidates.find(languageExists) || "";
+      const filterVoices = (targetLanguage) => validVoices.filter((voice) => {
+        const languages = this.splitVoiceLanguages(voice);
+        return languages.length === 0 || languages.includes(targetLanguage);
+      });
+      let filteredVoices = filterVoices(language);
+      if (filteredVoices.length === 0) {
+        const fallbackVoice = validVoices.find((voice) => this.splitVoiceLanguages(voice).length > 0);
+        if (fallbackVoice) {
+          language = this.splitVoiceLanguages(fallbackVoice)[0];
+          filteredVoices = filterVoices(language);
+        } else {
+          filteredVoices = validVoices;
+        }
+      }
+      if (filteredVoices.length === 0) {
+        return null;
+      }
+
+      const preferredVoice = filteredVoices.find((voice) => voice.id === preferredVoiceId);
+      const voice = preferredVoice || (options.autoSelectVoice ? filteredVoices[0] : null);
+      return {
+        modelId,
+        language,
+        voiceId: voice?.id || preferredVoiceId || "",
+        voiceDetails,
+        languageOptions,
+        voiceOptions: filteredVoices.map((item) => ({
+          value: item.id,
+          label: item.name,
+          voiceDemo: item.voiceDemo,
+          voice_demo: item.voice_demo,
+          isClone: Boolean(item.isClone),
+          train_status: item.trainStatus
+        }))
+      };
+    },
+    applyTtsDraft(draft, options = {}) {
+      this.form.model.ttsModelId = draft.modelId;
+      this.voiceDetails = draft.voiceDetails;
+      this.languageOptions = draft.languageOptions;
+      this.voiceOptions = draft.voiceOptions;
+      this.selectedLanguage = draft.language;
+      this.form.ttsLanguage = draft.language;
+      this.form.ttsVoiceId = draft.voiceId;
+      if (options.markTouched) {
+        this.ttsLanguageTouched = true;
+        this.ttsVoiceTouched = true;
+      }
+      this.ttsSettings = {
+        volume: this.form.ttsVolume !== null && this.form.ttsVolume !== undefined ? this.form.ttsVolume : 0,
+        speed: this.form.ttsRate !== null && this.form.ttsRate !== undefined ? this.form.ttsRate : 0,
+        pitch: this.form.ttsPitch !== null && this.form.ttsPitch !== undefined ? this.form.ttsPitch : 0
+      };
+    },
+    handleVoiceOptionsFailure(requestSeq, rollbackState) {
+      if (requestSeq !== this.voiceFetchSeq) {
+        return;
+      }
+      this.voiceOptionsLoading = false;
+      if (!this.restoreTtsDraft(rollbackState)) {
+        this.voiceOptions = [];
+        this.voiceDetails = {};
+        this.languageOptions = [];
+      }
+      this.$message.error(i18n.t("ttsModel.fetchVoicesFailed"));
     },
     getVoiceDefaultLanguage(voiceId) {
       if (!voiceId || !this.voiceDetails || !this.voiceDetails[voiceId]?.languages) {
@@ -1022,11 +1273,11 @@ export default {
 
       // 根据选中的语言筛选音色
       const filteredVoices = allVoices.filter(voice => {
-        if (!voice.languages) {
-          // 对于没有语言信息的克隆音色，始终显示
-          return Boolean(voice.isClone);
+        const languagesArray = this.splitVoiceLanguages(voice);
+        if (languagesArray.length === 0) {
+          // 未声明语言的合法音色由 provider 自行解释，不在前端强制过滤。
+          return true;
         }
-        const languagesArray = voice.languages.split(/[、；;,，]/).map(lang => lang.trim()).filter(lang => lang);
         return languagesArray.includes(this.selectedLanguage);
       });
 
@@ -1059,12 +1310,18 @@ export default {
       this.ttsLanguageTouched = true;
       this.form.ttsLanguage = this.selectedLanguage;
       this.filterVoicesByLanguage({ autoSelectVoice: true });
+      if (this.form.ttsVoiceId) {
+        this.lastValidTtsDraft = this.captureTtsDraft();
+      }
     },
     handleVoiceChange() {
       this.ttsVoiceTouched = true;
       if (this.selectedLanguage) {
         this.form.ttsLanguage = this.selectedLanguage;
         this.ttsLanguageTouched = true;
+      }
+      if (this.form.ttsVoiceId) {
+        this.lastValidTtsDraft = this.captureTtsDraft();
       }
     },
     shouldSubmitTtsLanguage() {
@@ -1089,7 +1346,11 @@ export default {
     },
     handleModelChange(type, value) {
       if (type === "Intent" && value !== "Intent_nointent") {
-        this.fetchAllFunctions();
+        this.fetchAllFunctions().then((metadataReady) => {
+          if (metadataReady) {
+            this.enrichCurrentFunctionsWithMetadata();
+          }
+        });
       }
       if (type === "Memory") {
         if (value === "Memory_nomem") {
@@ -1112,44 +1373,93 @@ export default {
         this.updateIntentOptionsVisibility();
       }
       if (type === "TTS") {
-        const preferredLanguage = this.selectedLanguage;
-        this.ttsLanguageTouched = true;
-        this.ttsVoiceTouched = true;
-        this.form.ttsVoiceId = "";
-        this.form.ttsLanguage = "";
+        const rollbackState = this.cloneTtsDraft(this.lastValidTtsDraft);
         this.fetchVoiceOptions(value, {
           autoSelectVoice: true,
-          preferredLanguage
+          preferredLanguage: rollbackState?.language || this.selectedLanguage,
+          rollbackState,
+          markTouched: true
         });
       }
     },
-    fetchAllFunctions() {
-      return new Promise((resolve, reject) => {
-        Api.model.getPluginFunctionList(null, ({ data }) => {
-          if (data.code === 0) {
-            this.allFunctions = data.data.map((item) => {
-              const meta = JSON.parse(item.fields || "[]");
-              const params = meta.reduce((m, f) => {
-                m[f.key] = f.default;
-                return m;
-              }, {});
-              return { ...item, fieldsMeta: meta, params };
-            });
-            resolve();
-          } else {
-            this.$message.error(data.msg || i18n.t("roleConfig.fetchPluginsFailed"));
-            reject();
+    parsePluginFields(fields) {
+      if (Array.isArray(fields)) {
+        return fields;
+      }
+      if (typeof fields !== "string" || !fields.trim()) {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(fields);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    },
+    fetchAllFunctions(options = {}) {
+      if (this.pluginMetadataReady) {
+        return Promise.resolve(true);
+      }
+      if (this.pluginMetadataLoading) {
+        return this.pluginMetadataLoading;
+      }
+
+      this.pluginMetadataLoading = new Promise((resolve) => {
+        let settled = false;
+        const finish = (ready, error) => {
+          if (settled) {
+            return;
           }
-        });
+          settled = true;
+          this.pluginMetadataReady = ready;
+          if (!ready && options.showError !== false) {
+            this.$message.error(error?.data?.msg || error?.msg || i18n.t("roleConfig.fetchPluginsFailed"));
+          }
+          resolve(ready);
+        };
+
+        Api.model.getPluginFunctionList(null, ({ data }) => {
+          if (data?.code !== 0) {
+            finish(false, data);
+            return;
+          }
+          try {
+            this.allFunctions = (data.data || []).map((item) => {
+              const fieldsMeta = this.parsePluginFields(item.fields);
+              const params = fieldsMeta.reduce((result, field) => {
+                if (field?.key) {
+                  result[field.key] = field.default;
+                }
+                return result;
+              }, {});
+              return { ...item, fieldsMeta, params };
+            });
+            finish(true);
+          } catch (error) {
+            finish(false, error);
+          }
+        }, (error) => finish(false, error));
+      }).finally(() => {
+        this.pluginMetadataLoading = null;
       });
+
+      return this.pluginMetadataLoading;
     },
     openFunctionDialog() {
-      // 显示编辑对话框时，确保 allFunctions 已经加载
-      if (this.allFunctions.length === 0) {
-        this.fetchAllFunctions().then(() => (this.showFunctionDialog = true));
-      } else {
-        this.showFunctionDialog = true;
+      if (this.agentReloading || !this.agentFunctionsLoaded) {
+        return;
       }
+      if (this.pluginMetadataReady) {
+        this.enrichCurrentFunctionsWithMetadata();
+        this.showFunctionDialog = true;
+        return;
+      }
+      this.fetchAllFunctions().then((metadataReady) => {
+        if (metadataReady) {
+          this.enrichCurrentFunctionsWithMetadata();
+          this.showFunctionDialog = true;
+        }
+      });
     },
     openContextProviderDialog() {
       this.showContextProviderDialog = true;
@@ -1520,12 +1830,46 @@ export default {
       this.inputVisible = false;
       this.inputValue = '';
     },
-    getAgentTags(agentId) {
-      Api.agent.getAgentTags(agentId, ({ data }) => {
-        if (data.code === 0) {
-          this.dynamicTags = data.data || [];
-          this.originalTagNames = this.dynamicTags.map(tag => tag.tagName);
-        }
+    getAgentTags(agentId, options = {}) {
+      const requestSeq = ++this.agentTagsFetchSeq;
+      this.agentTagsLoaded = false;
+      if (!agentId) {
+        this.dynamicTags = [];
+        this.originalTagNames = [];
+        this.agentTagsLoaded = true;
+        return Promise.resolve(true);
+      }
+
+      return new Promise((resolve) => {
+        const handleFailure = (error) => {
+          if (requestSeq !== this.agentTagsFetchSeq) {
+            resolve(false);
+            return;
+          }
+          this.agentTagsLoaded = false;
+          if (options.showError !== false) {
+            this.$message.error(error?.data?.msg || i18n.t("roleConfig.fetchConfigFailed"));
+          }
+          resolve(false);
+        };
+        Api.agent.getAgentTags(agentId, ({ data }) => {
+          if (requestSeq !== this.agentTagsFetchSeq) {
+            resolve(false);
+            return;
+          }
+          if (data?.code === 0) {
+            try {
+              this.dynamicTags = Array.isArray(data.data) ? data.data : [];
+              this.originalTagNames = this.dynamicTags.map(tag => tag.tagName);
+              this.agentTagsLoaded = true;
+              resolve(true);
+            } catch (error) {
+              handleFailure(error);
+            }
+          } else {
+            handleFailure(data);
+          }
+        }, handleFailure);
       });
     },
     isSameStringList(left, right) {
@@ -1547,13 +1891,18 @@ export default {
       });
     }
   },
+  beforeDestroy() {
+    this.agentReloadSeq += 1;
+    this.agentConfigFetchSeq += 1;
+    this.agentTagsFetchSeq += 1;
+    this.currentVersionFetchSeq += 1;
+    this.voiceFetchSeq += 1;
+  },
   async mounted() {
+    this.lastValidTtsDraft = this.captureTtsDraft();
     const agentId = this.$route.query.agentId;
     if (agentId) {
-      this.fetchAgentConfig(agentId);
-      this.getAgentTags(agentId);
-      this.fetchAllFunctions();
-      this.fetchCurrentVersion(agentId);
+      this.reloadAgentPage(agentId);
     }
     this.fetchModelOptions();
     this.fetchTemplates();

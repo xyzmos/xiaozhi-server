@@ -87,14 +87,16 @@ export interface AgentSnapshotData extends Partial<AgentDetail> {
 export interface AgentSnapshot {
   id: string
   agentId: string
-  userId?: number
+  userId?: string
   versionNo: number
   changedFields?: string[]
   fieldOrder?: string[]
   source?: string
   restoreFromSnapshotId?: string | null
   restoreFromVersionNo?: number | null
-  creator?: number
+  currentStateToken?: string
+  currentSnapshotData?: AgentSnapshotData
+  creator?: string
   createdAt?: string
   snapshotData?: AgentSnapshotData
   afterSnapshotData?: AgentSnapshotData

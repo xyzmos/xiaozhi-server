@@ -253,11 +253,11 @@ export function getAgentSnapshot(agentId: string, snapshotId: string) {
 }
 
 // 恢复智能体历史版本
-export function restoreAgentSnapshot(agentId: string, snapshotId: string) {
-  return http.Post(`/agent/${agentId}/snapshots/${snapshotId}/restore`, {}, {
+export function restoreAgentSnapshot(agentId: string, snapshotId: string, currentStateToken: string) {
+  return http.Post(`/agent/${agentId}/snapshots/${snapshotId}/restore`, { currentStateToken }, {
     meta: {
       ignoreAuth: false,
-      toast: true,
+      toast: false,
     },
   })
 }
@@ -267,7 +267,7 @@ export function deleteAgentSnapshot(agentId: string, snapshotId: string) {
   return http.Delete(`/agent/${agentId}/snapshots/${snapshotId}`, {
     meta: {
       ignoreAuth: false,
-      toast: true,
+      toast: false,
     },
   })
 }

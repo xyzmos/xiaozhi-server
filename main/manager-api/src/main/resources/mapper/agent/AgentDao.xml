@@ -89,4 +89,32 @@
         FOR UPDATE
     </select>
 
+    <update id="updateSnapshotFields">
+        UPDATE ai_agent
+        SET agent_code = #{agent.agentCode,jdbcType=VARCHAR},
+            agent_name = #{agent.agentName,jdbcType=VARCHAR},
+            asr_model_id = #{agent.asrModelId,jdbcType=VARCHAR},
+            vad_model_id = #{agent.vadModelId,jdbcType=VARCHAR},
+            llm_model_id = #{agent.llmModelId,jdbcType=VARCHAR},
+            slm_model_id = #{agent.slmModelId,jdbcType=VARCHAR},
+            vllm_model_id = #{agent.vllmModelId,jdbcType=VARCHAR},
+            tts_model_id = #{agent.ttsModelId,jdbcType=VARCHAR},
+            tts_voice_id = #{agent.ttsVoiceId,jdbcType=VARCHAR},
+            tts_language = #{agent.ttsLanguage,jdbcType=VARCHAR},
+            tts_volume = #{agent.ttsVolume,jdbcType=INTEGER},
+            tts_rate = #{agent.ttsRate,jdbcType=INTEGER},
+            tts_pitch = #{agent.ttsPitch,jdbcType=INTEGER},
+            mem_model_id = #{agent.memModelId,jdbcType=VARCHAR},
+            intent_model_id = #{agent.intentModelId,jdbcType=VARCHAR},
+            chat_history_conf = #{agent.chatHistoryConf,jdbcType=INTEGER},
+            system_prompt = #{agent.systemPrompt,jdbcType=LONGVARCHAR},
+            summary_memory = #{agent.summaryMemory,jdbcType=LONGVARCHAR},
+            lang_code = #{agent.langCode,jdbcType=VARCHAR},
+            language = #{agent.language,jdbcType=VARCHAR},
+            sort = #{agent.sort,jdbcType=INTEGER},
+            updater = #{agent.updater,jdbcType=BIGINT},
+            updated_at = #{agent.updatedAt,jdbcType=TIMESTAMP}
+        WHERE id = #{agent.id}
+    </update>
+
 </mapper>

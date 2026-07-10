@@ -4,18 +4,26 @@ import { computed, ref, watch } from 'vue'
 import { useMessage } from 'wot-design-uni/components/wd-message-box'
 import {
   deleteAgentSnapshot,
-  getAgentDetail,
   getAgentSnapshot,
   getAgentSnapshots,
-  getAgentTags,
   getCorrectWordFiles,
   getModelOptions,
   getPluginFunctions,
   getTTSVoices,
   restoreAgentSnapshot,
 } from '@/api/agent/agent'
-import { t } from '@/i18n'
+import { getCurrentLanguage, t } from '@/i18n'
 import { toast } from '@/utils/toast'
+import {
+  isSensitiveKey,
+  normalizeSnapshotTtsNumber as normalizeDefaultTtsNumber,
+  normalizeSnapshotOrderedList,
+  redactSnapshotDisplayValue,
+  SNAPSHOT_SECRET_REDACTED,
+  stablePrettyStringify,
+  toIntlLocale,
+  willRestorePermanentlyDeleteChatHistory,
+} from './agentSnapshotUtils.mjs'
 
 defineOptions({
   name: 'AgentSnapshotPanel',
@@ -24,17 +32,21 @@ defineOptions({
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   currentVersionNo: null,
+  hasUnsavedChanges: false,
+  mutationBusy: false,
 })
 
 const emit = defineEmits<{
   (event: 'update:visible', value: boolean): void
-  (event: 'restored'): void
+  (event: 'restored', context: { agentId: string, actionSequence: number }): void
 }>()
 
 interface Props {
   visible?: boolean
   agentId: string
   currentVersionNo?: number | null
+  hasUnsavedChanges?: boolean
+  mutationBusy?: boolean
 }
 
 interface SnapshotRow extends AgentSnapshot {
@@ -54,6 +66,7 @@ interface VersionDetail {
   forceCompare?: boolean
   beforeVersionNo?: number | null
   afterVersionNo?: number | null
+  currentStateToken?: string
 }
 
 interface DetailItem {
@@ -62,18 +75,34 @@ interface DetailItem {
   beforeText: string
   afterText: string
   single: boolean
+  recordedOnly?: boolean
+  redactedDifference?: boolean
+}
+
+interface RestoreActionContext {
+  actionSequence: number
+  agentId: string
+  snapshotId: string
+  currentStateToken: string
+  detailRequestSequence: number
+  willClearChatHistory: boolean
 }
 
 const message = useMessage()
+const restoring = ref(false)
 
 const panelVisible = computed({
   get: () => props.visible,
-  set: value => emit('update:visible', value),
+  set: (value) => {
+    if (!value && restoring.value) {
+      return
+    }
+    emit('update:visible', value)
+  },
 })
 
 const loading = ref(false)
 const detailLoading = ref(false)
-const restoring = ref(false)
 const deletingSnapshotId = ref('')
 const snapshots = ref<SnapshotRow[]>([])
 const page = ref(1)
@@ -81,6 +110,15 @@ const limit = 10
 const total = ref(0)
 const historyAnchorVersionNo = ref<number | null>(null)
 const detailVisible = ref(false)
+const detailPopupVisible = computed({
+  get: () => detailVisible.value,
+  set: (value) => {
+    if (!value && restoring.value) {
+      return
+    }
+    detailVisible.value = value
+  },
+})
 const currentDetail = ref<VersionDetail | null>(null)
 const pluginNameMap = ref<Record<string, string>>({})
 const modelNameMap = ref<Record<string, string>>({})
@@ -91,6 +129,9 @@ const metadataLoaded = ref(false)
 const correctWordMetadataLoaded = ref(false)
 let detailRequestSequence = 0
 let snapshotRequestSequence = 0
+let restoreActionSequence = 0
+let restorePostActionSequence: number | null = null
+let restorePreviewRequestSequence: number | null = null
 
 const MODEL_TYPES = ['ASR', 'VAD', 'LLM', 'VLLM', 'TTS', 'Memory', 'Intent']
 const MODEL_FIELD_TYPES: Record<string, string> = {
@@ -110,7 +151,6 @@ const CHAT_HISTORY_CONF_LABEL_KEYS: Record<string, string> = {
   2: 'agentSnapshot.chatHistoryConf.textVoice',
 }
 
-const SNAPSHOT_SECRET_REDACTED = '__SNAPSHOT_SECRET_REDACTED__'
 const SNAPSHOT_FIELD_ORDER = [
   'agentName',
   'agentCode',
@@ -159,8 +199,18 @@ const restoreWillClearChatHistory = computed(() => {
   if (!currentDetail.value || currentDetail.value.mode !== 'restore') {
     return false
   }
-  return currentDetail.value.beforeData?.memModelId !== 'Memory_nomem'
-    && currentDetail.value.afterData?.memModelId === 'Memory_nomem'
+  return willRestorePermanentlyDeleteChatHistory(
+    currentDetail.value.beforeData?.memModelId,
+    currentDetail.value.afterData?.memModelId,
+  )
+})
+const displayedCurrentVersionNo = computed(() => historyAnchorVersionNo.value || props.currentVersionNo)
+const canConfirmRestore = computed(() => {
+  return !restoring.value
+    && !props.mutationBusy
+    && currentDetail.value?.mode === 'restore'
+    && detailItems.value.length > 0
+    && Boolean(currentDetail.value.currentStateToken?.trim())
 })
 
 watch(() => props.visible, (visible) => {
@@ -168,8 +218,9 @@ watch(() => props.visible, (visible) => {
     openPanel()
   }
   else {
+    invalidateRestoreAction()
     invalidateSnapshotRequest()
-    closeDetail()
+    closeDetail(true)
   }
 })
 
@@ -185,9 +236,48 @@ watch(() => props.currentVersionNo, () => {
   }
 })
 
+watch(() => props.agentId, (currentAgentId, previousAgentId) => {
+  if (currentAgentId === previousAgentId) {
+    return
+  }
+  invalidateRestoreAction()
+  invalidateSnapshotRequest()
+  closeDetail(true)
+  if (props.visible) {
+    openPanel()
+  }
+}, { flush: 'sync' })
+
+watch(() => props.mutationBusy, (mutationBusy) => {
+  if (!mutationBusy) {
+    return
+  }
+  const restorePostInFlight = restoring.value
+    && restorePostActionSequence === restoreActionSequence
+  if (restorePostInFlight) {
+    return
+  }
+  const pendingRestorePreview = restorePreviewRequestSequence !== null
+    || currentDetail.value?.mode === 'restore'
+  const pendingRestoreConfirmation = restoring.value
+    && restorePostActionSequence !== restoreActionSequence
+  if (!pendingRestorePreview && !pendingRestoreConfirmation) {
+    return
+  }
+  if (pendingRestoreConfirmation) {
+    invalidateRestoreAction()
+  }
+  restorePreviewRequestSequence = null
+  closeDetail(true)
+  toast.warning(t('agentSnapshot.mutationBusy'))
+}, { flush: 'sync' })
+
 async function openPanel() {
   const requestId = ++snapshotRequestSequence
-  historyAnchorVersionNo.value = props.currentVersionNo || null
+  // The first page must be unanchored so that a stale parent page cannot hide
+  // versions created by another client. The response establishes a stable
+  // anchor for all subsequent pages in this panel session.
+  historyAnchorVersionNo.value = null
   page.value = 1
   snapshots.value = []
   await loadSnapshots(true, requestId)
@@ -207,14 +297,18 @@ async function loadSnapshots(reset = false, requestId = snapshotRequestSequence)
       page: nextPage,
       limit,
     }
-    if (historyAnchorVersionNo.value) {
+    if (!reset && historyAnchorVersionNo.value) {
       params.maxVersionNo = historyAnchorVersionNo.value
     }
     const result = await getAgentSnapshots(props.agentId, params)
     if (!isActiveSnapshotRequest(requestId)) {
       return
     }
-    const rows = decorateSnapshotRows(result?.list || [])
+    const responseRows = result?.list || []
+    if (reset) {
+      historyAnchorVersionNo.value = responseRows[0]?.versionNo || null
+    }
+    const rows = decorateSnapshotRows(responseRows)
     const mergedRows = reset ? rows : [...snapshots.value, ...rows]
     snapshots.value = attachPreviousRows(mergedRows)
     total.value = result?.total || 0
@@ -244,11 +338,9 @@ function invalidateSnapshotRequest() {
 }
 
 function decorateSnapshotRows(rows: AgentSnapshot[]): SnapshotRow[] {
-  return rows.map((row, index) => ({
+  return rows.map(row => ({
     ...row,
-    isLatestSnapshot: props.currentVersionNo
-      ? row.versionNo === props.currentVersionNo
-      : index === 0 && page.value === 1,
+    isLatestSnapshot: Boolean(historyAnchorVersionNo.value && row.versionNo === historyAnchorVersionNo.value),
   }))
 }
 
@@ -277,19 +369,18 @@ async function viewSnapshot(row: SnapshotRow) {
   detailLoading.value = true
   currentDetail.value = null
   try {
-    await ensureMetadata()
-    if (!isActiveDetailRequest(requestId)) {
-      return
-    }
+    const metadataRequest = ensureMetadata()
     const detail = await buildSavedVersionDetail(row)
     if (!isActiveDetailRequest(requestId)) {
       return
     }
-    await ensureDisplayMetadata(detail.beforeData, detail.afterData)
-    if (!isActiveDetailRequest(requestId)) {
-      return
-    }
     currentDetail.value = detail
+    // Names are enhancement metadata. Render the snapshot immediately with
+    // stable IDs, then update names reactively as metadata arrives.
+    void Promise.allSettled([
+      metadataRequest,
+      ensureDisplayMetadata(detail.beforeData, detail.afterData),
+    ])
   }
   catch (error) {
     if (!isActiveDetailRequest(requestId)) {
@@ -307,22 +398,26 @@ async function viewSnapshot(row: SnapshotRow) {
 }
 
 async function previewRestoreSnapshot(row: SnapshotRow) {
+  if (!canRestoreSnapshot(row)) {
+    return
+  }
+  if (props.mutationBusy) {
+    toast.warning(t('agentSnapshot.mutationBusy'))
+    return
+  }
   detailVisible.value = true
   const requestId = ++detailRequestSequence
+  restorePreviewRequestSequence = requestId
   detailLoading.value = true
   currentDetail.value = null
   try {
-    await ensureMetadata()
+    const metadataRequest = ensureMetadata()
+    const targetSnapshot = await getAgentSnapshot(props.agentId, row.id)
     if (!isActiveDetailRequest(requestId)) {
       return
     }
-    const [targetSnapshot, currentAgent, currentTags] = await Promise.all([
-      getAgentSnapshot(props.agentId, row.id),
-      getAgentDetail(props.agentId),
-      getAgentTags(props.agentId),
-    ])
-    if (!isActiveDetailRequest(requestId)) {
-      return
+    if (!isPlainObject(targetSnapshot.currentSnapshotData)) {
+      throw new Error('Snapshot detail is missing the atomic current-state data')
     }
     const detail: VersionDetail = {
       mode: 'restore',
@@ -331,23 +426,20 @@ async function previewRestoreSnapshot(row: SnapshotRow) {
         ...row,
         id: targetSnapshot.id || row.id,
       },
-      beforeData: {
-        ...currentAgent,
-        tags: currentTags || [],
-        tagNames: (currentTags || []).map(tag => tag?.tagName).filter(Boolean),
-      } as AgentSnapshotData,
+      beforeData: targetSnapshot.currentSnapshotData,
       afterData: targetSnapshot.snapshotData || {},
       changedFields: [],
       fieldOrder: targetSnapshot.fieldOrder || [],
       forceCompare: true,
-      beforeVersionNo: props.currentVersionNo,
+      beforeVersionNo: historyAnchorVersionNo.value || props.currentVersionNo,
       afterVersionNo: targetSnapshot.versionNo,
-    }
-    await ensureDisplayMetadata(detail.beforeData, detail.afterData)
-    if (!isActiveDetailRequest(requestId)) {
-      return
+      currentStateToken: targetSnapshot.currentStateToken,
     }
     currentDetail.value = detail
+    void Promise.allSettled([
+      metadataRequest,
+      ensureDisplayMetadata(detail.beforeData, detail.afterData),
+    ])
   }
   catch (error) {
     if (!isActiveDetailRequest(requestId)) {
@@ -358,6 +450,9 @@ async function previewRestoreSnapshot(row: SnapshotRow) {
     detailVisible.value = false
   }
   finally {
+    if (restorePreviewRequestSequence === requestId) {
+      restorePreviewRequestSequence = null
+    }
     if (isActiveDetailRequest(requestId)) {
       detailLoading.value = false
     }
@@ -374,7 +469,10 @@ function invalidateDetailRequest() {
   currentDetail.value = null
 }
 
-function closeDetail() {
+function closeDetail(force = false) {
+  if (restoring.value && !force) {
+    return
+  }
   if (detailVisible.value) {
     detailVisible.value = false
     return
@@ -437,22 +535,123 @@ async function confirmRestoreSnapshot() {
   if (restoring.value || !detail || detail.mode !== 'restore' || !detail.row?.id) {
     return
   }
-  const snapshotId = detail.row.id
+  if (props.mutationBusy) {
+    toast.warning(t('agentSnapshot.mutationBusy'))
+    return
+  }
+  if (!detailItems.value.length) {
+    toast.info(t('agentSnapshot.noRestoreNeeded'))
+    return
+  }
+  const currentStateToken = detail.currentStateToken?.trim()
+  if (!currentStateToken) {
+    console.error('Cannot restore snapshot without a current-state token')
+    toast.error(t('agentSnapshot.restoreFailed'))
+    return
+  }
+  const context: RestoreActionContext = {
+    actionSequence: ++restoreActionSequence,
+    agentId: props.agentId,
+    snapshotId: detail.row.id,
+    currentStateToken,
+    detailRequestSequence,
+    willClearChatHistory: restoreWillClearChatHistory.value,
+  }
+  // Enter the busy state before either confirmation can yield. This prevents
+  // rapid taps from opening duplicate dialogs or issuing duplicate restores.
   restoring.value = true
   try {
-    await restoreAgentSnapshot(props.agentId, snapshotId)
+    if (props.hasUnsavedChanges) {
+      const confirmed = await requestRestoreConfirmation({
+        title: t('agentSnapshot.unsavedChangesTitle'),
+        msg: t('agentSnapshot.unsavedChangesWarning'),
+        confirmButtonText: t('agentSnapshot.discardAndRestore'),
+        cancelButtonText: t('common.cancel'),
+      })
+      if (!confirmed || !isActiveRestoreAction(context)) {
+        return
+      }
+    }
+
+    // This confirmation must be the last user interaction before the POST.
+    // It is intentionally separate from the unsaved-form confirmation because
+    // clearing chat history is irreversible and outside snapshot recovery.
+    if (context.willClearChatHistory) {
+      const confirmed = await requestRestoreConfirmation({
+        title: t('agentSnapshot.confirmRestore'),
+        msg: t('agentSnapshot.restoreChatHistoryDestructiveWarning'),
+        confirmButtonText: t('agentSnapshot.confirmRestore'),
+        cancelButtonText: t('common.cancel'),
+      })
+      if (!confirmed || !isActiveRestoreAction(context)) {
+        return
+      }
+    }
+
+    if (!isActiveRestoreAction(context)) {
+      return
+    }
+    // Mark the irreversible request boundary only after the final mutation
+    // guard. A later parent busy transition must not pretend this POST was
+    // canceled; its real response still owns the terminal UI state.
+    restorePostActionSequence = context.actionSequence
+    await restoreAgentSnapshot(context.agentId, context.snapshotId, context.currentStateToken)
+    if (!isActiveRestoreAction(context)) {
+      return
+    }
     toast.success(t('agentSnapshot.restoreSuccess'))
-    closeDetail()
-    emit('restored')
-    await openPanel()
+    closeDetail(true)
+    emit('restored', {
+      agentId: context.agentId,
+      actionSequence: context.actionSequence,
+    })
+    if (props.visible && props.agentId === context.agentId) {
+      await openPanel()
+    }
   }
   catch (error) {
-    console.error('Failed to restore snapshot:', error)
-    toast.error(t('agentSnapshot.restoreFailed'))
+    if (isActiveRestoreAction(context)) {
+      console.error('Failed to restore snapshot:', error)
+      toast.error(t('agentSnapshot.restoreFailed'))
+    }
   }
   finally {
-    restoring.value = false
+    if (restorePostActionSequence === context.actionSequence) {
+      restorePostActionSequence = null
+    }
+    if (context.actionSequence === restoreActionSequence) {
+      restoring.value = false
+    }
   }
+}
+
+async function requestRestoreConfirmation(options: Parameters<typeof message.confirm>[0]) {
+  try {
+    await message.confirm(options)
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
+function isActiveRestoreAction(context: RestoreActionContext) {
+  const detail = currentDetail.value
+  return restoring.value
+    && context.actionSequence === restoreActionSequence
+    && (!props.mutationBusy || restorePostActionSequence === context.actionSequence)
+    && context.agentId === props.agentId
+    && props.visible
+    && detailVisible.value
+    && context.detailRequestSequence === detailRequestSequence
+    && detail?.mode === 'restore'
+    && detail.row?.id === context.snapshotId
+    && detail.currentStateToken?.trim() === context.currentStateToken
+}
+
+function invalidateRestoreAction() {
+  restoreActionSequence += 1
+  restoring.value = false
 }
 
 function deleteSnapshot(row: SnapshotRow) {
@@ -494,6 +693,8 @@ function buildDetailItems(detail: VersionDetail): DetailItem[] {
         beforeText: '',
         afterText: formatDisplayValue(field, afterValue, detail.afterData),
         single: true,
+        recordedOnly: false,
+        redactedDifference: false,
       }
     })
   }
@@ -507,12 +708,18 @@ function buildDetailItems(detail: VersionDetail): DetailItem[] {
   ).map((field) => {
     const beforeValue = getFieldValue(detail.beforeData, field)
     const afterValue = getFieldValue(detail.afterData, field)
+    const beforeText = formatDisplayValue(field, beforeValue, detail.beforeData)
+    const afterText = formatDisplayValue(field, afterValue, detail.afterData)
     return {
       field,
       label: fieldLabel(field),
-      beforeText: formatDisplayValue(field, beforeValue, detail.beforeData),
-      afterText: formatDisplayValue(field, afterValue, detail.afterData),
+      beforeText,
+      afterText,
       single: false,
+      recordedOnly: !detail.forceCompare && isSameFieldValue(field, beforeValue, afterValue),
+      redactedDifference: !isSameFieldValue(field, beforeValue, afterValue)
+        && beforeText === afterText
+        && beforeText.includes(t('agentSnapshot.secretRedacted')),
     }
   })
 }
@@ -531,7 +738,13 @@ function resolveDiffFields(
     .map(canonicalField)
   const candidates = forceCompare ? orderedFields : directFields
 
-  return Array.from(new Set(candidates)).filter((field) => {
+  const uniqueCandidates = Array.from(new Set(candidates))
+  if (!forceCompare) {
+    // changedFields is an immutable fact about the saved event. Re-running
+    // today's comparison rules would make old events disappear from detail.
+    return uniqueCandidates
+  }
+  return uniqueCandidates.filter((field) => {
     return !isSameFieldValue(
       field,
       getFieldValue(beforeData, field),
@@ -596,7 +809,7 @@ function formatDisplayValue(field: string, value: any, rowData: AgentSnapshotDat
     return formatArrayValue(value)
   }
   if (typeof value === 'object') {
-    return JSON.stringify(value, null, 2)
+    return stablePrettyStringify(redactDisplayValue(value))
   }
   if (field === 'ttsLanguage' && !value && rowData.ttsVoiceId) {
     return t('agentSnapshot.emptyValue')
@@ -611,9 +824,11 @@ function formatFunctions(value: any) {
   return value.map((item) => {
     const pluginId = item?.pluginId || item?.id || ''
     const name = pluginNameMap.value[pluginId] || translatedFallback(`agentSnapshot.plugin.${pluginId}`, pluginId || t('agentSnapshot.emptyValue'))
-    const params = item?.paramInfo || item?.params || {}
-    const keys = params && typeof params === 'object' ? Object.keys(params) : []
-    return keys.length ? `${name} (${keys.join(', ')})` : name
+    const params = parseObjectValue(item?.paramInfo ?? item?.params)
+    const safeParams = redactDisplayValue(params)
+    return Object.keys(safeParams).length
+      ? `${name}\n${stablePrettyStringify(safeParams)}`
+      : name
   }).join('\n')
 }
 
@@ -622,7 +837,7 @@ function formatContextProviders(value: any) {
     return t('agentSnapshot.emptyValue')
   }
   return value.map((item, index) => {
-    return `${index + 1}. ${item?.url || JSON.stringify(item)}`
+    return `${index + 1}. ${stablePrettyStringify(redactDisplayValue(item))}`
   }).join('\n')
 }
 
@@ -630,14 +845,14 @@ function formatCorrectWordFileIds(value: any) {
   if (!Array.isArray(value) || value.length === 0) {
     return t('agentSnapshot.emptyValue')
   }
-  return value.map(id => correctWordNameMap.value[id] || id).join('、')
+  return formatLocalizedList(value.map(id => correctWordNameMap.value[id] || id))
 }
 
 function formatStringList(value: any) {
   if (!Array.isArray(value) || value.length === 0) {
     return t('agentSnapshot.emptyValue')
   }
-  return value.join('、')
+  return formatLocalizedList(value)
 }
 
 function formatArrayValue(value: any[]) {
@@ -645,9 +860,9 @@ function formatArrayValue(value: any[]) {
     return t('agentSnapshot.emptyValue')
   }
   if (value.every(item => item === null || ['string', 'number', 'boolean'].includes(typeof item))) {
-    return value.join('、')
+    return formatLocalizedList(value)
   }
-  return JSON.stringify(value, null, 2)
+  return stablePrettyStringify(redactDisplayValue(value))
 }
 
 async function ensureMetadata() {
@@ -760,8 +975,34 @@ function formatTime(time?: string) {
   if (Number.isNaN(date.getTime())) {
     return String(time)
   }
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+  try {
+    return new Intl.DateTimeFormat(toIntlLocale(getCurrentLanguage()), {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(date)
+  }
+  catch {
+    const pad = (value: number) => String(value).padStart(2, '0')
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+  }
+}
+
+function formatLocalizedList(values: any[]) {
+  const items = values.map(value => String(value))
+  try {
+    return new Intl.ListFormat(toIntlLocale(getCurrentLanguage()), {
+      style: 'short',
+      type: 'conjunction',
+    }).format(items)
+  }
+  catch {
+    return items.join(getCurrentLanguage().startsWith('zh_') ? '、' : ', ')
+  }
 }
 
 function isSameFieldValue(
@@ -789,20 +1030,9 @@ function normalizeValueForField(field: string, value: any): any {
     return normalizeFunctions(value)
   }
   if (field === 'contextProviders') {
-    return normalizeSortedList(value)
+    return normalizeSnapshotOrderedList(value)
   }
   return normalizeValue(value)
-}
-
-function normalizeDefaultTtsNumber(value: any) {
-  if (value === undefined || value === null || String(value).trim() === '') {
-    return 0
-  }
-  if (typeof value === 'number') {
-    return Math.trunc(value)
-  }
-  const text = String(value).trim()
-  return /^[+-]?\d+$/.test(text) ? Number.parseInt(text, 10) : text
 }
 
 function normalizeStringList(value: any) {
@@ -845,16 +1075,6 @@ function parseObjectValue(value: any) {
   }
 }
 
-function normalizeSortedList(value: any) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value
-    .filter(item => item !== undefined && item !== null)
-    .map(normalizeValue)
-    .sort((left, right) => stableStringify(left).localeCompare(stableStringify(right)))
-}
-
 function isEquivalentValue(left: any, right: any): boolean {
   if (left === SNAPSHOT_SECRET_REDACTED || right === SNAPSHOT_SECRET_REDACTED) {
     return true
@@ -892,23 +1112,8 @@ function isPlainObject(value: any): value is Record<string, any> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-function isSensitiveKey(key: string) {
-  const normalized = String(key).toLowerCase().replace(/[^a-z0-9]/g, '')
-  return normalized === 'authorization'
-    || normalized === 'token'
-    || normalized.endsWith('token')
-    || normalized.includes('apikey')
-    || normalized.includes('appkey')
-    || normalized.includes('accesskey')
-    || normalized.includes('privatekey')
-    || normalized.includes('password')
-    || normalized.includes('passwd')
-    || normalized.includes('secret')
-    || normalized.includes('credential')
-}
-
-function stableStringify(value: any) {
-  return JSON.stringify(value)
+function redactDisplayValue(value: any, parentKey = ''): any {
+  return redactSnapshotDisplayValue(value, t('agentSnapshot.secretRedacted'), parentKey)
 }
 </script>
 
@@ -918,6 +1123,7 @@ function stableStringify(value: any) {
     position="bottom"
     custom-class="agent-snapshot-popup"
     custom-style="height: 86vh; max-height: 900px;"
+    :close-on-click-modal="!restoring"
     safe-area-inset-bottom
   >
     <view class="agent-snapshot-shell">
@@ -926,8 +1132,8 @@ function stableStringify(value: any) {
           <text class="block text-[34rpx] text-[#232338] font-bold">
             {{ t('agentSnapshot.title') }}
           </text>
-          <text v-if="currentVersionNo" class="mt-[6rpx] block text-[24rpx] text-[#65686f]">
-            {{ t('agentSnapshot.currentVersion') }} {{ formatVersion(currentVersionNo) }}
+          <text v-if="displayedCurrentVersionNo" class="mt-[6rpx] block text-[24rpx] text-[#65686f]">
+            {{ t('agentSnapshot.currentVersion') }} {{ formatVersion(displayedCurrentVersionNo) }}
           </text>
         </view>
         <wd-icon name="close" size="22px" custom-class="agent-snapshot-close-icon text-[#65686f]" @click="panelVisible = false" />
@@ -993,6 +1199,7 @@ function stableStringify(value: any) {
                 v-if="canRestoreSnapshot(snapshot)"
                 size="small"
                 type="primary"
+                :disabled="mutationBusy"
                 custom-class="agent-snapshot-action-button flex-1 !h-[64rpx] !bg-[#336cff]"
                 @click="previewRestoreSnapshot(snapshot)"
               >
@@ -1027,10 +1234,11 @@ function stableStringify(value: any) {
   </wd-popup>
 
   <wd-popup
-    v-model="detailVisible"
+    v-model="detailPopupVisible"
     position="bottom"
     custom-class="agent-snapshot-popup"
     custom-style="height: 88vh; max-height: 940px;"
+    :close-on-click-modal="!restoring"
     safe-area-inset-bottom
   >
     <view class="agent-snapshot-shell">
@@ -1038,7 +1246,7 @@ function stableStringify(value: any) {
         <text class="agent-snapshot-detail-title">
           {{ detailTitle }}
         </text>
-        <wd-icon name="close" size="22px" custom-class="agent-snapshot-close-icon text-[#65686f]" @click="detailVisible = false" />
+        <wd-icon name="close" size="22px" custom-class="agent-snapshot-close-icon text-[#65686f]" @click="closeDetail()" />
       </view>
 
       <scroll-view scroll-y class="agent-snapshot-body">
@@ -1059,6 +1267,12 @@ function stableStringify(value: any) {
             <view class="border-b border-[#f0f1f5] px-[22rpx] py-[18rpx]">
               <text class="text-[28rpx] text-[#232338] font-semibold">
                 {{ item.label }}
+              </text>
+              <text v-if="item.recordedOnly" class="ml-[10rpx] text-[22rpx] text-[#8b8f9a]">
+                {{ t('agentSnapshot.recordedChange') }}
+              </text>
+              <text v-if="item.redactedDifference" class="ml-[10rpx] text-[22rpx] text-[#a06a1f]">
+                {{ t('agentSnapshot.redactedValueChanged') }}
               </text>
             </view>
 
@@ -1098,10 +1312,16 @@ function stableStringify(value: any) {
             {{ t('agentSnapshot.restoreConfirm', { version: currentDetail.afterVersionNo || '' }) }}
           </view>
           <view
+            v-if="currentDetail?.mode === 'restore' && hasUnsavedChanges"
+            class="rounded-[18rpx] bg-[rgba(245,108,108,0.1)] p-[22rpx] text-[24rpx] text-[#a34848] leading-[1.6]"
+          >
+            {{ t('agentSnapshot.unsavedChangesWarning') }}
+          </view>
+          <view
             v-if="restoreWillClearChatHistory"
             class="rounded-[18rpx] bg-[rgba(245,108,108,0.1)] p-[22rpx] text-[24rpx] text-[#a34848] leading-[1.6]"
           >
-            {{ t('agentSnapshot.restoreMemoryWarning') }}
+            {{ t('agentSnapshot.restoreChatHistoryDestructiveWarning') }}
           </view>
         </view>
       </scroll-view>
@@ -1110,12 +1330,13 @@ function stableStringify(value: any) {
         v-if="currentDetail?.mode === 'restore'"
         class="agent-snapshot-footer"
       >
-        <wd-button type="info" custom-class="agent-snapshot-footer-button flex-1 !h-[78rpx]" @click="detailVisible = false">
+        <wd-button type="info" :disabled="restoring" custom-class="agent-snapshot-footer-button flex-1 !h-[78rpx]" @click="closeDetail()">
           {{ t('common.cancel') }}
         </wd-button>
         <wd-button
           type="primary"
           :loading="restoring"
+          :disabled="restoring || !canConfirmRestore"
           custom-class="agent-snapshot-footer-button flex-1 !h-[78rpx] !bg-[#336cff]"
           @click="confirmRestoreSnapshot"
         >
