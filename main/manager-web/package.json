@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "test": "npm run test:i18n",
-    "test:i18n": "node scripts/check-i18n.js",
+    "check:i18n": "node scripts/check-i18n.js",
     "build": "vue-cli-service build",
     "analyze": "cross-env ANALYZE=true vue-cli-service build"
   },
