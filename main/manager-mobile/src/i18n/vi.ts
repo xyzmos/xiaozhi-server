@@ -77,6 +77,7 @@ export default {
     'home.deleteAgentNameMismatch': 'Tên đại lý không khớp',
     'home.deleteAgentPasteForbidden': 'Vui lòng nhập thủ công tên đại lý. Không được dán.',
     'home.deleteAgentMissingInfo': 'Không thể xác nhận thông tin đại lý. Vui lòng tải lại rồi thử lại.',
+    'home.deleteAgentSuccess': 'Đã xóa đại lý thành công',
     'home.justNow': 'Vừa xong',
     'home.minutesAgo': 'phút trước',
     'home.hoursAgo': 'giờ trước',

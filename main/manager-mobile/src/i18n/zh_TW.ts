@@ -98,6 +98,7 @@ export default {
   'home.deleteAgentNameMismatch': '輸入的智能體名稱不匹配',
   'home.deleteAgentPasteForbidden': '請手動輸入智能體名稱，不允許貼上',
   'home.deleteAgentMissingInfo': '無法確認智能體資訊，請重新整理後再試',
+  'home.deleteAgentSuccess': '智能體刪除成功',
   'home.justNow': '剛剛',
   'home.minutesAgo': '分鐘前',
   'home.hoursAgo': '小時前',

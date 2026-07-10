@@ -77,6 +77,7 @@ export default {
   'home.deleteAgentNameMismatch': '输入的智能体名称不匹配',
   'home.deleteAgentPasteForbidden': '请手动输入智能体名称，不允许粘贴',
   'home.deleteAgentMissingInfo': '无法确认智能体信息，请刷新后重试',
+  'home.deleteAgentSuccess': '智能体删除成功',
   'home.justNow': '刚刚',
   'home.minutesAgo': '分钟前',
   'home.hoursAgo': '小时前',

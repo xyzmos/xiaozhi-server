@@ -77,6 +77,7 @@ export default {
   'home.deleteAgentNameMismatch': 'The agent name does not match',
   'home.deleteAgentPasteForbidden': 'Please type the agent name manually. Pasting is not allowed.',
   'home.deleteAgentMissingInfo': 'Unable to confirm agent information. Please refresh and try again.',
+  'home.deleteAgentSuccess': 'Agent deleted successfully',
   'home.justNow': 'Just now',
   'home.minutesAgo': 'minutes ago',
   'home.hoursAgo': 'hours ago',

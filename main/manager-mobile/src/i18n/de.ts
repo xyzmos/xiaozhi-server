@@ -77,6 +77,7 @@ export default {
     'home.deleteAgentNameMismatch': 'Der Agentenname stimmt nicht überein',
     'home.deleteAgentPasteForbidden': 'Bitte geben Sie den Agentennamen manuell ein. Einfügen ist nicht erlaubt.',
     'home.deleteAgentMissingInfo': 'Agenteninformationen konnten nicht bestätigt werden. Bitte aktualisieren und erneut versuchen.',
+    'home.deleteAgentSuccess': 'Agent erfolgreich gelöscht',
     'home.justNow': 'Gerade eben',
     'home.minutesAgo': 'Minuten her',
     'home.hoursAgo': 'Stunden her',

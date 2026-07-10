@@ -131,7 +131,7 @@ async function handleDeleteAgent() {
     await deleteAgent(deleteTargetAgent.value.id)
     // 删除成功后刷新列表
     pagingRef.value.reload()
-    toast.success(`${t('home.agentName')}${t('message.deleteSuccess')}`)
+    toast.success(t('home.deleteAgentSuccess'))
     deleteDialogVisible.value = false
     deleteTargetAgent.value = null
     deleteConfirmText.value = ''
