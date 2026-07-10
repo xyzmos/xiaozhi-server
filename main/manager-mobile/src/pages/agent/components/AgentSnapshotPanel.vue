@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { AgentSnapshot, AgentSnapshotData } from '@/api/agent/types'
 import { computed, ref, watch } from 'vue'
-import { useMessage } from 'wot-design-uni'
+import { useMessage } from 'wot-design-uni/components/wd-message-box'
 import {
   deleteAgentSnapshot,
   getAgentDetail,

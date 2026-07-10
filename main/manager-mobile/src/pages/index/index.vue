@@ -14,7 +14,7 @@
 import type { Agent } from '@/api/agent/types'
 import { computed, onMounted, ref } from 'vue'
 // 在组件挂载后设置导航栏标题
-import { useMessage } from 'wot-design-uni'
+import { useMessage } from 'wot-design-uni/components/wd-message-box'
 import useZPaging from 'z-paging/components/z-paging/js/hooks/useZPaging.js'
 import { createAgent, deleteAgent, getAgentList } from '@/api/agent/agent'
 import { t } from '@/i18n'
@@ -167,7 +167,7 @@ function openCreateDialog() {
       msg: '',
       inputPlaceholder: t('home.inputPlaceholder'),
       inputValue: '',
-      inputPattern: /^.{1,64}$/i,
+      inputPattern: /^.{1,64}$/,
       inputError: t('home.createError'),
       confirmButtonText: t('home.createNow'),
       cancelButtonText: t('common.cancel'),
