@@ -374,8 +374,9 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
 
         // 锁定后查询现有实体和关联配置
         AgentEntity existingEntity = this.getAgentById(agentId);
-        if (createSnapshot && agentSnapshotService.getCurrentVersionNo(agentId) == 0) {
-            agentSnapshotService.createSnapshot(agentId, "initial");
+        if (createSnapshot) {
+            int currentVersionNo = agentSnapshotService.getCurrentVersionNo(agentId);
+            agentSnapshotService.createSnapshot(agentId, currentVersionNo == 0 ? "initial" : "current");
         }
 
         // 只更新提供的非空字段
@@ -617,10 +618,16 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
             }
 
             entity.setTtsVoiceId(template.getTtsVoiceId());
+            entity.setTtsLanguage(defaultIfBlank(template.getTtsLanguage(),
+                    timbreModelService.getDefaultLanguageById(entity.getTtsVoiceId())));
             entity.setMemModelId(template.getMemModelId());
             entity.setIntentModelId(template.getIntentModelId());
             entity.setSystemPrompt(template.getSystemPrompt());
             entity.setSummaryMemory(template.getSummaryMemory());
+            if (Constant.MEMORY_NO_MEM.equals(entity.getMemModelId())
+                    || Constant.MEMORY_MEM_REPORT_ONLY.equals(entity.getMemModelId())) {
+                entity.setSummaryMemory("");
+            }
 
             // 根据记忆模型类型设置默认的chatHistoryConf值
             if (template.getMemModelId() != null) {
@@ -681,7 +688,12 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         }
         // 保存默认插件
         agentPluginMappingService.saveBatch(toInsert);
+        agentSnapshotService.createSnapshot(entity.getId(), "initial");
         return entity.getId();
+    }
+
+    private String defaultIfBlank(String value, String defaultValue) {
+        return StringUtils.isBlank(value) ? defaultValue : value;
     }
 
     private String getDefaultLLMModelId() {

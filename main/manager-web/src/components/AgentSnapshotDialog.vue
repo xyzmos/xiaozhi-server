@@ -3,20 +3,32 @@
     <el-dialog
       :title="$t('agentSnapshot.title')"
       :visible="visible"
-      width="760px"
+      width="860px"
       class="agent-snapshot-dialog"
+      :before-close="guardRestoreInFlightClose"
+      :close-on-click-modal="!restoring"
+      :close-on-press-escape="!restoring"
+      :show-close="!restoring"
       @open="open"
       @close="close"
     >
-      <el-table
-        v-loading="loading"
-        :data="snapshots"
-        :row-key="snapshotRowKey"
-        :row-class-name="snapshotRowClassName"
-        size="small"
-        class="snapshot-table"
-        :empty-text="loading ? ' ' : $t('agentSnapshot.empty')"
-      >
+      <template slot="title">
+        <div class="snapshot-dialog-title">
+          <i class="el-icon-time snapshot-title-icon" aria-hidden="true"></i>
+          <span>{{ $t('agentSnapshot.title') }}</span>
+        </div>
+      </template>
+
+      <div class="snapshot-table-wrapper">
+        <el-table
+          v-loading="loading"
+          :data="snapshots"
+          :row-key="snapshotRowKey"
+          :row-class-name="snapshotRowClassName"
+          size="small"
+          class="snapshot-table"
+          :empty-text="loading ? ' ' : $t('agentSnapshot.empty')"
+        >
         <el-table-column
           prop="versionNo"
           :label="$t('agentSnapshot.version')"
@@ -96,7 +108,8 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
+      </div>
 
       <div class="pagination-row">
         <el-pagination
@@ -116,6 +129,13 @@
       width="860px"
       class="snapshot-detail-dialog"
     >
+      <template slot="title">
+        <div class="snapshot-dialog-title">
+          <i class="el-icon-time snapshot-title-icon" aria-hidden="true"></i>
+          <span>{{ detailDialogTitle }}</span>
+        </div>
+      </template>
+
       <div v-loading="detailLoading" class="snapshot-diff">
         <template v-if="currentSnapshot && snapshotDiffs.length">
           <div class="detail-summary">
@@ -288,7 +308,18 @@
       :visible.sync="restorePreviewVisible"
       width="860px"
       class="snapshot-detail-dialog"
+      :before-close="guardRestoreInFlightClose"
+      :close-on-click-modal="!restoring"
+      :close-on-press-escape="!restoring"
+      :show-close="!restoring"
     >
+      <template slot="title">
+        <div class="snapshot-dialog-title">
+          <i class="el-icon-time snapshot-title-icon" aria-hidden="true"></i>
+          <span>{{ restorePreviewTitle }}</span>
+        </div>
+      </template>
+
       <div v-loading="restorePreviewLoading" class="snapshot-diff">
         <template v-if="restorePreviewSnapshot && restorePreviewDiffs.length">
           <div class="detail-summary">
@@ -410,25 +441,40 @@
           :title="$t('agentSnapshot.restoreConfirm', { version: restoreTargetVersion })"
         />
         <el-alert
-          v-if="restoreWillClearChatHistory"
+          v-if="restorePreviewSnapshot"
           class="restore-risk-alert"
           type="warning"
           :closable="false"
           show-icon
-          :title="$t('agentSnapshot.restoreMemoryWarning')"
+          :title="$t('agentSnapshot.unsavedChangesWarning')"
+        />
+        <el-alert
+          v-if="restoreWillClearChatHistory"
+          class="restore-risk-alert"
+          type="error"
+          :closable="false"
+          show-icon
+          :title="$t('agentSnapshot.restoreMemoryDestructiveWarning')"
         />
       </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="restorePreviewVisible = false">
+      <span slot="footer" class="snapshot-dialog-footer">
+        <el-button
+          class="snapshot-footer-button snapshot-footer-cancel"
+          :disabled="restoring"
+          @click="closeRestorePreview"
+        >
           {{ $t('button.cancel') }}
         </el-button>
         <el-button
-          type="primary"
+          class="snapshot-footer-button snapshot-footer-confirm"
           :loading="restoring"
-          :disabled="restorePreviewLoading || !restorePreviewSnapshot || restorePreviewDiffs.length === 0"
+          :disabled="restoring || restorePreviewLoading || !restorePreviewSnapshot || restorePreviewDiffs.length === 0"
           @click="confirmRestoreSnapshot"
         >
-          {{ $t('agentSnapshot.confirmRestore') }}
+          <span class="confirm-inner">
+            <i class="el-icon-refresh-left confirm-icon" aria-hidden="true"></i>
+            {{ $t('agentSnapshot.confirmRestore') }}
+          </span>
         </el-button>
       </span>
     </el-dialog>
@@ -437,7 +483,14 @@
 
 <script>
 import Api from "@/apis/api";
+import correctWord from "@/apis/module/correctWord";
 import { formatDate } from "@/utils/date";
+import {
+  hasValidCurrentStateToken,
+  normalizeSnapshotOrderedValue,
+  redactSnapshotDisplayValue,
+  SNAPSHOT_SECRET_REDACTED
+} from "./agentSnapshotDisplayUtils.mjs";
 
 const FALLBACK_PLUGIN_NAME_KEYS = {
   SYSTEM_PLUGIN_WEATHER: "agentSnapshot.plugin.SYSTEM_PLUGIN_WEATHER",
@@ -505,8 +558,6 @@ const CHAT_HISTORY_CONF_LABEL_KEYS = {
   1: "agentSnapshot.chatHistoryConf.text",
   2: "agentSnapshot.chatHistoryConf.textVoice"
 };
-const SNAPSHOT_SECRET_REDACTED = "__SNAPSHOT_SECRET_REDACTED__";
-
 export default {
   name: "AgentSnapshotDialog",
   props: {
@@ -545,6 +596,9 @@ export default {
       voiceNameMap: {},
       voiceMetadataLoading: {},
       loadedVoiceModelIds: {},
+      correctWordNameMap: {},
+      correctWordMetadataLoaded: false,
+      correctWordMetadataLoading: null,
       snapshotFetchSeq: 0,
       detailFetchSeq: 0,
       restorePreviewFetchSeq: 0,
@@ -598,12 +652,13 @@ export default {
 
       const beforeData = this.currentSnapshot.snapshotData || {};
       const afterData = this.currentSnapshot.afterSnapshotData || {};
-      return this.buildDiffs(beforeData, afterData, this.currentSnapshot.changedFields || [], {
+      return this.buildDiffs(beforeData, afterData, this.currentSnapshot.changedFields, {
         beforeLabel: this.$t("agentSnapshot.beforeChange"),
         afterLabel: this.$t("agentSnapshot.afterChange"),
         beforeVersionNo: this.currentSnapshot.beforeVersionNo,
         afterVersionNo: this.currentSnapshot.afterVersionNo || this.currentSnapshot.versionNo,
-        fieldOrder: this.currentSnapshot.fieldOrder
+        fieldOrder: this.currentSnapshot.fieldOrder,
+        forceCompare: Boolean(this.currentSnapshot.forceCompare)
       });
     },
     restorePreviewDiffs() {
@@ -620,7 +675,8 @@ export default {
           afterLabel: this.$t("agentSnapshot.afterRestore"),
           beforeVersionNo: this.restorePreviewSnapshot.beforeVersionNo || this.resolveCurrentVersionNo(),
           afterVersionNo: this.restorePreviewSnapshot.afterVersionNo || this.restorePreviewSnapshot.versionNo,
-          fieldOrder: this.restorePreviewSnapshot.fieldOrder
+          fieldOrder: this.restorePreviewSnapshot.fieldOrder,
+          forceCompare: true
         }
       );
     },
@@ -668,7 +724,13 @@ export default {
       });
     },
     buildDiffs(beforeData, afterData, changedFields, options = {}) {
-      const fields = this.resolveDiffFields(beforeData, afterData, changedFields, options.fieldOrder);
+      const fields = this.resolveDiffFields(
+        beforeData,
+        afterData,
+        changedFields,
+        options.fieldOrder,
+        options.forceCompare
+      );
       return fields.map((field) => {
         const beforeValue = this.getFieldValue(beforeData, field);
         const afterValue = this.getFieldValue(afterData, field);
@@ -691,9 +753,24 @@ export default {
       });
     },
     close() {
+      if (this.restoring) {
+        return;
+      }
       this.cancelPendingSnapshotRequests();
       this.historyAnchorVersionNo = null;
       this.$emit("update:visible", false);
+    },
+    guardRestoreInFlightClose(done) {
+      if (this.restoring) {
+        return;
+      }
+      done();
+    },
+    closeRestorePreview() {
+      if (this.restoring) {
+        return;
+      }
+      this.restorePreviewVisible = false;
     },
     open() {
       this.historyAnchorVersionNo = null;
@@ -722,7 +799,7 @@ export default {
       return !!row?.id;
     },
     canRestoreSnapshot(row) {
-      return !!row && !row.isLatestSnapshot;
+      return !!row?.id && !row.isLatestSnapshot;
     },
     canDeleteSnapshot(row) {
       return !!row && !row.isLatestSnapshot;
@@ -767,6 +844,13 @@ export default {
           } else {
             this.$message.error(data.msg || this.$t("agentSnapshot.fetchFailed"));
           }
+        },
+        () => {
+          if (requestSeq !== this.snapshotFetchSeq) {
+            return;
+          }
+          this.loading = false;
+          this.$message.error(this.$t("agentSnapshot.fetchFailed"));
         }
       );
     },
@@ -816,16 +900,20 @@ export default {
       this.ensurePluginMetadata();
       this.ensureModelMetadata();
 
-      Promise.all([
-        this.fetchSnapshotDetail(row.id),
-        this.fetchCurrentAgentData()
-      ]).then(([targetSnapshot, currentData]) => {
+      this.fetchSnapshotDetail(row.id).then((targetSnapshot) => {
         if (requestSeq !== this.restorePreviewFetchSeq) {
           return Promise.resolve();
         }
+        if (
+          !this.isPlainObject(targetSnapshot.currentSnapshotData)
+          || !hasValidCurrentStateToken(targetSnapshot.currentStateToken)
+        ) {
+          throw new Error("Snapshot detail is missing its atomic current-state preview");
+        }
         const previewSnapshot = {
           ...targetSnapshot,
-          beforeSnapshotData: currentData,
+          currentStateToken: targetSnapshot.currentStateToken,
+          beforeSnapshotData: targetSnapshot.currentSnapshotData,
           afterSnapshotData: targetSnapshot.snapshotData || {},
           beforeVersionNo: this.resolveCurrentVersionNo(),
           afterVersionNo: targetSnapshot.versionNo,
@@ -856,12 +944,56 @@ export default {
       }));
     },
     confirmRestoreSnapshot() {
-      if (!this.restorePreviewRow) {
+      if (this.restoring || !this.restorePreviewRow) {
+        return;
+      }
+      const snapshotId = this.restorePreviewRow.id;
+      const currentStateToken = this.restorePreviewSnapshot?.currentStateToken;
+      if (!hasValidCurrentStateToken(currentStateToken)) {
+        this.invalidateRestorePreview();
+        this.$message.error(this.$t("agentSnapshot.restoreFailed"));
+        return;
+      }
+
+      if (!this.restoreWillClearChatHistory) {
+        this.submitRestoreSnapshot(snapshotId, currentStateToken);
+        return;
+      }
+
+      this.restoring = true;
+      const requestSeq = ++this.restoreActionSeq;
+      this.$confirm(
+        this.$t("agentSnapshot.restoreMemoryDestructiveWarning"),
+        this.$t("common.warning"),
+        {
+          confirmButtonText: this.$t("common.confirm"),
+          cancelButtonText: this.$t("common.cancel"),
+          type: "error"
+        }
+      ).then(() => {
+        if (requestSeq !== this.restoreActionSeq) {
+          return;
+        }
+        this.submitRestoreSnapshot(snapshotId, currentStateToken, requestSeq);
+      }).catch(() => {
+        if (requestSeq === this.restoreActionSeq) {
+          this.restoring = false;
+        }
+      });
+    },
+    submitRestoreSnapshot(snapshotId, currentStateToken, confirmedRequestSeq = null) {
+      if (!hasValidCurrentStateToken(currentStateToken)) {
+        this.restoring = false;
+        this.invalidateRestorePreview();
+        this.$message.error(this.$t("agentSnapshot.restoreFailed"));
+        return;
+      }
+      const requestSeq = confirmedRequestSeq ?? ++this.restoreActionSeq;
+      if (requestSeq !== this.restoreActionSeq) {
         return;
       }
       this.restoring = true;
-      const requestSeq = ++this.restoreActionSeq;
-      Api.agent.restoreAgentSnapshot(this.agentId, this.restorePreviewRow.id, ({ data }) => {
+      Api.agent.restoreAgentSnapshot(this.agentId, snapshotId, currentStateToken, ({ data }) => {
         if (requestSeq !== this.restoreActionSeq) {
           return;
         }
@@ -869,14 +1001,31 @@ export default {
         if (data.code === 0) {
           this.$message.success(this.$t("agentSnapshot.restoreSuccess"));
           this.restorePreviewVisible = false;
+          this.restorePreviewSnapshot = null;
+          this.restorePreviewRow = null;
           this.detailVisible = false;
           this.$emit("restored");
           this.historyAnchorVersionNo = null;
           this.fetchSnapshots();
         } else {
+          this.invalidateRestorePreview();
           this.$message.error(this.restoreFailedMessage(data));
         }
+      }, () => {
+        if (requestSeq !== this.restoreActionSeq) {
+          return;
+        }
+        this.restoring = false;
+        this.invalidateRestorePreview();
+        this.$message.error(this.$t("agentSnapshot.restoreFailed"));
       });
+    },
+    invalidateRestorePreview() {
+      this.restorePreviewFetchSeq += 1;
+      this.restorePreviewLoading = false;
+      this.restorePreviewVisible = false;
+      this.restorePreviewSnapshot = null;
+      this.restorePreviewRow = null;
     },
     deleteSnapshot(row) {
       if (!this.canDeleteSnapshot(row)) {
@@ -907,6 +1056,12 @@ export default {
           } else {
             this.$message.error(data.msg || this.$t("agentSnapshot.deleteFailed"));
           }
+        }, () => {
+          if (requestSeq !== this.deleteActionSeq) {
+            return;
+          }
+          this.deletingSnapshotId = null;
+          this.$message.error(this.$t("agentSnapshot.deleteFailed"));
         });
       }).catch(() => {});
     },
@@ -953,7 +1108,7 @@ export default {
           } else {
             reject(data);
           }
-        });
+        }, reject);
       });
     },
     fetchSnapshotRows(params) {
@@ -964,7 +1119,7 @@ export default {
           } else {
             reject(data);
           }
-        });
+        }, reject);
       });
     },
     snapshotQueryParams(params = {}) {
@@ -1023,6 +1178,7 @@ export default {
             ...selectedSnapshot,
             versionNo: displayVersionNo,
             changedFields: adjacentVersion ? (selectedSnapshot.changedFields || row.changedFields || []) : [],
+            forceCompare: !adjacentVersion,
             snapshotData: previousSnapshot.snapshotData || {},
             afterSnapshotData: selectedSnapshot.snapshotData || {},
             beforeVersionNo: previousSnapshot.versionNo,
@@ -1152,6 +1308,9 @@ export default {
             this.pluginMetadataLoaded = true;
           }
           resolve();
+        }, () => {
+          this.pluginMetadataLoaded = true;
+          resolve();
         });
       }).finally(() => {
         this.pluginMetadataLoading = null;
@@ -1181,9 +1340,9 @@ export default {
           };
 
           if (type === "LLM") {
-            Api.model.getLlmModelCodeList("", callback);
+            Api.model.getLlmModelCodeList("", callback, () => resolve([]));
           } else {
-            Api.model.getModelNames(type, "", callback);
+            Api.model.getModelNames(type, "", callback, () => resolve([]));
           }
         });
       });
@@ -1210,8 +1369,47 @@ export default {
       const afterData = snapshot.afterSnapshotData || {};
       return Promise.all([
         this.ensureModelMetadata(),
-        this.ensureVoiceMetadataForData(beforeData, afterData)
+        this.ensureVoiceMetadataForData(beforeData, afterData),
+        this.ensureCorrectWordMetadataForData(beforeData, afterData)
       ]);
+    },
+    ensureCorrectWordMetadataForData(...dataList) {
+      const hasCorrectWordIds = dataList.some((data) => {
+        return Array.isArray(data?.correctWordFileIds) && data.correctWordFileIds.length > 0;
+      });
+      return hasCorrectWordIds ? this.ensureCorrectWordMetadata() : Promise.resolve();
+    },
+    ensureCorrectWordMetadata() {
+      if (this.correctWordMetadataLoaded) {
+        return Promise.resolve();
+      }
+      if (this.correctWordMetadataLoading) {
+        return this.correctWordMetadataLoading;
+      }
+
+      this.correctWordMetadataLoading = new Promise((resolve) => {
+        correctWord.selectAll(({ data }) => {
+          if (data.code === 0) {
+            const metadata = {};
+            (data.data || []).forEach((item) => {
+              if (item.id) {
+                metadata[item.id] = item.fileName || item.id;
+              }
+            });
+            this.correctWordNameMap = metadata;
+            this.correctWordMetadataLoaded = true;
+          }
+          resolve();
+        }, () => {
+          // 权限不足或元数据服务不可用时保留原始 ID，不扩大文件列表的访问边界。
+          this.correctWordMetadataLoaded = true;
+          resolve();
+        });
+      }).finally(() => {
+        this.correctWordMetadataLoading = null;
+      });
+
+      return this.correctWordMetadataLoading;
     },
     ensureVoiceMetadataForData(...dataList) {
       const modelIds = Array.from(new Set(
@@ -1249,6 +1447,12 @@ export default {
               };
             }
             resolve();
+          }, () => {
+            this.loadedVoiceModelIds = {
+              ...this.loadedVoiceModelIds,
+              [modelId]: true
+            };
+            resolve();
           });
         }).finally(() => {
           const { [modelId]: dropped, ...rest } = this.voiceMetadataLoading;
@@ -1283,7 +1487,7 @@ export default {
           } else {
             reject(data);
           }
-        });
+        }, reject);
       });
       const tagsPromise = this.fetchCurrentAgentTags();
 
@@ -1303,7 +1507,7 @@ export default {
           } else {
             reject(data);
           }
-        });
+        }, reject);
       });
     },
     normalizeAgentData(data) {
@@ -1501,7 +1705,7 @@ export default {
       return paramKeys.map((key) => ({
         key,
         label: this.functionParamLabel(pluginId, key),
-        value: this.formatFunctionParamValue(normalizedParams[key]),
+        value: this.formatFunctionParamValue(normalizedParams[key], key),
         changed: changedParamKeys.includes(key)
       }));
     },
@@ -1529,11 +1733,11 @@ export default {
         return item.id === pluginId || item.providerCode === pluginId || item.name === pluginId;
       }) || null;
     },
-    formatFunctionParamValue(value) {
+    formatFunctionParamValue(value, key = "") {
       if (value === null || value === undefined || value === "") {
         return this.$t("agentSnapshot.emptyValue");
       }
-      const displayValue = this.localizedSnapshotDisplayValue(value);
+      const displayValue = this.localizedSnapshotDisplayValue(value, key);
       if (typeof displayValue === "object") {
         return JSON.stringify(displayValue);
       }
@@ -1661,17 +1865,21 @@ export default {
         ? `${this.$t("agentSnapshot.restoreFailedRollback")}: ${data.msg}`
         : this.$t("agentSnapshot.restoreFailedRollback");
     },
-    resolveDiffFields(beforeData, afterData, changedFields = [], fieldOrder = []) {
-      const safeChangedFields = Array.isArray(changedFields) ? changedFields : [];
+    resolveDiffFields(beforeData, afterData, changedFields = null, fieldOrder = [], forceCompare = false) {
+      const hasBackendChangedFields = Array.isArray(changedFields);
+      const safeChangedFields = hasBackendChangedFields ? changedFields : [];
       const directFields = safeChangedFields
         .filter((field) => field && field !== "restore")
         .map((field) => this.canonicalField(field));
-      const candidates = directFields.length > 0 && !safeChangedFields.includes("restore")
-        ? directFields
-        : this.snapshotFieldOrder(fieldOrder, beforeData, afterData);
+      if (!forceCompare && hasBackendChangedFields) {
+        return Array.from(new Set(directFields));
+      }
+
+      const candidates = this.snapshotFieldOrder(fieldOrder, beforeData, afterData);
 
       return Array.from(new Set(candidates)).filter((field) => {
-        return !this.isSameValue(
+        return !this.isSameFieldValue(
+          field,
           this.getFieldValue(beforeData, field),
           this.getFieldValue(afterData, field)
         );
@@ -1706,6 +1914,44 @@ export default {
     isSameValue(left, right) {
       return this.isEquivalentValue(this.normalizeValue(left), this.normalizeValue(right));
     },
+    isSameFieldValue(field, left, right) {
+      return this.isEquivalentValue(
+        this.normalizeValueForField(field, left),
+        this.normalizeValueForField(field, right)
+      );
+    },
+    normalizeValueForField(field, value) {
+      if (field === "functions") {
+        return this.normalizeFunctionMap(value);
+      }
+      if (field === "contextProviders") {
+        return normalizeSnapshotOrderedValue(Array.isArray(value) ? value : []);
+      }
+      if (["ttsVolume", "ttsRate", "ttsPitch"].includes(field)) {
+        return this.normalizeDefaultTtsNumber(value);
+      }
+      if (field === "summaryMemory") {
+        return value === null || value === undefined || String(value).trim() === "" ? "" : String(value);
+      }
+      if (field === "correctWordFileIds" || field === "tagNames") {
+        return Array.isArray(value)
+          ? value.filter((item) => item !== null && item !== undefined && String(item).trim() !== "")
+            .map((item) => String(item))
+            .sort()
+          : [];
+      }
+      return this.normalizeValue(value);
+    },
+    normalizeDefaultTtsNumber(value) {
+      if (value === null || value === undefined || String(value).trim() === "") {
+        return null;
+      }
+      if (typeof value === "number") {
+        return Math.trunc(value);
+      }
+      const text = String(value).trim();
+      return /^[+-]?\d+$/.test(text) ? Number.parseInt(text, 10) : text;
+    },
     isEquivalentValue(left, right) {
       if (left === SNAPSHOT_SECRET_REDACTED || right === SNAPSHOT_SECRET_REDACTED) {
         return true;
@@ -1729,16 +1975,7 @@ export default {
       return left === right;
     },
     normalizeValue(value) {
-      if (Array.isArray(value)) {
-        return value.map((item) => this.normalizeValue(item));
-      }
-      if (value && typeof value === "object") {
-        return Object.keys(value).sort().reduce((result, key) => {
-          result[key] = this.normalizeValue(value[key]);
-          return result;
-        }, {});
-      }
-      return value === undefined ? null : value;
+      return normalizeSnapshotOrderedValue(value);
     },
     isPlainObject(value) {
       return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -1754,7 +1991,10 @@ export default {
         return this.translateKey(CHAT_HISTORY_CONF_LABEL_KEYS[value] || CHAT_HISTORY_CONF_LABEL_KEYS[Number(value)])
           || this.formatValue(value);
       }
-      return this.formatValue(value);
+      if (field === "correctWordFileIds") {
+        return this.correctWordDisplayNames(value);
+      }
+      return this.formatValue(value, field);
     },
     modelDisplayName(value) {
       if (value === null || value === undefined || value === "") {
@@ -1769,14 +2009,22 @@ export default {
       return this.voiceNameMap[`${modelId}:${value}`] || this.voiceNameMap[value]
         || this.translateKey(FALLBACK_VOICE_NAME_KEYS[value], String(value)) || String(value);
     },
-    formatValue(value) {
+    correctWordDisplayNames(value) {
+      if (!Array.isArray(value) || value.length === 0) {
+        return this.$t("agentSnapshot.emptyValue");
+      }
+      return value
+        .map((id) => this.correctWordNameMap[id] || id)
+        .join(", ");
+    },
+    formatValue(value, parentKey = "") {
       if (value === null || value === undefined || value === "") {
         return this.$t("agentSnapshot.emptyValue");
       }
       if (Array.isArray(value) && value.length === 0) {
         return this.$t("agentSnapshot.emptyValue");
       }
-      const displayValue = this.localizedSnapshotDisplayValue(value);
+      const displayValue = this.localizedSnapshotDisplayValue(value, parentKey);
       if (Array.isArray(displayValue) && displayValue.every((item) => this.isPrimitiveValue(item))) {
         return displayValue.join(", ");
       }
@@ -1785,20 +2033,12 @@ export default {
       }
       return String(displayValue);
     },
-    localizedSnapshotDisplayValue(value) {
-      if (value === SNAPSHOT_SECRET_REDACTED) {
-        return this.$t("agentSnapshot.secretRedacted");
-      }
-      if (Array.isArray(value)) {
-        return value.map((item) => this.localizedSnapshotDisplayValue(item));
-      }
-      if (value && typeof value === "object") {
-        return Object.keys(value).reduce((result, key) => {
-          result[key] = this.localizedSnapshotDisplayValue(value[key]);
-          return result;
-        }, {});
-      }
-      return value;
+    localizedSnapshotDisplayValue(value, parentKey = "") {
+      return redactSnapshotDisplayValue(
+        value,
+        this.$t("agentSnapshot.secretRedacted"),
+        parentKey
+      );
     },
     isPrimitiveValue(value) {
       return value === null || ["string", "number", "boolean"].includes(typeof value);
@@ -1846,6 +2086,59 @@ export default {
   font-weight: 500;
 }
 
+.snapshot-dialog-title {
+  display: inline-flex;
+  align-items: center;
+  font-size: 18px;
+
+  > span {
+    line-height: 18px;
+    font-weight: 500;
+  }
+}
+
+.snapshot-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  color: #4a7cfd;
+  font-size: 24px;
+  line-height: 1;
+}
+
+::v-deep .el-dialog__headerbtn {
+  top: 12px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+  .el-dialog__close {
+    position: static;
+    color: #666;
+    font-size: 18px;
+    transform: none;
+  }
+
+  &:hover {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+
+    .el-dialog__close {
+      color: #333;
+    }
+  }
+}
+
 ::v-deep .el-dialog__body {
   padding: 20px;
 }
@@ -1854,8 +2147,89 @@ export default {
   padding: 12px 20px 16px;
 }
 
+.snapshot-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.snapshot-footer-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  height: 36px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+
+  & + .snapshot-footer-button {
+    margin-left: 0;
+  }
+}
+
+.snapshot-footer-cancel {
+  border: 1px solid #d7e1ff;
+  background: #f7f9ff;
+  color: #4a7cfd;
+
+  &:hover,
+  &:focus {
+    border-color: #4a7cfd;
+    background: #eef4ff;
+    color: #4a7cfd;
+    box-shadow: 0 2px 8px rgba(74, 124, 253, 0.14);
+    transform: translateY(-2px);
+  }
+}
+
+.snapshot-footer-confirm {
+  border: none;
+  background: linear-gradient(to right, #4a7cfd, #8154fc);
+  color: #fff;
+
+  &:hover,
+  &:focus {
+    border-color: transparent;
+    background: linear-gradient(to right, #4a7cfd, #8154fc);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(74, 124, 253, 0.3);
+    transform: translateY(-2px);
+    opacity: 0.88;
+  }
+
+  &.is-disabled,
+  &.is-disabled:hover,
+  &.is-disabled:focus {
+    border-color: transparent;
+    background: linear-gradient(to right, #a0b4fd, #b8a4fd);
+    color: rgba(255, 255, 255, 0.6);
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+    opacity: 1;
+  }
+}
+
+.confirm-inner {
+  display: inline-flex;
+  align-items: center;
+}
+
+.confirm-icon {
+  margin-right: 5px;
+  font-size: 16px;
+}
+
 .snapshot-table {
   width: 100%;
+}
+
+.snapshot-table-wrapper {
+  max-height: 62vh;
+  overflow: auto;
+  @include scrollbar-style;
 }
 
 .version-cell {

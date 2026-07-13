@@ -47,4 +47,7 @@ public class AgentSnapshotEntity {
 
     @Schema(description = "创建时间")
     private Date createdAt;
+
+    @Schema(description = "快照数据脱敏规则版本")
+    private Integer redactionVersion;
 }

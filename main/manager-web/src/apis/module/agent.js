@@ -1,6 +1,41 @@
 import { getServiceUrl } from '../api';
 import RequestService from '../httpRequest';
 
+const CALLBACK_RETRY_LIMIT = 10;
+const CALLBACK_RETRY_DELAY_MS = 2000;
+const CALLBACK_RETRY_WINDOW_MS = CALLBACK_RETRY_LIMIT * CALLBACK_RETRY_DELAY_MS;
+
+function retryCallbackRequest(retry, retryCount, onTerminalFailure, error, retryStartedAt) {
+    if (!onTerminalFailure) {
+        RequestService.reAjaxFun(() => retry(retryCount + 1))
+        return
+    }
+    const startedAt = retryStartedAt || Date.now()
+    if (retryCount >= CALLBACK_RETRY_LIMIT || Date.now() - startedAt >= CALLBACK_RETRY_WINDOW_MS) {
+        RequestService.clearRequestTime()
+        onTerminalFailure(error)
+        return
+    }
+    setTimeout(() => retry(retryCount + 1, startedAt), CALLBACK_RETRY_DELAY_MS)
+}
+
+function attachTerminalFailure(request, onTerminalFailure) {
+    if (onTerminalFailure) {
+        request.fail((error) => {
+            RequestService.clearRequestTime()
+            onTerminalFailure(error)
+        })
+    }
+    return request
+}
+
+function terminateCallbackRequest(onTerminalFailure, error) {
+    RequestService.clearRequestTime()
+    if (onTerminalFailure) {
+        onTerminalFailure(error)
+    }
+}
+
 
 export default {
     // 获取智能体列表
@@ -50,8 +85,9 @@ export default {
             }).send();
     },
     // 获取智能体配置
-    getDeviceConfig(agentId, callback) {
-        RequestService.sendRequest()
+    getDeviceConfig(agentId, callback, onTerminalFailure, retryCount = 0, retryStartedAt = 0) {
+        const retryWindowStartedAt = retryStartedAt || Date.now()
+        const request = RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/${agentId}`)
             .method('GET')
             .success((res) => {
@@ -60,10 +96,21 @@ export default {
             })
             .networkFail((err) => {
                 console.error('获取配置失败:', err);
-                RequestService.reAjaxFun(() => {
-                    this.getDeviceConfig(agentId, callback);
-                });
-            }).send();
+                retryCallbackRequest(
+                    (nextRetryCount, nextRetryStartedAt) => this.getDeviceConfig(
+                        agentId,
+                        callback,
+                        onTerminalFailure,
+                        nextRetryCount,
+                        nextRetryStartedAt
+                    ),
+                    retryCount,
+                    onTerminalFailure,
+                    err,
+                    retryWindowStartedAt
+                )
+            })
+        attachTerminalFailure(request, onTerminalFailure).send();
     },
     // 配置智能体
     updateAgentConfig(agentId, configData, callback) {
@@ -82,8 +129,9 @@ export default {
             }).send();
     },
     // 获取智能体配置快照列表
-    getAgentSnapshots(agentId, params, callback) {
-        RequestService.sendRequest()
+    getAgentSnapshots(agentId, params, callback, onTerminalFailure, retryCount = 0, retryStartedAt = 0) {
+        const retryWindowStartedAt = retryStartedAt || Date.now()
+        const request = RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/${agentId}/snapshots`)
             .method('GET')
             .data(params)
@@ -91,56 +139,80 @@ export default {
                 RequestService.clearRequestTime();
                 callback(res);
             })
-            .networkFail(() => {
-                RequestService.reAjaxFun(() => {
-                    this.getAgentSnapshots(agentId, params, callback);
-                });
-            }).send();
+            .networkFail((error) => {
+                retryCallbackRequest(
+                    (nextRetryCount, nextRetryStartedAt) => this.getAgentSnapshots(
+                        agentId,
+                        params,
+                        callback,
+                        onTerminalFailure,
+                        nextRetryCount,
+                        nextRetryStartedAt
+                    ),
+                    retryCount,
+                    onTerminalFailure,
+                    error,
+                    retryWindowStartedAt
+                )
+            })
+        attachTerminalFailure(request, onTerminalFailure).send();
     },
     // 获取智能体配置快照详情
-    getAgentSnapshot(agentId, snapshotId, callback) {
-        RequestService.sendRequest()
+    getAgentSnapshot(agentId, snapshotId, callback, onTerminalFailure, retryCount = 0, retryStartedAt = 0) {
+        const retryWindowStartedAt = retryStartedAt || Date.now()
+        const request = RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/${agentId}/snapshots/${snapshotId}`)
             .method('GET')
             .success((res) => {
                 RequestService.clearRequestTime();
                 callback(res);
             })
-            .networkFail(() => {
-                RequestService.reAjaxFun(() => {
-                    this.getAgentSnapshot(agentId, snapshotId, callback);
-                });
-            }).send();
+            .networkFail((error) => {
+                retryCallbackRequest(
+                    (nextRetryCount, nextRetryStartedAt) => this.getAgentSnapshot(
+                        agentId,
+                        snapshotId,
+                        callback,
+                        onTerminalFailure,
+                        nextRetryCount,
+                        nextRetryStartedAt
+                    ),
+                    retryCount,
+                    onTerminalFailure,
+                    error,
+                    retryWindowStartedAt
+                )
+            })
+        attachTerminalFailure(request, onTerminalFailure).send();
     },
     // 恢复智能体配置快照
-    restoreAgentSnapshot(agentId, snapshotId, callback) {
-        RequestService.sendRequest()
+    restoreAgentSnapshot(agentId, snapshotId, currentStateToken, callback, onTerminalFailure) {
+        const request = RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/${agentId}/snapshots/${snapshotId}/restore`)
             .method('POST')
+            .data({ currentStateToken })
             .success((res) => {
                 RequestService.clearRequestTime();
                 callback(res);
             })
-            .networkFail(() => {
-                RequestService.reAjaxFun(() => {
-                    this.restoreAgentSnapshot(agentId, snapshotId, callback);
-                });
-            }).send();
+            .networkFail((error) => {
+                terminateCallbackRequest(onTerminalFailure, error)
+            })
+        attachTerminalFailure(request, onTerminalFailure).send();
     },
     // 删除智能体配置快照
-    deleteAgentSnapshot(agentId, snapshotId, callback) {
-        RequestService.sendRequest()
+    deleteAgentSnapshot(agentId, snapshotId, callback, onTerminalFailure) {
+        const request = RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/${agentId}/snapshots/${snapshotId}`)
             .method('DELETE')
             .success((res) => {
                 RequestService.clearRequestTime();
                 callback(res);
             })
-            .networkFail(() => {
-                RequestService.reAjaxFun(() => {
-                    this.deleteAgentSnapshot(agentId, snapshotId, callback);
-                });
-            }).send();
+            .networkFail((error) => {
+                terminateCallbackRequest(onTerminalFailure, error)
+            })
+        attachTerminalFailure(request, onTerminalFailure).send();
     },
     // 新增方法：获取智能体模板
     getAgentTemplate(callback) {  // 移除templateName参数
@@ -463,19 +535,31 @@ export default {
             }).send();
     },
     // 获取智能体标签
-    getAgentTags(agentId, callback) {
-        RequestService.sendRequest()
+    getAgentTags(agentId, callback, onTerminalFailure, retryCount = 0, retryStartedAt = 0) {
+        const retryWindowStartedAt = retryStartedAt || Date.now()
+        const request = RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/${agentId}/tags`)
             .method('GET')
             .success((res) => {
                 RequestService.clearRequestTime();
                 callback(res);
             })
-            .networkFail(() => {
-                RequestService.reAjaxFun(() => {
-                    this.getAgentTags(agentId, callback);
-                });
-            }).send();
+            .networkFail((error) => {
+                retryCallbackRequest(
+                    (nextRetryCount, nextRetryStartedAt) => this.getAgentTags(
+                        agentId,
+                        callback,
+                        onTerminalFailure,
+                        nextRetryCount,
+                        nextRetryStartedAt
+                    ),
+                    retryCount,
+                    onTerminalFailure,
+                    error,
+                    retryWindowStartedAt
+                )
+            })
+        attachTerminalFailure(request, onTerminalFailure).send();
     },
     // 保存智能体标签
     saveAgentTags(agentId, tags, callback) {

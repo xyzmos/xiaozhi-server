@@ -6,17 +6,20 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import xiaozhi.common.exception.RenException;
 import xiaozhi.common.page.PageData;
 import xiaozhi.common.user.UserDetail;
 import xiaozhi.common.utils.Result;
 import xiaozhi.modules.agent.dto.AgentSnapshotPageDTO;
+import xiaozhi.modules.agent.dto.AgentSnapshotRestoreDTO;
 import xiaozhi.modules.agent.service.AgentService;
 import xiaozhi.modules.agent.service.AgentSnapshotService;
 import xiaozhi.modules.agent.vo.AgentSnapshotVO;
@@ -51,9 +54,10 @@ public class AgentSnapshotController {
     @PostMapping("/{snapshotId}/restore")
     @Operation(summary = "恢复智能体快照")
     @RequiresPermissions("sys:role:normal")
-    public Result<Void> restore(@PathVariable String agentId, @PathVariable String snapshotId) {
+    public Result<Void> restore(@PathVariable String agentId, @PathVariable String snapshotId,
+            @RequestBody @Valid AgentSnapshotRestoreDTO request) {
         checkPermission(agentId);
-        agentSnapshotService.restoreSnapshot(agentId, snapshotId);
+        agentSnapshotService.restoreSnapshot(agentId, snapshotId, request.getCurrentStateToken());
         return new Result<>();
     }
 
