@@ -14,9 +14,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
 import xiaozhi.common.constant.Constant;
+import xiaozhi.common.mybatisplus.MpServiceImpl;
 import xiaozhi.common.page.PageData;
 import xiaozhi.common.utils.ConvertUtils;
 import xiaozhi.common.utils.JsonUtils;
@@ -39,7 +38,7 @@ import xiaozhi.modules.agent.vo.AgentChatHistoryUserVO;
  */
 @Service
 @RequiredArgsConstructor
-public class AgentChatHistoryServiceImpl extends ServiceImpl<AiAgentChatHistoryDao, AgentChatHistoryEntity>
+public class AgentChatHistoryServiceImpl extends MpServiceImpl<AiAgentChatHistoryDao, AgentChatHistoryEntity>
         implements AgentChatHistoryService {
 
     private final AgentChatTitleService agentChatTitleService;
