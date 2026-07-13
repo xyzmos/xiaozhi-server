@@ -3,7 +3,7 @@
     <el-dialog
       :title="$t('agentSnapshot.title')"
       :visible="visible"
-      width="760px"
+      width="860px"
       class="agent-snapshot-dialog"
       :before-close="guardRestoreInFlightClose"
       :close-on-click-modal="!restoring"
@@ -19,15 +19,16 @@
         </div>
       </template>
 
-      <el-table
-        v-loading="loading"
-        :data="snapshots"
-        :row-key="snapshotRowKey"
-        :row-class-name="snapshotRowClassName"
-        size="small"
-        class="snapshot-table"
-        :empty-text="loading ? ' ' : $t('agentSnapshot.empty')"
-      >
+      <div class="snapshot-table-wrapper">
+        <el-table
+          v-loading="loading"
+          :data="snapshots"
+          :row-key="snapshotRowKey"
+          :row-class-name="snapshotRowClassName"
+          size="small"
+          class="snapshot-table"
+          :empty-text="loading ? ' ' : $t('agentSnapshot.empty')"
+        >
         <el-table-column
           prop="versionNo"
           :label="$t('agentSnapshot.version')"
@@ -107,7 +108,8 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
+      </div>
 
       <div class="pagination-row">
         <el-pagination
@@ -2222,6 +2224,12 @@ export default {
 
 .snapshot-table {
   width: 100%;
+}
+
+.snapshot-table-wrapper {
+  max-height: 62vh;
+  overflow: auto;
+  @include scrollbar-style;
 }
 
 .version-cell {
