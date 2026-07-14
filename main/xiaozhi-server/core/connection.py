@@ -414,8 +414,6 @@ class ConnectionHandler:
     def _apply_aec(self, timestamp: int, pcm_frame: bytes) -> bytes:
         """应用AEC处理 - 综合算法：互相关延迟估计 + Wiener滤波 + 频谱减法"""
         try:
-            import numpy as np
-
             if not pcm_frame or len(pcm_frame) == 0:
                 return pcm_frame
 
@@ -428,41 +426,27 @@ class ConnectionHandler:
             if mic_rms < 100:
                 return pcm_frame
 
-            # 初始化
-            if not hasattr(self, "_aec_filter_state"):
-                self._aec_filter_state = np.zeros(512)  # 滤波器状态
-                self._aec_delay_ms = 200
-                self._aec_last_delay = 200
-                self._aec_coherence_history = []
-
             sorted_timestamps = sorted(self.aec_audio_cache.keys())
             if len(sorted_timestamps) < 2:
                 return pcm_frame
 
             # ========== 匹配参考帧（对数功率谱匹配） ==========
             n = len(mic_audio)
-            sorted_timestamps = sorted(self.aec_audio_cache.keys())
 
             # 找最接近的timestamp作为起点
             closest_idx = min(range(len(sorted_timestamps)), key=lambda i: abs(sorted_timestamps[i] - timestamp))
 
-            # 对数功率谱相关性计算
-            def log_powerSpectrum_corr(audio1, audio2):
-                window = np.hanning(len(audio1))
-                fft1 = np.fft.rfft(audio1 * window)
-                fft2 = np.fft.rfft(audio2 * window)
-                psd1 = np.abs(fft1) ** 2
-                psd2 = np.abs(fft2) ** 2
-                log1 = 10 * np.log10(psd1 + 1e-8)
-                log2 = 10 * np.log10(psd2 + 1e-8)
-                P_xy = np.dot(log1, log2)
-                P_xx = np.dot(log1, log1)
-                P_yy = np.dot(log2, log2)
-                return abs(P_xy) / (np.sqrt(P_xx) * np.sqrt(P_yy) + 1e-8)
+            # 预计算 mic_audio 的对数功率谱（循环内共用，避免重复FFT）
+            mic_window = np.hanning(n)
+            mic_fft = np.fft.rfft(mic_audio * mic_window)
+            mic_psd = np.abs(mic_fft) ** 2
+            mic_log_psd = 10 * np.log10(mic_psd + 1e-8)
+            mic_P_xx = np.dot(mic_log_psd, mic_log_psd)
 
             # 用对数功率谱匹配找最佳帧：前后各找2帧
             best_corr = -1
             best_ref_idx = closest_idx
+            best_ref_rms = 0.0
 
             for offset in range(-2, 3):  # T-2, T-1, T, T+1, T+2
                 test_idx = closest_idx + offset
@@ -475,16 +459,22 @@ class ConnectionHandler:
                     continue
 
                 # 对数功率谱相关性
-                corr = log_powerSpectrum_corr(mic_audio, test_ref)
+                test_window = np.hanning(len(test_ref))
+                test_fft = np.fft.rfft(test_ref * test_window)
+                test_psd = np.abs(test_fft) ** 2
+                test_log_psd = 10 * np.log10(test_psd + 1e-8)
+                P_xy = np.dot(mic_log_psd, test_log_psd)
+                P_yy = np.dot(test_log_psd, test_log_psd)
+                corr = abs(P_xy) / (np.sqrt(mic_P_xx) * np.sqrt(P_yy) + 1e-8)
 
                 if corr > best_corr:
                     best_corr = corr
                     best_ref_idx = test_idx
+                    best_ref_rms = test_ref_rms
 
             best_ts = sorted_timestamps[best_ref_idx]
-
             best_ref = np.frombuffer(self.aec_audio_cache[best_ts], dtype=np.int16).astype(np.float32)
-            ref_rms = np.sqrt(np.mean(best_ref ** 2))
+            ref_rms = best_ref_rms
 
             if ref_rms < 50:
                 return pcm_frame
@@ -499,45 +489,30 @@ class ConnectionHandler:
             # 频域幅度谱不受相位影响，对数功率谱相关性稳定在0.97+
             # 公式：result_mag = max(|mic_fft| - |ref_fft| * scale * coef, 0)
 
-            window = np.hanning(n)
-            mic_fft = np.fft.rfft(mic_audio * window)
-            ref_fft = np.fft.rfft(aligned_ref * window)
-
             mic_mag = np.abs(mic_fft)
-            ref_mag = np.abs(ref_fft)
             mic_phase = np.angle(mic_fft)
+            ref_fft = np.fft.rfft(aligned_ref * np.hanning(n))
+            ref_mag = np.abs(ref_fft)
 
             # 频域计算回声比例 scale
             scale = np.sum(mic_mag * ref_mag) / (np.dot(ref_mag, ref_mag) + 1e-8)
 
-            # 使用对数功率谱相关性作为coh
-            coh = best_corr
-            ref_power = ref_rms
-
             # 自适应系数：根据scale和coh动态调整
             # scale大（回声强）-> coef大；coh高（匹配准）-> coef大
-            raw_coef = 1.0 + scale * 3 + (coh - 0.97) * 30
+            raw_coef = 1.0 + scale * 3 + (best_corr - 0.97) * 30
             coef = max(0.5, min(3.0, raw_coef))
 
             # 谱减法（过减 + 半波整流）
-            if ref_power < 50:
-                output = mic_audio
-                coef = 0
-                gain = 0
-            else:
-                echo_mag = ref_mag * scale * coef
-                # 过减：使用较大系数抑制回声
-                over_subtract = 1.5
-                result_mag = np.maximum(mic_mag - echo_mag * over_subtract, mic_mag * 0.1)
+            echo_mag = ref_mag * scale * coef
+            result_mag = np.maximum(mic_mag - echo_mag * 1.5, mic_mag * 0.1)
 
-                # 保留相位重建信号
-                result_fft = result_mag * np.exp(1j * mic_phase)
-                output = np.fft.irfft(result_fft, n)
-                gain = scale * coef
+            # 保留相位重建信号
+            result_fft = result_mag * np.exp(1j * mic_phase)
+            output = np.fft.irfft(result_fft, n)
 
-                # 高置信度是纯回声时，再压一下确保VAD检测不到
-                if coh >= 0.97 and ref_power > 500:
-                    output = output * 0.3
+            # 高置信度是纯回声时，再压一下确保VAD检测不到
+            if best_corr >= 0.97 and ref_rms > 500:
+                output = output * 0.3
 
             # 后处理：限幅
             output = np.clip(output, -32768, 32767)
