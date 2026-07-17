@@ -4,8 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
+import xiaozhi.common.mybatisplus.MpServiceImpl;
 import xiaozhi.modules.agent.dao.AgentTemplateDao;
 import xiaozhi.modules.agent.entity.AgentTemplateEntity;
 import xiaozhi.modules.agent.service.AgentTemplateService;
@@ -21,7 +20,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
  * @createDate 2025-03-22 11:48:18
  */
 @Service
-public class AgentTemplateServiceImpl extends ServiceImpl<AgentTemplateDao, AgentTemplateEntity>
+public class AgentTemplateServiceImpl extends MpServiceImpl<AgentTemplateDao, AgentTemplateEntity>
         implements AgentTemplateService {
 
     /**

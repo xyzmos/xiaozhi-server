@@ -22,12 +22,11 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
 import lombok.extern.slf4j.Slf4j;
 import xiaozhi.common.constant.Constant;
 import xiaozhi.common.exception.ErrorCode;
 import xiaozhi.common.exception.RenException;
+import xiaozhi.common.mybatisplus.MpServiceImpl;
 import xiaozhi.common.utils.ConvertUtils;
 import xiaozhi.common.utils.JsonUtils;
 import xiaozhi.modules.agent.dao.AgentVoicePrintDao;
@@ -46,7 +45,7 @@ import xiaozhi.modules.sys.service.SysParamsService;
  */
 @Service
 @Slf4j
-public class AgentVoicePrintServiceImpl extends ServiceImpl<AgentVoicePrintDao, AgentVoicePrintEntity>
+public class AgentVoicePrintServiceImpl extends MpServiceImpl<AgentVoicePrintDao, AgentVoicePrintEntity>
         implements AgentVoicePrintService {
     private final AgentChatAudioService agentChatAudioService;
     private final RestTemplate restTemplate;

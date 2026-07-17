@@ -9,11 +9,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import xiaozhi.common.utils.JsonUtils;
+import xiaozhi.common.mybatisplus.MpServiceImpl;
 import xiaozhi.modules.agent.dao.AgentPluginMappingMapper;
 import xiaozhi.modules.agent.entity.AgentPluginMapping;
 import xiaozhi.modules.agent.service.AgentPluginMappingService;
@@ -29,7 +28,7 @@ import xiaozhi.modules.model.service.ModelConfigService;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AgentPluginMappingServiceImpl extends ServiceImpl<AgentPluginMappingMapper, AgentPluginMapping>
+public class AgentPluginMappingServiceImpl extends MpServiceImpl<AgentPluginMappingMapper, AgentPluginMapping>
         implements AgentPluginMappingService {
     private final AgentPluginMappingMapper agentPluginMappingMapper;
     private final KnowledgeBaseService knowledgeBaseService;

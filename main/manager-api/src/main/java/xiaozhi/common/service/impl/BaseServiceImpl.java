@@ -27,6 +27,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 
 import xiaozhi.common.constant.Constant;
+import xiaozhi.common.mybatisplus.MybatisPlusBatchHelper;
 import xiaozhi.common.page.PageData;
 import xiaozhi.common.service.BaseService;
 import xiaozhi.common.utils.ConvertUtils;
@@ -181,8 +182,9 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> implements Bas
      * 执行批量操作
      */
     @SuppressWarnings("deprecation")
-    protected <E> boolean executeBatch(Collection<E> list, int batchSize, BiConsumer<SqlSession, E> consumer) {
-        return SqlHelper.executeBatch(this.currentModelClass(), this.log, list, batchSize, consumer);
+    protected <E> boolean executeBatch(Collection<E> list, int batchSize, BiConsumer<SqlSession, E> operation) {
+        return MybatisPlusBatchHelper.executeBatch(SqlHelper.sqlSessionFactory(this.currentModelClass()), this.log,
+                list, batchSize, operation);
     }
 
     @Override

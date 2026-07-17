@@ -1096,13 +1096,13 @@ class AgentSnapshotServiceImplTest {
         when(snapshotService.getCurrentVersionNo(agentId)).thenReturn(0);
         when(contextProviderService.getByAgentId(agentId)).thenReturn(null);
         when(correctWordFileService.getAgentCorrectWordFileIds(agentId)).thenReturn(List.of());
-        when(agentDao.updateById(any())).thenReturn(1);
+        when(agentDao.updateById(any(AgentEntity.class))).thenReturn(1);
 
         service.updateAgentById(agentId, update);
 
         InOrder inOrder = inOrder(agentDao, snapshotService);
         inOrder.verify(snapshotService).createSnapshot(agentId, "initial");
-        inOrder.verify(agentDao).updateById(argThat(agent -> "new-name".equals(agent.getAgentName())));
+        inOrder.verify(agentDao).updateById(argThat((AgentEntity agent) -> "new-name".equals(agent.getAgentName())));
         inOrder.verify(snapshotService).createSnapshot(agentId, "config");
     }
 
@@ -1130,13 +1130,13 @@ class AgentSnapshotServiceImplTest {
         when(snapshotService.getCurrentVersionNo(agentId)).thenReturn(4);
         when(contextProviderService.getByAgentId(agentId)).thenReturn(null);
         when(correctWordFileService.getAgentCorrectWordFileIds(agentId)).thenReturn(List.of());
-        when(agentDao.updateById(any())).thenReturn(1);
+        when(agentDao.updateById(any(AgentEntity.class))).thenReturn(1);
 
         service.updateAgentById(agentId, update);
 
         InOrder inOrder = inOrder(agentDao, snapshotService);
         inOrder.verify(snapshotService).createSnapshot(agentId, "current");
-        inOrder.verify(agentDao).updateById(argThat(agent -> "new-name".equals(agent.getAgentName())));
+        inOrder.verify(agentDao).updateById(argThat((AgentEntity agent) -> "new-name".equals(agent.getAgentName())));
         inOrder.verify(snapshotService).createSnapshot(agentId, "config");
     }
 
@@ -1160,7 +1160,7 @@ class AgentSnapshotServiceImplTest {
         when(templateService.getDefaultTemplate()).thenReturn(template);
 
         when(timbreService.getDefaultLanguageById("TTS_EdgeTTS0001")).thenReturn("普通话");
-        when(agentDao.insert(any())).thenReturn(1);
+        when(agentDao.insert(any(AgentEntity.class))).thenReturn(1);
 
         AgentCreateDTO dto = new AgentCreateDTO();
         dto.setAgentName("test123");
@@ -1168,7 +1168,7 @@ class AgentSnapshotServiceImplTest {
         String agentId = service.createAgent(dto);
 
         InOrder inOrder = inOrder(agentDao, pluginMappingService, snapshotService);
-        inOrder.verify(agentDao).insert(argThat(agent -> "test123".equals(agent.getAgentName())
+        inOrder.verify(agentDao).insert(argThat((AgentEntity agent) -> "test123".equals(agent.getAgentName())
                 && "普通话".equals(agent.getTtsLanguage())
                 && "".equals(agent.getSummaryMemory())
                 && Integer.valueOf(0).equals(agent.getChatHistoryConf())));
@@ -1834,8 +1834,8 @@ class AgentSnapshotServiceImplTest {
 
         assertTrue(error.getCause() instanceof RenException);
         assertEquals("快照引用的标签已被删除，无法恢复，请先重新创建或选择标签", error.getCause().getMessage());
-        verify(tagDao, never()).updateById(any());
-        verify(tagDao, never()).insert(any());
+        verify(tagDao, never()).updateById(any(AgentTagEntity.class));
+        verify(tagDao, never()).insert(any(AgentTagEntity.class));
     }
 
     private AgentInfoVO snapshotAgentInfo(String agentId, Long userId, String agentName, String summaryMemory) {

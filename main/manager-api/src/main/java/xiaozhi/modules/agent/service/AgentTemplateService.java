@@ -1,7 +1,6 @@
 package xiaozhi.modules.agent.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-
+import xiaozhi.common.mybatisplus.MpService;
 import xiaozhi.modules.agent.entity.AgentTemplateEntity;
 
 /**
@@ -9,7 +8,7 @@ import xiaozhi.modules.agent.entity.AgentTemplateEntity;
  * @description 针对表【ai_agent_template(智能体配置模板表)】的数据库操作Service
  * @createDate 2025-03-22 11:48:18
  */
-public interface AgentTemplateService extends IService<AgentTemplateEntity> {
+public interface AgentTemplateService extends MpService<AgentTemplateEntity> {
 
     /**
      * 获取默认模板
