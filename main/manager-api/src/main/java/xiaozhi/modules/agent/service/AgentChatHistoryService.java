@@ -3,8 +3,9 @@ package xiaozhi.modules.agent.service;
 import java.util.List;
 import java.util.Map;
 
+import com.baomidou.mybatisplus.extension.repository.IRepository;
+
 import xiaozhi.common.page.PageData;
-import xiaozhi.common.mybatisplus.MpService;
 import xiaozhi.modules.agent.dto.AgentChatHistoryDTO;
 import xiaozhi.modules.agent.dto.AgentChatSessionDTO;
 import xiaozhi.modules.agent.entity.AgentChatHistoryEntity;
@@ -17,7 +18,7 @@ import xiaozhi.modules.agent.vo.AgentChatHistoryUserVO;
  * @version 1.0, 2025/4/30
  * @since 1.0.0
  */
-public interface AgentChatHistoryService extends MpService<AgentChatHistoryEntity> {
+public interface AgentChatHistoryService extends IRepository<AgentChatHistoryEntity> {
 
     /**
      * 根据智能体ID获取会话列表

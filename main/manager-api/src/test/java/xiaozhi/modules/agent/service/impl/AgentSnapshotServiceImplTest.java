@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.repository.IRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -1172,7 +1173,7 @@ class AgentSnapshotServiceImplTest {
                 && "普通话".equals(agent.getTtsLanguage())
                 && "".equals(agent.getSummaryMemory())
                 && Integer.valueOf(0).equals(agent.getChatHistoryConf())));
-        inOrder.verify(pluginMappingService).saveBatch(any());
+        inOrder.verify(pluginMappingService).saveBatch(any(), eq(IRepository.DEFAULT_BATCH_SIZE));
         inOrder.verify(snapshotService).createSnapshot(agentId, "initial");
     }
 
@@ -1407,7 +1408,7 @@ class AgentSnapshotServiceImplTest {
             return mapping != null
                     && "plugin".equals(mapping.getPluginId())
                     && mapping.getParamInfo().contains("target");
-        }));
+        }), eq(IRepository.DEFAULT_BATCH_SIZE));
         verify(snapshotDao).insertWithNextVersion(argThat(snapshot -> "restore".equals(snapshot.getSource())));
     }
 

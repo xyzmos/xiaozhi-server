@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.logging.Log;
@@ -27,7 +27,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 
 import xiaozhi.common.constant.Constant;
-import xiaozhi.common.mybatisplus.MybatisPlusBatchHelper;
 import xiaozhi.common.page.PageData;
 import xiaozhi.common.service.BaseService;
 import xiaozhi.common.utils.ConvertUtils;
@@ -182,9 +181,9 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> implements Bas
      * 执行批量操作
      */
     @SuppressWarnings("deprecation")
-    protected <E> boolean executeBatch(Collection<E> list, int batchSize, BiConsumer<SqlSession, E> operation) {
-        return MybatisPlusBatchHelper.executeBatch(SqlHelper.sqlSessionFactory(this.currentModelClass()), this.log,
-                list, batchSize, operation);
+    protected <E> boolean executeBatch(Collection<E> list, int batchSize, BiFunction<SqlSession, E, Integer> operation) {
+        return SqlHelper.executeBatch(SqlHelper.sqlSessionFactory(this.currentModelClass()), this.log, list, batchSize,
+                operation);
     }
 
     @Override
@@ -211,7 +210,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> implements Bas
         return executeBatch(entityList, batchSize, (sqlSession, entity) -> {
             MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
             param.put(Constants.ENTITY, entity);
-            sqlSession.update(sqlStatement, param);
+            return sqlSession.update(sqlStatement, param);
         });
     }
 

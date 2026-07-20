@@ -20,10 +20,7 @@
         <java.version>21</java.version>
         <junit.version>5.10.1</junit.version>
         <druid.version>1.2.20</druid.version>
-        <mybatisplus.version>3.5.5</mybatisplus.version>
-        <mybatisplus.starter.artifactId>mybatis-plus-boot-starter</mybatisplus.starter.artifactId>
-        <mybatis-spring.version>3.0.3</mybatis-spring.version>
-        <mybatisplus.compat.source>src/mybatis-plus-legacy/java</mybatisplus.compat.source>
+        <mybatisplus.version>3.5.17</mybatisplus.version>
         <hutool.version>5.8.24</hutool.version>
         <jsoup.version>1.19.1</jsoup.version>
         <knife4j.version>4.6.0</knife4j.version>
@@ -179,13 +176,13 @@
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>${mybatisplus.starter.artifactId}</artifactId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
             <version>${mybatisplus.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.mybatis</groupId>
-            <artifactId>mybatis-spring</artifactId>
-            <version>${mybatis-spring.version}</version>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
+            <version>${mybatisplus.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -268,54 +265,9 @@
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
-    <profiles>
-        <!-- Use -Pmybatis-plus-3.5.6 or -Pmybatis-plus-3.5.17 with clean; adapters share class names. -->
-        <profile>
-            <id>mybatis-plus-3.5.6</id>
-            <properties>
-                <mybatisplus.version>3.5.6</mybatisplus.version>
-            </properties>
-        </profile>
-        <!-- MyBatis-Plus 3.5.17 moved Spring services and split out JSqlParser support. -->
-        <profile>
-            <id>mybatis-plus-3.5.17</id>
-            <properties>
-                <mybatisplus.version>3.5.17</mybatisplus.version>
-                <mybatisplus.starter.artifactId>mybatis-plus-spring-boot3-starter</mybatisplus.starter.artifactId>
-                <mybatis-spring.version>3.0.5</mybatis-spring.version>
-                <mybatisplus.compat.source>src/mybatis-plus-modern/java</mybatisplus.compat.source>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.baomidou</groupId>
-                    <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
-                    <version>${mybatisplus.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.6.0</version>
-                <executions>
-                    <execution>
-                        <id>add-mybatis-plus-compatibility-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.basedir}/${mybatisplus.compat.source}</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

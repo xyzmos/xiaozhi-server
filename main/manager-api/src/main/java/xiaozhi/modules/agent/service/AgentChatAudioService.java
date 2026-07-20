@@ -1,6 +1,7 @@
 package xiaozhi.modules.agent.service;
 
-import xiaozhi.common.mybatisplus.MpService;
+import com.baomidou.mybatisplus.extension.repository.IRepository;
+
 import xiaozhi.modules.agent.entity.AgentChatAudioEntity;
 
 /**
@@ -10,7 +11,7 @@ import xiaozhi.modules.agent.entity.AgentChatAudioEntity;
  * @version 1.0, 2025/5/8
  * @since 1.0.0
  */
-public interface AgentChatAudioService extends MpService<AgentChatAudioEntity> {
+public interface AgentChatAudioService extends IRepository<AgentChatAudioEntity> {
     /**
      * 保存音频数据
      *
