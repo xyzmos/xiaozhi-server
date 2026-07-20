@@ -167,7 +167,7 @@ public class DeviceAddressBookServiceImpl implements DeviceAddressBookService {
             alias = generateUniqueAlias(macAddress, targetMac, alias);
             entity.setAlias(alias);
             entity.setHasPermission(hasPermission);
-            deviceAddressBookDao.insert(entity);
+            deviceAddressBookDao.insertAddressBook(entity);
         } else {
             if (alias != null) {
                 updateAlias(macAddress, targetMac, alias);
