@@ -57,7 +57,8 @@ class BaseServiceImplTest {
         when(sqlSessionFactory.openSession(ExecutorType.BATCH)).thenReturn(sqlSession);
         when(sqlSession.insert(eq(INSERT_STATEMENT), any(TestEntity.class))).thenReturn(1);
         when(sqlSession.flushStatements())
-                .thenReturn(List.of(batchResult(1, 1)), List.of(batchResult(1)));
+                .thenReturn(List.of(batchResult(1, 1)))
+                .thenReturn(List.of(batchResult(1)));
 
         TestEntity first = new TestEntity(1L);
         TestEntity second = new TestEntity(2L);
@@ -124,6 +125,19 @@ class BaseServiceImplTest {
         }
 
         verifyNoInteractions(sqlSessionFactory);
+    }
+
+    @Test
+    void deleteBatchIdsDelegatesToCompatibleApiAndPreservesAffectedRowResult() {
+        TestMapper mapper = mock(TestMapper.class);
+        List<Long> ids = List.of(1L, 2L);
+        service.baseDao = mapper;
+        when(mapper.deleteByIds(ids)).thenReturn(2).thenReturn(0);
+
+        assertTrue(service.deleteBatchIds(ids));
+        assertFalse(service.deleteBatchIds(ids));
+
+        verify(mapper, times(2)).deleteByIds(ids);
     }
 
     @Test
