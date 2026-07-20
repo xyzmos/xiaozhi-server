@@ -1,0 +1,75 @@
+[project]
+name = "xiaozhi-manager-api-fastapi"
+version = "0.1.0"
+description = "FastAPI-compatible replacement for xiaozhi manager-api"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "aiosqlite==0.21.0",
+  "asyncmy==0.2.10",
+  "bcrypt==4.3.0",
+  "cryptography==45.0.5",
+  "fastapi==0.116.1",
+  "gmssl==3.2.2",
+  "httpx==0.28.1",
+  "pillow==11.3.0",
+  # FastAPI 0.116 reconstructs request fields through TypeAdapter.  Pydantic
+  # 2.13 warns that aliases on that compatibility path are ineffective; pin
+  # the contemporary 2.11 line so request aliases remain warning-free.
+  "pydantic==2.11.7",
+  "pydantic-settings==2.10.1",
+  "python-multipart==0.0.20",
+  "pyyaml==6.0.2",
+  "redis[hiredis]==6.2.0",
+  "sqlalchemy[asyncio]==2.0.41",
+  "uvicorn[standard]==0.35.0",
+  "websockets==15.0.1",
+]
+
+[dependency-groups]
+dev = [
+  "mypy==1.17.0",
+  "pytest==8.4.1",
+  "pytest-asyncio==1.1.0",
+  "pytest-cov==6.2.1",
+  "respx==0.22.0",
+  "ruff==0.12.4",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+  "integration: requires isolated MySQL and Redis",
+  "contract: compares the Java and FastAPI services",
+  "performance: runs the representative performance comparison",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+exclude = ["tests/fixtures/generated"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "S"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"app/routers/*.py" = ["B008"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["tests/fixtures/generated"]
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

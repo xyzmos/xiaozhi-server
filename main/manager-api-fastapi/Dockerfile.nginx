@@ -1,0 +1,14 @@
+FROM nginx:1.28.0-alpine
+
+COPY main/manager-api-fastapi/deploy/nginx.conf /etc/nginx/nginx.conf.template
+COPY main/manager-api-fastapi/deploy/nginx-entrypoint.sh /usr/local/bin/manager-api-nginx-entrypoint
+RUN MANAGER_API_UPSTREAM=127.0.0.1:8002 \
+    envsubst '${MANAGER_API_UPSTREAM}' \
+    < /etc/nginx/nginx.conf.template \
+    > /tmp/nginx-build-check.conf \
+    && nginx -t -c /tmp/nginx-build-check.conf \
+    && rm /tmp/nginx-build-check.conf \
+    && chmod 0555 /usr/local/bin/manager-api-nginx-entrypoint
+
+ENV MANAGER_API_UPSTREAM=manager-api-fastapi:8002
+ENTRYPOINT ["/usr/local/bin/manager-api-nginx-entrypoint"]

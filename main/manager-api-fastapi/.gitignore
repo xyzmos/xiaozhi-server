@@ -1,0 +1,16 @@
+.env
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.test-runtime/
+.venv/
+.coverage
+coverage.xml
+htmlcov/
+__pycache__/
+*.py[cod]
+data/uploads/
+target/
+dist/
+!compatibility/*.json
+!tests/fixtures/*.json

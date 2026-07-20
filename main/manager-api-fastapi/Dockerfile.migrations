@@ -1,0 +1,35 @@
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+
+WORKDIR /migration
+COPY main/manager-api-fastapi/migration-pom.xml ./pom.xml
+COPY main/manager-api-fastapi/migration-src ./migration-src
+COPY main/manager-api/src/main/resources ./java-resources
+# Keep the Maven repository outside the committed layer so an interrupted
+# registry transfer can resume on the next build.  Resolver downloads are
+# deliberately serial: Apple Container's BuildKit NAT has proved unreliable
+# when several Maven Central responses are multiplexed over one connection.
+RUN --mount=type=cache,target=/root/.m2/repository \
+    mvn -B \
+    -Dmaven.repo.local=/root/.m2/repository \
+    -Djava.resources.dir=/migration/java-resources \
+    -Daether.connector.basic.threads=1 \
+    -Daether.connector.connectTimeout=15000 \
+    -Daether.connector.requestTimeout=60000 \
+    -Daether.connector.http.retryHandler.count=5 \
+    -Daether.connector.http.retryHandler.interval=1000 \
+    -Daether.connector.http.retryHandler.intervalMax=5000 \
+    package
+
+FROM eclipse-temurin:21-jre
+WORKDIR /migration
+COPY --from=build /migration/target/manager-api-liquibase-runner-1.0.0-all.jar ./runner.jar
+COPY main/manager-api-fastapi/scripts/run-migrations.sh /usr/local/bin/run-manager-api-migrations
+RUN groupadd --gid 10001 xiaozhi \
+    && useradd --uid 10001 --gid xiaozhi --create-home --shell /usr/sbin/nologin xiaozhi \
+    && chown -R xiaozhi:xiaozhi /migration \
+    && chmod 0555 /usr/local/bin/run-manager-api-migrations
+ENV MIGRATION_RUNNER_JAR=/migration/runner.jar \
+    TZ=Asia/Shanghai
+USER 10001:10001
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["/usr/local/bin/run-manager-api-migrations"]

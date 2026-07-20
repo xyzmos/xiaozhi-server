@@ -1,0 +1,93 @@
+services:
+  manager-api-migrate:
+    image: xiaozhi/manager-api-migrate:fastapi-0.1.0
+    build:
+      context: ../..
+      dockerfile: main/manager-api-fastapi/Dockerfile.migrations
+    environment:
+      LIQUIBASE_URL: ${LIQUIBASE_URL:?Set a JDBC MySQL URL}
+      LIQUIBASE_USERNAME: ${MYSQL_USER:?Set MYSQL_USER}
+      LIQUIBASE_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      MIGRATION_POM: /migration/pom.xml
+      JAVA_RESOURCES_DIR: /migration/java-resources
+      MAVEN_BIN: mvn
+    restart: "no"
+
+  manager-api-fastapi:
+    image: xiaozhi/manager-api-fastapi:0.1.0
+    build:
+      context: ../..
+      dockerfile: main/manager-api-fastapi/Dockerfile
+    init: true
+    depends_on:
+      manager-api-migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_ENVIRONMENT: production
+      APP_DATABASE_URL: ${FASTAPI_DATABASE_URL:?Set an asyncmy MySQL URL}
+      APP_REDIS_URL: ${REDIS_URL:?Set REDIS_URL}
+      APP_WORKERS: ${APP_WORKERS:-2}
+      APP_GRACEFUL_SHUTDOWN_SECONDS: ${APP_GRACEFUL_SHUTDOWN_SECONDS:-30}
+      APP_FORWARDED_ALLOW_IPS: ${APP_FORWARDED_ALLOW_IPS:-*}
+      APP_ALLOW_START_WITHOUT_DEPENDENCIES: "false"
+    expose:
+      - "8002"
+    volumes:
+      # During cutover this source can be the retained Java service's host
+      # uploadfile directory so both implementations see identical files.
+      - ${MANAGER_API_UPLOAD_SOURCE:-manager-api-uploads}:/data/uploads
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    restart: unless-stopped
+    stop_grace_period: 40s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/xiaozhi/health/ready', timeout=2).read()"]
+      interval: 15s
+      timeout: 3s
+      retries: 4
+      start_period: 20s
+
+  manager-api-jobs:
+    image: xiaozhi/manager-api-fastapi:0.1.0
+    init: true
+    depends_on:
+      manager-api-migrate:
+        condition: service_completed_successfully
+    command: ["python", "-m", "app.jobs.worker"]
+    environment:
+      APP_ENVIRONMENT: production
+      APP_DATABASE_URL: ${FASTAPI_DATABASE_URL:?Set an asyncmy MySQL URL}
+      APP_REDIS_URL: ${REDIS_URL:?Set REDIS_URL}
+      APP_GRACEFUL_SHUTDOWN_SECONDS: ${APP_GRACEFUL_SHUTDOWN_SECONDS:-30}
+      APP_ALLOW_START_WITHOUT_DEPENDENCIES: "false"
+    volumes:
+      - ${MANAGER_API_UPLOAD_SOURCE:-manager-api-uploads}:/data/uploads
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    restart: unless-stopped
+    stop_grace_period: 40s
+
+  manager-api-nginx:
+    image: xiaozhi/manager-api-nginx:fastapi-0.1.0
+    build:
+      context: ../..
+      dockerfile: main/manager-api-fastapi/Dockerfile.nginx
+    depends_on:
+      manager-api-fastapi:
+        condition: service_healthy
+    ports:
+      - "8002:8002"
+    environment:
+      MANAGER_API_UPSTREAM: ${MANAGER_API_UPSTREAM:-manager-api-fastapi:8002}
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:size=32m
+      - /var/run:size=1m
+      - /tmp:size=16m
+    restart: unless-stopped
+    stop_grace_period: 15s
+
+volumes:
+  manager-api-uploads:

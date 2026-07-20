@@ -1,0 +1,2905 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T07:12:31.520810+00:00",
+  "services": {
+    "java": "http://127.0.0.1:18082/xiaozhi",
+    "fastapi": "http://127.0.0.1:18083/xiaozhi"
+  },
+  "fixture_ids": {
+    "admin": "9007199254740993",
+    "normal": "9007199254740994"
+  },
+  "summary": {
+    "total": 49,
+    "passed": 49,
+    "failed": 0,
+    "skipped": 0
+  },
+  "categories": {
+    "configuration": {
+      "passed": 1,
+      "failed": 0
+    },
+    "authentication-i18n": {
+      "passed": 7,
+      "failed": 0
+    },
+    "authentication": {
+      "passed": 1,
+      "failed": 0
+    },
+    "authorization": {
+      "passed": 1,
+      "failed": 0
+    },
+    "serialization": {
+      "passed": 2,
+      "failed": 0
+    },
+    "agent": {
+      "passed": 1,
+      "failed": 0
+    },
+    "device": {
+      "passed": 1,
+      "failed": 0
+    },
+    "model": {
+      "passed": 1,
+      "failed": 0
+    },
+    "correct-word": {
+      "passed": 1,
+      "failed": 0
+    },
+    "binary-download": {
+      "passed": 6,
+      "failed": 0
+    },
+    "validation": {
+      "passed": 5,
+      "failed": 0
+    },
+    "server-secret": {
+      "passed": 3,
+      "failed": 0
+    },
+    "ota": {
+      "passed": 1,
+      "failed": 0
+    },
+    "ota-validation": {
+      "passed": 2,
+      "failed": 0
+    },
+    "ota-signing": {
+      "passed": 2,
+      "failed": 0
+    },
+    "activation": {
+      "passed": 3,
+      "failed": 0
+    },
+    "external-mock": {
+      "passed": 2,
+      "failed": 0
+    },
+    "crud": {
+      "passed": 3,
+      "failed": 0
+    },
+    "database-side-effect": {
+      "passed": 4,
+      "failed": 0
+    },
+    "upload": {
+      "passed": 1,
+      "failed": 0
+    },
+    "upload-validation": {
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "results": [
+    {
+      "name": "public configuration",
+      "category": "configuration",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "beianIcpNum": "null",
+            "systemWebMenu": {
+              "groups": {
+                "voiceManagement": [
+                  "vad",
+                  "asr"
+                ],
+                "featureManagement": [
+                  "voiceprintRecognition",
+                  "voiceClone",
+                  "knowledgeBase",
+                  "mcpAccessPoint"
+                ]
+              },
+              "features": {
+                "asr": {
+                  "name": "feature.asr.name",
+                  "enabled": true,
+                  "description": "feature.asr.description"
+                },
+                "vad": {
+                  "name": "feature.vad.name",
+                  "enabled": true,
+                  "description": "feature.vad.description"
+                },
+                "voiceClone": {
+                  "name": "feature.voiceClone.name",
+                  "enabled": false,
+                  "description": "feature.voiceClone.description"
+                },
+                "knowledgeBase": {
+                  "name": "feature.knowledgeBase.name",
+                  "enabled": false,
+                  "description": "feature.knowledgeBase.description"
+                },
+                "mcpAccessPoint": {
+                  "name": "feature.mcpAccessPoint.name",
+                  "enabled": false,
+                  "description": "feature.mcpAccessPoint.description"
+                },
+                "voiceprintRecognition": {
+                  "name": "feature.voiceprintRecognition.name",
+                  "enabled": false,
+                  "description": "feature.voiceprintRecognition.description"
+                }
+              },
+              "addressBook": {
+                "name": "feature.addressBook.name",
+                "enabled": false,
+                "description": "feature.addressBook.description"
+              }
+            },
+            "enableMobileRegister": false,
+            "year": "©2026",
+            "beianGaNum": "null",
+            "name": "xiaozhi-esp32-server",
+            "sm2PublicKey": "04409d3dc074e2b0217ee931ba5d167d85fed556ac5bf5a1c2ca0c294ab57e15b7aa55b06fd49bb337b23f88e1feaebd9ae4a5206c72ad8832f40c1a0374f83999",
+            "allowUserRegister": false,
+            "version": "0.9.5",
+            "mobileAreaList": [
+              {
+                "name": "中国大陆",
+                "key": "+86"
+              },
+              {
+                "name": "中国香港",
+                "key": "+852"
+              },
+              {
+                "name": "中国澳门",
+                "key": "+853"
+              },
+              {
+                "name": "中国台湾",
+                "key": "+886"
+              },
+              {
+                "name": "美国/加拿大",
+                "key": "+1"
+              },
+              {
+                "name": "英国",
+                "key": "+44"
+              },
+              {
+                "name": "法国",
+                "key": "+33"
+              },
+              {
+                "name": "意大利",
+                "key": "+39"
+              },
+              {
+                "name": "德国",
+                "key": "+49"
+              },
+              {
+                "name": "波兰",
+                "key": "+48"
+              },
+              {
+                "name": "瑞士",
+                "key": "+41"
+              },
+              {
+                "name": "西班牙",
+                "key": "+34"
+              },
+              {
+                "name": "丹麦",
+                "key": "+45"
+              },
+              {
+                "name": "马来西亚",
+                "key": "+60"
+              },
+              {
+                "name": "澳大利亚",
+                "key": "+61"
+              },
+              {
+                "name": "印度尼西亚",
+                "key": "+62"
+              },
+              {
+                "name": "菲律宾",
+                "key": "+63"
+              },
+              {
+                "name": "新西兰",
+                "key": "+64"
+              },
+              {
+                "name": "新加坡",
+                "key": "+65"
+              },
+              {
+                "name": "泰国",
+                "key": "+66"
+              },
+              {
+                "name": "日本",
+                "key": "+81"
+              },
+              {
+                "name": "韩国",
+                "key": "+82"
+              },
+              {
+                "name": "越南",
+                "key": "+84"
+              },
+              {
+                "name": "印度",
+                "key": "+91"
+              },
+              {
+                "name": "巴基斯坦",
+                "key": "+92"
+              },
+              {
+                "name": "尼日利亚",
+                "key": "+234"
+              },
+              {
+                "name": "孟加拉国",
+                "key": "+880"
+              },
+              {
+                "name": "沙特阿拉伯",
+                "key": "+966"
+              },
+              {
+                "name": "阿联酋",
+                "key": "+971"
+              },
+              {
+                "name": "巴西",
+                "key": "+55"
+              },
+              {
+                "name": "墨西哥",
+                "key": "+52"
+              },
+              {
+                "name": "智利",
+                "key": "+56"
+              },
+              {
+                "name": "阿根廷",
+                "key": "+54"
+              },
+              {
+                "name": "埃及",
+                "key": "+20"
+              },
+              {
+                "name": "南非",
+                "key": "+27"
+              },
+              {
+                "name": "肯尼亚",
+                "key": "+254"
+              },
+              {
+                "name": "坦桑尼亚",
+                "key": "+255"
+              },
+              {
+                "name": "哈萨克斯坦",
+                "key": "+7"
+              }
+            ]
+          }
+        },
+        "body_sha256": "c41809c50c6e6bef5e7695d1755d9d6a9cb391d884d2dafb45c32fe410ce096f",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"allowUserRegister\": false, \"beianGaNum\": \"null\", \"beianIcpNum\": \"null\", \"enableMobileRegister\": false, \"mobileAreaList\": [{\"key\": \"+86\", \"name\": \"中国大陆\"}, {\"key\": \"+852\", \"name\": \"中国香港\"}, {\"key\": \"+853\", \"name\": \"中国澳门\"}, {\"key\": \"+886\", \"name\": \"中国台湾\"}, {\"key\": \"+1\", \"name\": \"美国/加拿大\"}, {\"key\": \"+44\", \"name\": \"英国\"}, {\"key\": \"+33\", \"name\": \"法国\"}, {\"key\": \"+39\", \"name\": \"意大利\"}, {\"key\": \"+49\", \"name\": \"德国\"}, {\"key\": \"+48\", \"name\": \"波兰\"}, {\"key\": \"+41\", \"name\": \"瑞士\"}, {\"key\": \"+34\", \"name\": \"西班牙\"}, {\"key\": \"+45\", \"name\": \"丹麦\"}, {\"key\": \"+60\", \"name\": \"马来西亚\"}, {\"key\": \"+61\", \"name\": \"澳大利亚\"}, {\"key\": \"+62\", \"name\": \"印度尼西亚\"}, {\"key\": \"+63\", \"name\": \"菲律宾\"}, {\"key\": \"+64\", \"name\": \"新西兰\"}, {\"key\": \"+65\", \"name\": \"新加坡\"}, {\"key\": \"+66\", \"name\": \"泰国\"}, {\"key\": \"+81\", \"name\": \"日本\"}, {\"key\": \"+82\", \"name\": \"韩国\"}, {\"key\": \"+84\", \"name\": \"越南\"}, {\"key\": \"+91\", \"name\": \"印度\"}, {\"key\": \"+92\", \"name\": \"巴基斯坦\"}, {\"key\": \"+234\", \"name\": \"尼日利亚\"}, {\"key\": \"+880\", \"name\": \"孟加拉国\"}, {\"key\": \"+96"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "2589"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "enableMobileRegister": false,
+            "version": "0.9.5",
+            "year": "©2026",
+            "allowUserRegister": false,
+            "mobileAreaList": [
+              {
+                "name": "中国大陆",
+                "key": "+86"
+              },
+              {
+                "name": "中国香港",
+                "key": "+852"
+              },
+              {
+                "name": "中国澳门",
+                "key": "+853"
+              },
+              {
+                "name": "中国台湾",
+                "key": "+886"
+              },
+              {
+                "name": "美国/加拿大",
+                "key": "+1"
+              },
+              {
+                "name": "英国",
+                "key": "+44"
+              },
+              {
+                "name": "法国",
+                "key": "+33"
+              },
+              {
+                "name": "意大利",
+                "key": "+39"
+              },
+              {
+                "name": "德国",
+                "key": "+49"
+              },
+              {
+                "name": "波兰",
+                "key": "+48"
+              },
+              {
+                "name": "瑞士",
+                "key": "+41"
+              },
+              {
+                "name": "西班牙",
+                "key": "+34"
+              },
+              {
+                "name": "丹麦",
+                "key": "+45"
+              },
+              {
+                "name": "马来西亚",
+                "key": "+60"
+              },
+              {
+                "name": "澳大利亚",
+                "key": "+61"
+              },
+              {
+                "name": "印度尼西亚",
+                "key": "+62"
+              },
+              {
+                "name": "菲律宾",
+                "key": "+63"
+              },
+              {
+                "name": "新西兰",
+                "key": "+64"
+              },
+              {
+                "name": "新加坡",
+                "key": "+65"
+              },
+              {
+                "name": "泰国",
+                "key": "+66"
+              },
+              {
+                "name": "日本",
+                "key": "+81"
+              },
+              {
+                "name": "韩国",
+                "key": "+82"
+              },
+              {
+                "name": "越南",
+                "key": "+84"
+              },
+              {
+                "name": "印度",
+                "key": "+91"
+              },
+              {
+                "name": "巴基斯坦",
+                "key": "+92"
+              },
+              {
+                "name": "尼日利亚",
+                "key": "+234"
+              },
+              {
+                "name": "孟加拉国",
+                "key": "+880"
+              },
+              {
+                "name": "沙特阿拉伯",
+                "key": "+966"
+              },
+              {
+                "name": "阿联酋",
+                "key": "+971"
+              },
+              {
+                "name": "巴西",
+                "key": "+55"
+              },
+              {
+                "name": "墨西哥",
+                "key": "+52"
+              },
+              {
+                "name": "智利",
+                "key": "+56"
+              },
+              {
+                "name": "阿根廷",
+                "key": "+54"
+              },
+              {
+                "name": "埃及",
+                "key": "+20"
+              },
+              {
+                "name": "南非",
+                "key": "+27"
+              },
+              {
+                "name": "肯尼亚",
+                "key": "+254"
+              },
+              {
+                "name": "坦桑尼亚",
+                "key": "+255"
+              },
+              {
+                "name": "哈萨克斯坦",
+                "key": "+7"
+              }
+            ],
+            "beianIcpNum": "null",
+            "beianGaNum": "null",
+            "name": "xiaozhi-esp32-server",
+            "sm2PublicKey": "04409d3dc074e2b0217ee931ba5d167d85fed556ac5bf5a1c2ca0c294ab57e15b7aa55b06fd49bb337b23f88e1feaebd9ae4a5206c72ad8832f40c1a0374f83999",
+            "systemWebMenu": {
+              "groups": {
+                "voiceManagement": [
+                  "vad",
+                  "asr"
+                ],
+                "featureManagement": [
+                  "voiceprintRecognition",
+                  "voiceClone",
+                  "knowledgeBase",
+                  "mcpAccessPoint"
+                ]
+              },
+              "features": {
+                "asr": {
+                  "name": "feature.asr.name",
+                  "enabled": true,
+                  "description": "feature.asr.description"
+                },
+                "vad": {
+                  "name": "feature.vad.name",
+                  "enabled": true,
+                  "description": "feature.vad.description"
+                },
+                "voiceClone": {
+                  "name": "feature.voiceClone.name",
+                  "enabled": false,
+                  "description": "feature.voiceClone.description"
+                },
+                "knowledgeBase": {
+                  "name": "feature.knowledgeBase.name",
+                  "enabled": false,
+                  "description": "feature.knowledgeBase.description"
+                },
+                "mcpAccessPoint": {
+                  "name": "feature.mcpAccessPoint.name",
+                  "enabled": false,
+                  "description": "feature.mcpAccessPoint.description"
+                },
+                "voiceprintRecognition": {
+                  "name": "feature.voiceprintRecognition.name",
+                  "enabled": false,
+                  "description": "feature.voiceprintRecognition.description"
+                }
+              },
+              "addressBook": {
+                "name": "feature.addressBook.name",
+                "enabled": false,
+                "description": "feature.addressBook.description"
+              }
+            }
+          }
+        },
+        "body_sha256": "c41809c50c6e6bef5e7695d1755d9d6a9cb391d884d2dafb45c32fe410ce096f",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"allowUserRegister\": false, \"beianGaNum\": \"null\", \"beianIcpNum\": \"null\", \"enableMobileRegister\": false, \"mobileAreaList\": [{\"key\": \"+86\", \"name\": \"中国大陆\"}, {\"key\": \"+852\", \"name\": \"中国香港\"}, {\"key\": \"+853\", \"name\": \"中国澳门\"}, {\"key\": \"+886\", \"name\": \"中国台湾\"}, {\"key\": \"+1\", \"name\": \"美国/加拿大\"}, {\"key\": \"+44\", \"name\": \"英国\"}, {\"key\": \"+33\", \"name\": \"法国\"}, {\"key\": \"+39\", \"name\": \"意大利\"}, {\"key\": \"+49\", \"name\": \"德国\"}, {\"key\": \"+48\", \"name\": \"波兰\"}, {\"key\": \"+41\", \"name\": \"瑞士\"}, {\"key\": \"+34\", \"name\": \"西班牙\"}, {\"key\": \"+45\", \"name\": \"丹麦\"}, {\"key\": \"+60\", \"name\": \"马来西亚\"}, {\"key\": \"+61\", \"name\": \"澳大利亚\"}, {\"key\": \"+62\", \"name\": \"印度尼西亚\"}, {\"key\": \"+63\", \"name\": \"菲律宾\"}, {\"key\": \"+64\", \"name\": \"新西兰\"}, {\"key\": \"+65\", \"name\": \"新加坡\"}, {\"key\": \"+66\", \"name\": \"泰国\"}, {\"key\": \"+81\", \"name\": \"日本\"}, {\"key\": \"+82\", \"name\": \"韩国\"}, {\"key\": \"+84\", \"name\": \"越南\"}, {\"key\": \"+91\", \"name\": \"印度\"}, {\"key\": \"+92\", \"name\": \"巴基斯坦\"}, {\"key\": \"+234\", \"name\": \"尼日利亚\"}, {\"key\": \"+880\", \"name\": \"孟加拉国\"}, {\"key\": \"+96"
+      }
+    },
+    {
+      "name": "unauthenticated localized response [default]",
+      "category": "authentication-i18n",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "42"
+        },
+        "body": {
+          "code": 401,
+          "msg": "未授权",
+          "data": null
+        },
+        "body_sha256": "b36a7313f7b7ea8481f5c434df5dace4fe85ee705bb684eeb82e39ba7407d2d7",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"未授权\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "42"
+        },
+        "body": {
+          "code": 401,
+          "msg": "未授权",
+          "data": null
+        },
+        "body_sha256": "b36a7313f7b7ea8481f5c434df5dace4fe85ee705bb684eeb82e39ba7407d2d7",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"未授权\"}"
+      }
+    },
+    {
+      "name": "unauthenticated localized response [zh-CN]",
+      "category": "authentication-i18n",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "42"
+        },
+        "body": {
+          "code": 401,
+          "msg": "未授权",
+          "data": null
+        },
+        "body_sha256": "b36a7313f7b7ea8481f5c434df5dace4fe85ee705bb684eeb82e39ba7407d2d7",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"未授权\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "42"
+        },
+        "body": {
+          "code": 401,
+          "msg": "未授权",
+          "data": null
+        },
+        "body_sha256": "b36a7313f7b7ea8481f5c434df5dace4fe85ee705bb684eeb82e39ba7407d2d7",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"未授权\"}"
+      }
+    },
+    {
+      "name": "unauthenticated localized response [zh-TW]",
+      "category": "authentication-i18n",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "42"
+        },
+        "body": {
+          "code": 401,
+          "msg": "未授權",
+          "data": null
+        },
+        "body_sha256": "4d01f8e3935fc54e281e4a51a2af1f17594bf01f9cfa825488a04c0c34627b65",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"未授權\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "42"
+        },
+        "body": {
+          "code": 401,
+          "msg": "未授權",
+          "data": null
+        },
+        "body_sha256": "4d01f8e3935fc54e281e4a51a2af1f17594bf01f9cfa825488a04c0c34627b65",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"未授權\"}"
+      }
+    },
+    {
+      "name": "unauthenticated localized response [en-US]",
+      "category": "authentication-i18n",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "45"
+        },
+        "body": {
+          "code": 401,
+          "msg": "Unauthorized",
+          "data": null
+        },
+        "body_sha256": "c5f1a8536c903848e6ada6a1cfc27d77965f02e646b7d1fe1b2e700f31966d3c",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"Unauthorized\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "45"
+        },
+        "body": {
+          "code": 401,
+          "msg": "Unauthorized",
+          "data": null
+        },
+        "body_sha256": "c5f1a8536c903848e6ada6a1cfc27d77965f02e646b7d1fe1b2e700f31966d3c",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"Unauthorized\"}"
+      }
+    },
+    {
+      "name": "unauthenticated localized response [de-DE]",
+      "category": "authentication-i18n",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "50"
+        },
+        "body": {
+          "code": 401,
+          "msg": "Nicht autorisiert",
+          "data": null
+        },
+        "body_sha256": "358b8c88c55006b160615e9c3dc5022354a9d036e2cc2f05cd430e05dee9fdbb",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"Nicht autorisiert\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "50"
+        },
+        "body": {
+          "code": 401,
+          "msg": "Nicht autorisiert",
+          "data": null
+        },
+        "body_sha256": "358b8c88c55006b160615e9c3dc5022354a9d036e2cc2f05cd430e05dee9fdbb",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"Nicht autorisiert\"}"
+      }
+    },
+    {
+      "name": "unauthenticated localized response [vi-VN]",
+      "category": "authentication-i18n",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "61"
+        },
+        "body": {
+          "code": 401,
+          "msg": "Không được ủy quyền",
+          "data": null
+        },
+        "body_sha256": "5e5d5fdacca91510acc9d76e9ae68324b63cab0fa926f23ca1f867c02db65a0a",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"Không được ủy quyền\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "61"
+        },
+        "body": {
+          "code": 401,
+          "msg": "Không được ủy quyền",
+          "data": null
+        },
+        "body_sha256": "5e5d5fdacca91510acc9d76e9ae68324b63cab0fa926f23ca1f867c02db65a0a",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"Không được ủy quyền\"}"
+      }
+    },
+    {
+      "name": "unauthenticated localized response [pt-BR]",
+      "category": "authentication-i18n",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "48"
+        },
+        "body": {
+          "code": 401,
+          "msg": "Não autorizado",
+          "data": null
+        },
+        "body_sha256": "b3e974b1153f0a879223ec07b9b525ebf504e2294d39c3eceaae0bfb87e80dd9",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"Não autorizado\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "48"
+        },
+        "body": {
+          "code": 401,
+          "msg": "Não autorizado",
+          "data": null
+        },
+        "body_sha256": "b3e974b1153f0a879223ec07b9b525ebf504e2294d39c3eceaae0bfb87e80dd9",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"Não autorizado\"}"
+      }
+    },
+    {
+      "name": "expired database token",
+      "category": "authentication",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "42"
+        },
+        "body": {
+          "code": 401,
+          "msg": "未授权",
+          "data": null
+        },
+        "body_sha256": "b36a7313f7b7ea8481f5c434df5dace4fe85ee705bb684eeb82e39ba7407d2d7",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"未授权\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "42"
+        },
+        "body": {
+          "code": 401,
+          "msg": "未授权",
+          "data": null
+        },
+        "body_sha256": "b36a7313f7b7ea8481f5c434df5dace4fe85ee705bb684eeb82e39ba7407d2d7",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"未授权\"}"
+      }
+    },
+    {
+      "name": "normal user forbidden from admin endpoint",
+      "category": "authorization",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 403,
+          "msg": "拒绝访问，没有权限",
+          "data": null
+        },
+        "body_sha256": "61729f3e91e3145e8022343a9b8ca00d6b69f1f0fbfc9e7e238713bf56ebcfbb",
+        "body_excerpt": "{\"code\": 403, \"data\": null, \"msg\": \"拒绝访问，没有权限\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "60"
+        },
+        "body": {
+          "code": 403,
+          "msg": "拒绝访问，没有权限",
+          "data": null
+        },
+        "body_sha256": "61729f3e91e3145e8022343a9b8ca00d6b69f1f0fbfc9e7e238713bf56ebcfbb",
+        "body_excerpt": "{\"code\": 403, \"data\": null, \"msg\": \"拒绝访问，没有权限\"}"
+      }
+    },
+    {
+      "name": "Long user ID and token response",
+      "category": "serialization",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "id": "9007199254740994",
+            "username": "contract-user",
+            "superAdmin": 0,
+            "token": "<redacted>",
+            "status": 1
+          }
+        },
+        "body_sha256": "a489d49f9db3df1c863beb4d03c1afbc4f982c0c37864b41c26cea25550ccf61",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"id\": \"9007199254740994\", \"status\": 1, \"superAdmin\": 0, \"token\": \"<redacted>\", \"username\": \"contract-user\"}, \"msg\": \"success\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "144"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "id": "9007199254740994",
+            "username": "contract-user",
+            "superAdmin": 0,
+            "token": "<redacted>",
+            "status": 1
+          }
+        },
+        "body_sha256": "a489d49f9db3df1c863beb4d03c1afbc4f982c0c37864b41c26cea25550ccf61",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"id\": \"9007199254740994\", \"status\": 1, \"superAdmin\": 0, \"token\": \"<redacted>\", \"username\": \"contract-user\"}, \"msg\": \"success\"}"
+      }
+    },
+    {
+      "name": "user page Long/date/null structure",
+      "category": "serialization",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "total": 3,
+            "list": [
+              {
+                "deviceCount": "0",
+                "mobile": "contract-admin",
+                "status": 1,
+                "userid": "9007199254740993",
+                "createDate": "2026-07-20 12:34:56"
+              },
+              {
+                "deviceCount": "1",
+                "mobile": "contract-user",
+                "status": 1,
+                "userid": "9007199254740994",
+                "createDate": "2026-07-20 12:34:56"
+              },
+              {
+                "deviceCount": "0",
+                "mobile": "contract-expired",
+                "status": 1,
+                "userid": "9007199254740995",
+                "createDate": "2026-07-20 12:34:56"
+              }
+            ]
+          }
+        },
+        "body_sha256": "87d98d1726ad3cd728dfa41159bc5ae1a363011fefc7caf0b3b1660a886d910b",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"list\": [{\"createDate\": \"2026-07-20 12:34:56\", \"deviceCount\": \"0\", \"mobile\": \"contract-admin\", \"status\": 1, \"userid\": \"9007199254740993\"}, {\"createDate\": \"2026-07-20 12:34:56\", \"deviceCount\": \"1\", \"mobile\": \"contract-user\", \"status\": 1, \"userid\": \"9007199254740994\"}, {\"createDate\": \"2026-07-20 12:34:56\", \"deviceCount\": \"0\", \"mobile\": \"contract-expired\", \"status\": 1, \"userid\": \"9007199254740995\"}], \"total\": 3}, \"msg\": \"success\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "415"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "list": [
+              {
+                "deviceCount": "0",
+                "mobile": "contract-admin",
+                "status": 1,
+                "userid": "9007199254740993",
+                "createDate": "2026-07-20 12:34:56"
+              },
+              {
+                "deviceCount": "1",
+                "mobile": "contract-user",
+                "status": 1,
+                "userid": "9007199254740994",
+                "createDate": "2026-07-20 12:34:56"
+              },
+              {
+                "deviceCount": "0",
+                "mobile": "contract-expired",
+                "status": 1,
+                "userid": "9007199254740995",
+                "createDate": "2026-07-20 12:34:56"
+              }
+            ],
+            "total": 3
+          }
+        },
+        "body_sha256": "87d98d1726ad3cd728dfa41159bc5ae1a363011fefc7caf0b3b1660a886d910b",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"list\": [{\"createDate\": \"2026-07-20 12:34:56\", \"deviceCount\": \"0\", \"mobile\": \"contract-admin\", \"status\": 1, \"userid\": \"9007199254740993\"}, {\"createDate\": \"2026-07-20 12:34:56\", \"deviceCount\": \"1\", \"mobile\": \"contract-user\", \"status\": 1, \"userid\": \"9007199254740994\"}, {\"createDate\": \"2026-07-20 12:34:56\", \"deviceCount\": \"0\", \"mobile\": \"contract-expired\", \"status\": 1, \"userid\": \"9007199254740995\"}], \"total\": 3}, \"msg\": \"success\"}"
+      }
+    },
+    {
+      "name": "agent list null/date fields",
+      "category": "agent",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": [
+            {
+              "id": "contract-agent-1",
+              "agentName": "Contract Agent",
+              "ttsModelName": null,
+              "ttsVoiceName": null,
+              "llmModelName": null,
+              "vllmModelName": "智谱视觉AI",
+              "memModelId": null,
+              "systemPrompt": null,
+              "summaryMemory": null,
+              "lastConnectedAt": "2026-07-20 12:34:56",
+              "deviceCount": 1,
+              "tags": null
+            }
+          ]
+        },
+        "body_sha256": "d5bf3b06646ea61af86180faa469cb6780014496dfc95f485b1a1008c8f414b1",
+        "body_excerpt": "{\"code\": 0, \"data\": [{\"agentName\": \"Contract Agent\", \"deviceCount\": 1, \"id\": \"contract-agent-1\", \"lastConnectedAt\": \"2026-07-20 12:34:56\", \"llmModelName\": null, \"memModelId\": null, \"summaryMemory\": null, \"systemPrompt\": null, \"tags\": null, \"ttsModelName\": null, \"ttsVoiceName\": null, \"vllmModelName\": \"智谱视觉AI\"}], \"msg\": \"success\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "310"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": [
+            {
+              "id": "contract-agent-1",
+              "agentName": "Contract Agent",
+              "ttsModelName": null,
+              "ttsVoiceName": null,
+              "llmModelName": null,
+              "vllmModelName": "智谱视觉AI",
+              "memModelId": null,
+              "systemPrompt": null,
+              "summaryMemory": null,
+              "lastConnectedAt": "2026-07-20 12:34:56",
+              "deviceCount": 1,
+              "tags": null
+            }
+          ]
+        },
+        "body_sha256": "d5bf3b06646ea61af86180faa469cb6780014496dfc95f485b1a1008c8f414b1",
+        "body_excerpt": "{\"code\": 0, \"data\": [{\"agentName\": \"Contract Agent\", \"deviceCount\": 1, \"id\": \"contract-agent-1\", \"lastConnectedAt\": \"2026-07-20 12:34:56\", \"llmModelName\": null, \"memModelId\": null, \"summaryMemory\": null, \"systemPrompt\": null, \"tags\": null, \"ttsModelName\": null, \"ttsVoiceName\": null, \"vllmModelName\": \"智谱视觉AI\"}], \"msg\": \"success\"}"
+      }
+    },
+    {
+      "name": "device list UTC display and epoch fields",
+      "category": "device",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": [
+            {
+              "appVersion": "1.2.3",
+              "bindUserName": null,
+              "deviceType": "esp32s3",
+              "board": "esp32s3",
+              "id": "contract-device-1",
+              "macAddress": "AA:BB:CC:DD:EE:01",
+              "alias": null,
+              "otaUpgrade": null,
+              "recentChatTime": null,
+              "lastConnectedAtTimestamp": "1784522096000",
+              "createDateTimestamp": "1784522096000",
+              "createDate": "2026-07-20 04:34:56"
+            }
+          ]
+        },
+        "body_sha256": "a686e41292ba8c11b557bc99638006340fab77df07ae9c80a9220f563baf864d",
+        "body_excerpt": "{\"code\": 0, \"data\": [{\"alias\": null, \"appVersion\": \"1.2.3\", \"bindUserName\": null, \"board\": \"esp32s3\", \"createDate\": \"2026-07-20 04:34:56\", \"createDateTimestamp\": \"1784522096000\", \"deviceType\": \"esp32s3\", \"id\": \"contract-device-1\", \"lastConnectedAtTimestamp\": \"1784522096000\", \"macAddress\": \"AA:BB:CC:DD:EE:01\", \"otaUpgrade\": null, \"recentChatTime\": null}], \"msg\": \"success\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "346"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": [
+            {
+              "appVersion": "1.2.3",
+              "bindUserName": null,
+              "deviceType": "esp32s3",
+              "board": "esp32s3",
+              "id": "contract-device-1",
+              "macAddress": "AA:BB:CC:DD:EE:01",
+              "alias": null,
+              "otaUpgrade": null,
+              "recentChatTime": null,
+              "lastConnectedAtTimestamp": "1784522096000",
+              "createDateTimestamp": "1784522096000",
+              "createDate": "2026-07-20 04:34:56"
+            }
+          ]
+        },
+        "body_sha256": "a686e41292ba8c11b557bc99638006340fab77df07ae9c80a9220f563baf864d",
+        "body_excerpt": "{\"code\": 0, \"data\": [{\"alias\": null, \"appVersion\": \"1.2.3\", \"bindUserName\": null, \"board\": \"esp32s3\", \"createDate\": \"2026-07-20 04:34:56\", \"createDateTimestamp\": \"1784522096000\", \"deviceType\": \"esp32s3\", \"id\": \"contract-device-1\", \"lastConnectedAtTimestamp\": \"1784522096000\", \"macAddress\": \"AA:BB:CC:DD:EE:01\", \"otaUpgrade\": null, \"recentChatTime\": null}], \"msg\": \"success\"}"
+      }
+    },
+    {
+      "name": "filtered model provider page",
+      "category": "model",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "total": 1,
+            "list": [
+              {
+                "id": "contract-provider",
+                "modelType": "LLM",
+                "providerCode": "contract",
+                "name": "Contract Provider",
+                "fields": "[{\"key\": \"api_key\", \"type\": \"string\", \"label\": \"API Key\"}]",
+                "sort": 9,
+                "updater": "9007199254740993",
+                "updateDate": "2026-07-20 12:34:56",
+                "creator": "9007199254740993",
+                "createDate": "2026-07-20 12:34:56"
+              }
+            ]
+          }
+        },
+        "body_sha256": "96c276b24b360b652a2637368bcf43017f06047974eebfa90e69612fe22f53df",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"list\": [{\"createDate\": \"2026-07-20 12:34:56\", \"creator\": \"9007199254740993\", \"fields\": \"[{\\\"key\\\": \\\"api_key\\\", \\\"type\\\": \\\"string\\\", \\\"label\\\": \\\"API Key\\\"}]\", \"id\": \"contract-provider\", \"modelType\": \"LLM\", \"name\": \"Contract Provider\", \"providerCode\": \"contract\", \"sort\": 9, \"updateDate\": \"2026-07-20 12:34:56\", \"updater\": \"9007199254740993\"}], \"total\": 1}, \"msg\": \"success\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "371"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "total": 1,
+            "list": [
+              {
+                "id": "contract-provider",
+                "modelType": "LLM",
+                "providerCode": "contract",
+                "name": "Contract Provider",
+                "fields": "[{\"key\": \"api_key\", \"type\": \"string\", \"label\": \"API Key\"}]",
+                "sort": 9,
+                "creator": "9007199254740993",
+                "createDate": "2026-07-20 12:34:56",
+                "updater": "9007199254740993",
+                "updateDate": "2026-07-20 12:34:56"
+              }
+            ]
+          }
+        },
+        "body_sha256": "96c276b24b360b652a2637368bcf43017f06047974eebfa90e69612fe22f53df",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"list\": [{\"createDate\": \"2026-07-20 12:34:56\", \"creator\": \"9007199254740993\", \"fields\": \"[{\\\"key\\\": \\\"api_key\\\", \\\"type\\\": \\\"string\\\", \\\"label\\\": \\\"API Key\\\"}]\", \"id\": \"contract-provider\", \"modelType\": \"LLM\", \"name\": \"Contract Provider\", \"providerCode\": \"contract\", \"sort\": 9, \"updateDate\": \"2026-07-20 12:34:56\", \"updater\": \"9007199254740993\"}], \"total\": 1}, \"msg\": \"success\"}"
+      }
+    },
+    {
+      "name": "correct-word page",
+      "category": "correct-word",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "total": 1,
+            "list": [
+              {
+                "id": "contract-words",
+                "fileName": "合同词表.txt",
+                "wordCount": 2,
+                "content": [
+                  "小智,小志",
+                  "ESP32,esp32"
+                ],
+                "createdAt": "2026-07-20 12:34:56",
+                "updatedAt": "2026-07-20 12:34:56"
+              }
+            ]
+          }
+        },
+        "body_sha256": "79287e1c218fce90088787f6a6467100120fdfc592a4a6ba2267aa0a58ed2200",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"list\": [{\"content\": [\"小智,小志\", \"ESP32,esp32\"], \"createdAt\": \"2026-07-20 12:34:56\", \"fileName\": \"合同词表.txt\", \"id\": \"contract-words\", \"updatedAt\": \"2026-07-20 12:34:56\", \"wordCount\": 2}], \"total\": 1}, \"msg\": \"success\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "232"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "total": 1,
+            "list": [
+              {
+                "id": "contract-words",
+                "fileName": "合同词表.txt",
+                "wordCount": 2,
+                "content": [
+                  "小智,小志",
+                  "ESP32,esp32"
+                ],
+                "createdAt": "2026-07-20 12:34:56",
+                "updatedAt": "2026-07-20 12:34:56"
+              }
+            ]
+          }
+        },
+        "body_sha256": "79287e1c218fce90088787f6a6467100120fdfc592a4a6ba2267aa0a58ed2200",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"list\": [{\"content\": [\"小智,小志\", \"ESP32,esp32\"], \"createdAt\": \"2026-07-20 12:34:56\", \"fileName\": \"合同词表.txt\", \"id\": \"contract-words\", \"updatedAt\": \"2026-07-20 12:34:56\", \"wordCount\": 2}], \"total\": 1}, \"msg\": \"success\"}"
+      }
+    },
+    {
+      "name": "correct-word binary download headers and bytes",
+      "category": "binary-download",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true,
+        "header:content-disposition": true,
+        "header:content-length": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"____.txt\"; filename*=UTF-8''%E5%90%88%E5%90%8C%E8%AF%8D%E8%A1%A8.txt",
+          "content-length": "25"
+        },
+        "body": "小智,小志\nESP32,esp32",
+        "body_sha256": "2d7a34c5282e77b6efe94797118cbe860c652b4e01c42a966e3611f71e22e2d6",
+        "body_excerpt": "\"小智,小志\\nESP32,esp32\""
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"____.txt\"; filename*=UTF-8''%E5%90%88%E5%90%8C%E8%AF%8D%E8%A1%A8.txt",
+          "content-length": "25"
+        },
+        "body": "小智,小志\nESP32,esp32",
+        "body_sha256": "2d7a34c5282e77b6efe94797118cbe860c652b4e01c42a966e3611f71e22e2d6",
+        "body_excerpt": "\"小智,小志\\nESP32,esp32\""
+      }
+    },
+    {
+      "name": "minimum boundary validation",
+      "category": "validation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 10034,
+          "msg": "最小不能小于0",
+          "data": null
+        },
+        "body_sha256": "546388597c1749ab4659f233c87632589e28022d653f16b6a14dd9aee95e7772",
+        "body_excerpt": "{\"code\": 10034, \"data\": null, \"msg\": \"最小不能小于0\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "54"
+        },
+        "body": {
+          "code": 10034,
+          "msg": "最小不能小于0",
+          "data": null
+        },
+        "body_sha256": "546388597c1749ab4659f233c87632589e28022d653f16b6a14dd9aee95e7772",
+        "body_excerpt": "{\"code\": 10034, \"data\": null, \"msg\": \"最小不能小于0\"}"
+      }
+    },
+    {
+      "name": "maximum boundary validation",
+      "category": "validation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 10034,
+          "msg": "最大不能超过1",
+          "data": null
+        },
+        "body_sha256": "fee5205e471a80c0a5f0ff1cbaf8d41067b64be174c681514d24c5da31ad6dca",
+        "body_excerpt": "{\"code\": 10034, \"data\": null, \"msg\": \"最大不能超过1\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "54"
+        },
+        "body": {
+          "code": 10034,
+          "msg": "最大不能超过1",
+          "data": null
+        },
+        "body_sha256": "fee5205e471a80c0a5f0ff1cbaf8d41067b64be174c681514d24c5da31ad6dca",
+        "body_excerpt": "{\"code\": 10034, \"data\": null, \"msg\": \"最大不能超过1\"}"
+      }
+    },
+    {
+      "name": "UTF-16 string-length validation boundary",
+      "category": "validation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 10034,
+          "msg": "个数必须在0和64之间",
+          "data": null
+        },
+        "body_sha256": "aff178d29594159cf7e18713d4de0916dc3a52eba0e94a093e43b0f43feec2e4",
+        "body_excerpt": "{\"code\": 10034, \"data\": null, \"msg\": \"个数必须在0和64之间\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "62"
+        },
+        "body": {
+          "code": 10034,
+          "msg": "个数必须在0和64之间",
+          "data": null
+        },
+        "body_sha256": "aff178d29594159cf7e18713d4de0916dc3a52eba0e94a093e43b0f43feec2e4",
+        "body_excerpt": "{\"code\": 10034, \"data\": null, \"msg\": \"个数必须在0和64之间\"}"
+      }
+    },
+    {
+      "name": "required model-provider fields (unordered Java ConstraintViolation Set)",
+      "category": "validation",
+      "passed": true,
+      "checks": {
+        "java_http_200": true,
+        "java_code_10034": true,
+        "java_messages_are_declared_constraints": true,
+        "fastapi_http_200": true,
+        "fastapi_code_10034": true,
+        "fastapi_message_is_declared_constraint": true
+      },
+      "difference": null,
+      "java": {
+        "observed_messages": [
+          "fields(JSON格式)不能为空",
+          "name不能为空",
+          "sort不能为空"
+        ],
+        "declared_messages": [
+          "fields(JSON格式)不能为空",
+          "modelType不能为空",
+          "name不能为空",
+          "providerCode不能为空",
+          "sort不能为空"
+        ]
+      },
+      "fastapi": {
+        "body": {
+          "code": 10034,
+          "msg": "providerCode不能为空",
+          "data": null
+        }
+      }
+    },
+    {
+      "name": "invalid pagination number format",
+      "category": "validation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 500,
+          "msg": "排序值不能小于0",
+          "data": null
+        },
+        "body_sha256": "0cae350a6aa1fb188221254f94d412f8ca4373c2e66c1d1fdfaaab174c62a10f",
+        "body_excerpt": "{\"code\": 500, \"data\": null, \"msg\": \"排序值不能小于0\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "55"
+        },
+        "body": {
+          "code": 500,
+          "msg": "排序值不能小于0",
+          "data": null
+        },
+        "body_sha256": "0cae350a6aa1fb188221254f94d412f8ca4373c2e66c1d1fdfaaab174c62a10f",
+        "body_excerpt": "{\"code\": 500, \"data\": null, \"msg\": \"排序值不能小于0\"}"
+      }
+    },
+    {
+      "name": "missing server secret",
+      "category": "server-secret",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "60"
+        },
+        "body": {
+          "code": 401,
+          "msg": "服务器密钥不能为空",
+          "data": null
+        },
+        "body_sha256": "de9f43e4af222a5918a2d7f70a6e9900c4a9d224961bf6e4161a8335efe6ab44",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"服务器密钥不能为空\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "60"
+        },
+        "body": {
+          "code": 401,
+          "msg": "服务器密钥不能为空",
+          "data": null
+        },
+        "body_sha256": "de9f43e4af222a5918a2d7f70a6e9900c4a9d224961bf6e4161a8335efe6ab44",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"服务器密钥不能为空\"}"
+      }
+    },
+    {
+      "name": "invalid server secret",
+      "category": "server-secret",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "57"
+        },
+        "body": {
+          "code": 401,
+          "msg": "无效的服务器密钥",
+          "data": null
+        },
+        "body_sha256": "eda919b0be50a497b95eb5aebf076111a8284ad0badb3cd7957975a55c5fca3f",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"无效的服务器密钥\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=utf-8",
+          "content-disposition": null,
+          "content-length": "57"
+        },
+        "body": {
+          "code": 401,
+          "msg": "无效的服务器密钥",
+          "data": null
+        },
+        "body_sha256": "eda919b0be50a497b95eb5aebf076111a8284ad0badb3cd7957975a55c5fca3f",
+        "body_excerpt": "{\"code\": 401, \"data\": null, \"msg\": \"无效的服务器密钥\"}"
+      }
+    },
+    {
+      "name": "valid server secret runtime configuration",
+      "category": "server-secret",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "delete_audio": true,
+            "ASR": {
+              "ASR_FunASR": {
+                "type": "fun_local",
+                "language": "auto",
+                "model_dir": "models/SenseVoiceSmall",
+                "output_dir": "tmp/"
+              }
+            },
+            "server": {
+              "sms_max_send_count": 10,
+              "mqtt_gateway": "mqtt://127.0.0.1:1883",
+              "public_key": "04409d3dc074e2b0217ee931ba5d167d85fed556ac5bf5a1c2ca0c294ab57e15b7aa55b06fd49bb337b23f88e1feaebd9ae4a5206c72ad8832f40c1a0374f83999",
+              "fronted_url": "http://xiaozhi.server.com",
+              "auth": {
+                "enabled": true
+              },
+              "private_key": "<redacted>",
+              "secret": "<redacted>",
+              "beian_ga_num": "null",
+              "allow_user_register": false,
+              "enable_mobile_register": false,
+              "mqtt_manager_api": "127.0.0.1:18084",
+              "websocket": "ws://127.0.0.1:18080/xiaozhi/v1/",
+              "udp_gateway": "null",
+              "mqtt_signature_key": "<redacted>",
+              "name": "xiaozhi-esp32-server",
+              "mcp_endpoint": "null",
+              "voice_print": "null",
+              "ota": "http://127.0.0.1:18082/xiaozhi/ota/",
+              "beian_icp_num": "null",
+              "voiceprint_similarity_threshold": "0.4"
+            },
+            "enable_stop_tts_notify": false,
+            "close_connection_no_voice_time": 120,
+            "enable_wakeup_words_response_cache": true,
+            "log": {
+              "log_format_file": "{time:YYYY-MM-DD HH:mm:ss} - {version}_{selected_module} - {name} - {level} - {extra[tag]} - {message}",
+              "log_dir": "tmp",
+              "log_format": "<green>{time:YYMMDD HH:mm:ss}</green>[<light-blue>{version}-{selected_module}</light-blue>][<light-blue>{extra[tag]}</light-blue>]-<level>{level}</level>-<light-green>{message}</light-green>",
+              "log_file": "server.log",
+              "log_level": "INFO",
+              "data_dir": "data"
+            },
+            "wakeup_words": [
+              "你好小智",
+              "你好小志",
+              "小爱同学",
+              "你好小鑫",
+              "你好小新",
+              "小美同学",
+              "小龙小龙",
+              "喵喵同学",
+              "小滨小滨",
+              "小冰小冰",
+              "嘿你好呀"
+            ],
+            "selected_module": {
+              "ASR": "ASR_FunASR",
+              "VAD": "VAD_SileroVAD"
+            },
+            "enable_greeting": true,
+            "end_prompt": {
+              "enable": true,
+              "prompt": "请你以“时间过得真快”未来头，用富有感情、依依不舍的话来结束这场对话吧！"
+            },
+            "exit_commands": [
+              "退出",
+              "关闭"
+            ],
+            "tts_timeout": 10,
+            "device_max_output_size": 0,
+            "system-web": {
+              "menu": {
+                "groups": {
+                  "voiceManagement": [
+                    "vad",
+                    "asr"
+                  ],
+                  "featureManagement": [
+                    "voiceprintRecognition",
+                    "voiceClone",
+                    "knowledgeBase",
+                    "mcpAccessPoint"
+                  ]
+                },
+                "features": {
+                  "asr": {
+                    "name": "feature.asr.name",
+                    "enabled": true,
+                    "description": "feature.asr.description"
+                  },
+                  "vad": {
+                    "name": "feature.vad.name",
+                    "enabled": true,
+                    "description": "feature.vad.description"
+                  },
+                  "voiceClone": {
+                    "name": "feature.voiceClone.name",
+                    "enabled": false,
+                    "description": "feature.voiceClone.description"
+                  },
+                  "knowledgeBase": {
+                    "name": "feature.knowledgeBase.name",
+                    "enabled": false,
+                    "description": "feature.knowledgeBase.description"
+                  },
+                  "mcpAccessPoint": {
+                    "name": "feature.mcpAccessPoint.name",
+                    "enabled": false,
+                    "description": "feature.mcpAccessPoint.description"
+                  },
+                  "voiceprintRecognition": {
+                    "name": "feature.voiceprintRecognition.name",
+                    "enabled": false,
+                    "description": "feature.voiceprintRecognition.description"
+                  }
+                },
+                "addressBook": {
+                  "name": "feature.addressBook.name",
+                  "enabled": false,
+                  "description": "feature.addressBook.description"
+                }
+              }
+            },
+            "tool_call_timeout": 30,
+            "VAD": {
+              "VAD_SileroVAD": {
+                "type": "silero",
+                "model_dir": "models/snakers4_silero-vad",
+                "threshold": 0.5,
+                "min_silence_duration_ms": 700
+              }
+            },
+            "summaryMemory": null,
+            "stop_tts_notify_voice": "config/assets/tts_notify.mp3",
+            "system_error_response": "主人，小智现在有点忙，我们稍后再试吧。",
+            "aliyun": {
+              "sms": {
+                "access_key_id": "",
+                "sign_name": "",
+                "access_key_secret": "",
+                "sms_code_template_code": ""
+              }
+            },
+            "prompt": null,
+            "enable_websocket_ping": false,
+            "xiaozhi": {
+              "type": "hello",
+              "version": 1,
+              "transport": "websocket",
+              "audio_params": {
+                "format": "opus",
+                "sample_rate": 24000,
+                "channels": 1,
+                "frame_duration": 60
+              }
+            }
+          }
+        },
+        "body_sha256": "969fdeb7bf416a11bf8265f541781239191b6627c0cdf415204ae26481a0ddb3",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"ASR\": {\"ASR_FunASR\": {\"language\": \"auto\", \"model_dir\": \"models/SenseVoiceSmall\", \"output_dir\": \"tmp/\", \"type\": \"fun_local\"}}, \"VAD\": {\"VAD_SileroVAD\": {\"min_silence_duration_ms\": 700, \"model_dir\": \"models/snakers4_silero-vad\", \"threshold\": 0.5, \"type\": \"silero\"}}, \"aliyun\": {\"sms\": {\"access_key_id\": \"\", \"access_key_secret\": \"\", \"sign_name\": \"\", \"sms_code_template_code\": \"\"}}, \"close_connection_no_voice_time\": 120, \"delete_audio\": true, \"device_max_output_size\": 0, \"enable_greeting\": true, \"enable_stop_tts_notify\": false, \"enable_wakeup_words_response_cache\": true, \"enable_websocket_ping\": false, \"end_prompt\": {\"enable\": true, \"prompt\": \"请你以“时间过得真快”未来头，用富有感情、依依不舍的话来结束这场对话吧！\"}, \"exit_commands\": [\"退出\", \"关闭\"], \"log\": {\"data_dir\": \"data\", \"log_dir\": \"tmp\", \"log_file\": \"server.log\", \"log_format\": \"<green>{time:YYMMDD HH:mm:ss}</green>[<light-blue>{version}-{selected_module}</light-blue>][<light-blue>{extra[tag]}</light-blue>]-<level>{level}</level>-<light-green>{message"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "3582"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "server": {
+              "secret": "<redacted>",
+              "allow_user_register": false,
+              "fronted_url": "http://xiaozhi.server.com",
+              "websocket": "ws://127.0.0.1:18080/xiaozhi/v1/",
+              "ota": "http://127.0.0.1:18082/xiaozhi/ota/",
+              "name": "xiaozhi-esp32-server",
+              "beian_icp_num": "null",
+              "beian_ga_num": "null",
+              "enable_mobile_register": false,
+              "sms_max_send_count": 10,
+              "mcp_endpoint": "null",
+              "voice_print": "null",
+              "voiceprint_similarity_threshold": "0.4",
+              "mqtt_gateway": "mqtt://127.0.0.1:1883",
+              "mqtt_signature_key": "<redacted>",
+              "udp_gateway": "null",
+              "mqtt_manager_api": "127.0.0.1:18084",
+              "public_key": "04409d3dc074e2b0217ee931ba5d167d85fed556ac5bf5a1c2ca0c294ab57e15b7aa55b06fd49bb337b23f88e1feaebd9ae4a5206c72ad8832f40c1a0374f83999",
+              "private_key": "<redacted>",
+              "auth": {
+                "enabled": true
+              }
+            },
+            "device_max_output_size": 0,
+            "log": {
+              "log_format": "<green>{time:YYMMDD HH:mm:ss}</green>[<light-blue>{version}-{selected_module}</light-blue>][<light-blue>{extra[tag]}</light-blue>]-<level>{level}</level>-<light-green>{message}</light-green>",
+              "log_format_file": "{time:YYYY-MM-DD HH:mm:ss} - {version}_{selected_module} - {name} - {level} - {extra[tag]} - {message}",
+              "log_level": "INFO",
+              "log_dir": "tmp",
+              "log_file": "server.log",
+              "data_dir": "data"
+            },
+            "delete_audio": true,
+            "close_connection_no_voice_time": 120,
+            "tts_timeout": 10,
+            "enable_wakeup_words_response_cache": true,
+            "enable_greeting": true,
+            "enable_stop_tts_notify": false,
+            "stop_tts_notify_voice": "config/assets/tts_notify.mp3",
+            "exit_commands": [
+              "退出",
+              "关闭"
+            ],
+            "xiaozhi": {
+              "type": "hello",
+              "version": 1,
+              "transport": "websocket",
+              "audio_params": {
+                "format": "opus",
+                "sample_rate": 24000,
+                "channels": 1,
+                "frame_duration": 60
+              }
+            },
+            "wakeup_words": [
+              "你好小智",
+              "你好小志",
+              "小爱同学",
+              "你好小鑫",
+              "你好小新",
+              "小美同学",
+              "小龙小龙",
+              "喵喵同学",
+              "小滨小滨",
+              "小冰小冰",
+              "嘿你好呀"
+            ],
+            "enable_websocket_ping": false,
+            "tool_call_timeout": 30,
+            "end_prompt": {
+              "enable": true,
+              "prompt": "请你以“时间过得真快”未来头，用富有感情、依依不舍的话来结束这场对话吧！"
+            },
+            "system_error_response": "主人，小智现在有点忙，我们稍后再试吧。",
+            "system-web": {
+              "menu": {
+                "groups": {
+                  "voiceManagement": [
+                    "vad",
+                    "asr"
+                  ],
+                  "featureManagement": [
+                    "voiceprintRecognition",
+                    "voiceClone",
+                    "knowledgeBase",
+                    "mcpAccessPoint"
+                  ]
+                },
+                "features": {
+                  "asr": {
+                    "name": "feature.asr.name",
+                    "enabled": true,
+                    "description": "feature.asr.description"
+                  },
+                  "vad": {
+                    "name": "feature.vad.name",
+                    "enabled": true,
+                    "description": "feature.vad.description"
+                  },
+                  "voiceClone": {
+                    "name": "feature.voiceClone.name",
+                    "enabled": false,
+                    "description": "feature.voiceClone.description"
+                  },
+                  "knowledgeBase": {
+                    "name": "feature.knowledgeBase.name",
+                    "enabled": false,
+                    "description": "feature.knowledgeBase.description"
+                  },
+                  "mcpAccessPoint": {
+                    "name": "feature.mcpAccessPoint.name",
+                    "enabled": false,
+                    "description": "feature.mcpAccessPoint.description"
+                  },
+                  "voiceprintRecognition": {
+                    "name": "feature.voiceprintRecognition.name",
+                    "enabled": false,
+                    "description": "feature.voiceprintRecognition.description"
+                  }
+                },
+                "addressBook": {
+                  "name": "feature.addressBook.name",
+                  "enabled": false,
+                  "description": "feature.addressBook.description"
+                }
+              }
+            },
+            "aliyun": {
+              "sms": {
+                "access_key_id": "",
+                "access_key_secret": "",
+                "sign_name": "",
+                "sms_code_template_code": ""
+              }
+            },
+            "VAD": {
+              "VAD_SileroVAD": {
+                "type": "silero",
+                "model_dir": "models/snakers4_silero-vad",
+                "threshold": 0.5,
+                "min_silence_duration_ms": 700
+              }
+            },
+            "ASR": {
+              "ASR_FunASR": {
+                "type": "fun_local",
+                "language": "auto",
+                "model_dir": "models/SenseVoiceSmall",
+                "output_dir": "tmp/"
+              }
+            },
+            "selected_module": {
+              "VAD": "VAD_SileroVAD",
+              "ASR": "ASR_FunASR"
+            },
+            "prompt": null,
+            "summaryMemory": null
+          }
+        },
+        "body_sha256": "969fdeb7bf416a11bf8265f541781239191b6627c0cdf415204ae26481a0ddb3",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"ASR\": {\"ASR_FunASR\": {\"language\": \"auto\", \"model_dir\": \"models/SenseVoiceSmall\", \"output_dir\": \"tmp/\", \"type\": \"fun_local\"}}, \"VAD\": {\"VAD_SileroVAD\": {\"min_silence_duration_ms\": 700, \"model_dir\": \"models/snakers4_silero-vad\", \"threshold\": 0.5, \"type\": \"silero\"}}, \"aliyun\": {\"sms\": {\"access_key_id\": \"\", \"access_key_secret\": \"\", \"sign_name\": \"\", \"sms_code_template_code\": \"\"}}, \"close_connection_no_voice_time\": 120, \"delete_audio\": true, \"device_max_output_size\": 0, \"enable_greeting\": true, \"enable_stop_tts_notify\": false, \"enable_wakeup_words_response_cache\": true, \"enable_websocket_ping\": false, \"end_prompt\": {\"enable\": true, \"prompt\": \"请你以“时间过得真快”未来头，用富有感情、依依不舍的话来结束这场对话吧！\"}, \"exit_commands\": [\"退出\", \"关闭\"], \"log\": {\"data_dir\": \"data\", \"log_dir\": \"tmp\", \"log_file\": \"server.log\", \"log_format\": \"<green>{time:YYMMDD HH:mm:ss}</green>[<light-blue>{version}-{selected_module}</light-blue>][<light-blue>{extra[tag]}</light-blue>]-<level>{level}</level>-<light-green>{message"
+      }
+    },
+    {
+      "name": "OTA health MIME and body",
+      "category": "ota",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/plain;charset=UTF-8",
+          "content-disposition": null,
+          "content-length": "49"
+        },
+        "body": "OTA接口运行正常，websocket集群数量：1",
+        "body_sha256": "328287942eb320af0a21856fb6ccdeb1947ebe8f689ad6843654230856e0b101",
+        "body_excerpt": "\"OTA接口运行正常，websocket集群数量：1\""
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/plain;charset=UTF-8",
+          "content-disposition": null,
+          "content-length": "49"
+        },
+        "body": "OTA接口运行正常，websocket集群数量：1",
+        "body_sha256": "328287942eb320af0a21856fb6ccdeb1947ebe8f689ad6843654230856e0b101",
+        "body_excerpt": "\"OTA接口运行正常，websocket集群数量：1\""
+      }
+    },
+    {
+      "name": "OTA missing required Device-Id",
+      "category": "ota-validation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 500,
+          "msg": "服务器内部异常",
+          "data": null
+        },
+        "body_sha256": "68e87bf48447199af76a7489b2fa2a2de52caeb76878edb315178f9777bea8d6",
+        "body_excerpt": "{\"code\": 500, \"data\": null, \"msg\": \"服务器内部异常\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "54"
+        },
+        "body": {
+          "code": 500,
+          "msg": "服务器内部异常",
+          "data": null
+        },
+        "body_sha256": "68e87bf48447199af76a7489b2fa2a2de52caeb76878edb315178f9777bea8d6",
+        "body_excerpt": "{\"code\": 500, \"data\": null, \"msg\": \"服务器内部异常\"}"
+      }
+    },
+    {
+      "name": "OTA invalid Device-Id",
+      "category": "ota-validation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true,
+        "header:content-length": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "29"
+        },
+        "body": {
+          "error": "Invalid device ID"
+        },
+        "body_sha256": "1de3f545556a1a2676e7d673ac88d85d06729d36cdd0fe649d9755470885056b",
+        "body_excerpt": "{\"error\": \"Invalid device ID\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "29"
+        },
+        "body": {
+          "error": "Invalid device ID"
+        },
+        "body_sha256": "1de3f545556a1a2676e7d673ac88d85d06729d36cdd0fe649d9755470885056b",
+        "body_excerpt": "{\"error\": \"Invalid device ID\"}"
+      }
+    },
+    {
+      "name": "OTA WebSocket/MQTT credentials",
+      "category": "ota-signing",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true,
+        "header:content-length": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "635"
+        },
+        "body": {
+          "server_time": {
+            "timestamp": "<millisecond-timestamp>",
+            "timeZone": "Asia/Shanghai",
+            "timezone_offset": 480
+          },
+          "firmware": {
+            "version": "1.2.3",
+            "url": "http://xiaozhi.server.com:8002/xiaozhi/otaMag/download/NOT_ACTIVATED_FIRMWARE_THIS_IS_A_INVALID_URL"
+          },
+          "websocket": {
+            "url": "ws://127.0.0.1:18080/xiaozhi/v1/",
+            "token": "<redacted>"
+          },
+          "mqtt": {
+            "endpoint": "mqtt://127.0.0.1:1883",
+            "client_id": "esp32s3@@@AA_BB_CC_DD_EE_01@@@AA_BB_CC_DD_EE_01",
+            "username": "eyJpcCI6IjEyNy4wLjAuMSJ9",
+            "password": "<redacted>",
+            "publish_topic": "device-server",
+            "subscribe_topic": "devices/p2p/AA_BB_CC_DD_EE_01"
+          }
+        },
+        "body_sha256": "a998dbd6b9ceec19c5d7b0a09d848fca191d94d4941a0da2b634dd61e926dd89",
+        "body_excerpt": "{\"firmware\": {\"url\": \"http://xiaozhi.server.com:8002/xiaozhi/otaMag/download/NOT_ACTIVATED_FIRMWARE_THIS_IS_A_INVALID_URL\", \"version\": \"1.2.3\"}, \"mqtt\": {\"client_id\": \"esp32s3@@@AA_BB_CC_DD_EE_01@@@AA_BB_CC_DD_EE_01\", \"endpoint\": \"mqtt://127.0.0.1:1883\", \"password\": \"<redacted>\", \"publish_topic\": \"device-server\", \"subscribe_topic\": \"devices/p2p/AA_BB_CC_DD_EE_01\", \"username\": \"eyJpcCI6IjEyNy4wLjAuMSJ9\"}, \"server_time\": {\"timeZone\": \"Asia/Shanghai\", \"timestamp\": \"<millisecond-timestamp>\", \"timezone_offset\": 480}, \"websocket\": {\"token\": \"<redacted>\", \"url\": \"ws://127.0.0.1:18080/xiaozhi/v1/\"}}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "635"
+        },
+        "body": {
+          "server_time": {
+            "timestamp": "<millisecond-timestamp>",
+            "timeZone": "Asia/Shanghai",
+            "timezone_offset": 480
+          },
+          "firmware": {
+            "version": "1.2.3",
+            "url": "http://xiaozhi.server.com:8002/xiaozhi/otaMag/download/NOT_ACTIVATED_FIRMWARE_THIS_IS_A_INVALID_URL"
+          },
+          "websocket": {
+            "url": "ws://127.0.0.1:18080/xiaozhi/v1/",
+            "token": "<redacted>"
+          },
+          "mqtt": {
+            "client_id": "esp32s3@@@AA_BB_CC_DD_EE_01@@@AA_BB_CC_DD_EE_01",
+            "username": "eyJpcCI6IjEyNy4wLjAuMSJ9",
+            "password": "<redacted>",
+            "publish_topic": "device-server",
+            "subscribe_topic": "devices/p2p/AA_BB_CC_DD_EE_01",
+            "endpoint": "mqtt://127.0.0.1:1883"
+          }
+        },
+        "body_sha256": "a998dbd6b9ceec19c5d7b0a09d848fca191d94d4941a0da2b634dd61e926dd89",
+        "body_excerpt": "{\"firmware\": {\"url\": \"http://xiaozhi.server.com:8002/xiaozhi/otaMag/download/NOT_ACTIVATED_FIRMWARE_THIS_IS_A_INVALID_URL\", \"version\": \"1.2.3\"}, \"mqtt\": {\"client_id\": \"esp32s3@@@AA_BB_CC_DD_EE_01@@@AA_BB_CC_DD_EE_01\", \"endpoint\": \"mqtt://127.0.0.1:1883\", \"password\": \"<redacted>\", \"publish_topic\": \"device-server\", \"subscribe_topic\": \"devices/p2p/AA_BB_CC_DD_EE_01\", \"username\": \"eyJpcCI6IjEyNy4wLjAuMSJ9\"}, \"server_time\": {\"timeZone\": \"Asia/Shanghai\", \"timestamp\": \"<millisecond-timestamp>\", \"timezone_offset\": 480}, \"websocket\": {\"token\": \"<redacted>\", \"url\": \"ws://127.0.0.1:18080/xiaozhi/v1/\"}}"
+      }
+    },
+    {
+      "name": "OTA HMAC/Base64 cryptographic validity",
+      "category": "ota-signing",
+      "passed": true,
+      "checks": {
+        "java_credentials": true,
+        "fastapi_credentials": true
+      },
+      "difference": null,
+      "java": {
+        "credential_shape": {
+          "websocket_token_pattern": true,
+          "mqtt_fields": [
+            "client_id",
+            "endpoint",
+            "password",
+            "publish_topic",
+            "subscribe_topic",
+            "username"
+          ]
+        }
+      },
+      "fastapi": {
+        "credential_shape": {
+          "websocket_token_pattern": true,
+          "mqtt_fields": [
+            "client_id",
+            "endpoint",
+            "password",
+            "publish_topic",
+            "subscribe_topic",
+            "username"
+          ]
+        }
+      }
+    },
+    {
+      "name": "activation missing Device-Id",
+      "category": "activation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 500,
+          "msg": "服务器内部异常",
+          "data": null
+        },
+        "body_sha256": "68e87bf48447199af76a7489b2fa2a2de52caeb76878edb315178f9777bea8d6",
+        "body_excerpt": "{\"code\": 500, \"data\": null, \"msg\": \"服务器内部异常\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "54"
+        },
+        "body": {
+          "code": 500,
+          "msg": "服务器内部异常",
+          "data": null
+        },
+        "body_sha256": "68e87bf48447199af76a7489b2fa2a2de52caeb76878edb315178f9777bea8d6",
+        "body_excerpt": "{\"code\": 500, \"data\": null, \"msg\": \"服务器内部异常\"}"
+      }
+    },
+    {
+      "name": "activation unknown device",
+      "category": "activation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 202,
+        "headers": {
+          "content-type": null,
+          "content-disposition": null,
+          "content-length": "0"
+        },
+        "body": "",
+        "body_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+        "body_excerpt": "\"\""
+      },
+      "fastapi": {
+        "status": 202,
+        "headers": {
+          "content-type": null,
+          "content-disposition": null,
+          "content-length": "0"
+        },
+        "body": "",
+        "body_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+        "body_excerpt": "\"\""
+      }
+    },
+    {
+      "name": "activation bound device MIME",
+      "category": "activation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "header:content-type": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/plain;charset=UTF-8",
+          "content-disposition": null,
+          "content-length": "7"
+        },
+        "body": "success",
+        "body_sha256": "68e7a69974a641064a6a5ae8b1a00997939a325ec585a49e9fe82b386a21726a",
+        "body_excerpt": "\"success\""
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/plain;charset=UTF-8",
+          "content-disposition": null,
+          "content-length": "7"
+        },
+        "body": "success",
+        "body_sha256": "68e7a69974a641064a6a5ae8b1a00997939a325ec585a49e9fe82b386a21726a",
+        "body_excerpt": "\"success\""
+      }
+    },
+    {
+      "name": "MQTT tools external mock response",
+      "category": "external-mock",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "tools": [
+              {
+                "name": "contract.echo",
+                "description": "repeatable contract fixture",
+                "inputSchema": {
+                  "type": "object"
+                }
+              }
+            ]
+          }
+        },
+        "body_sha256": "b32106f0f36e75e9f995a9421ddd23195025af3e872b5f6bc1cb14a1ecc868bb",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"tools\": [{\"description\": \"repeatable contract fixture\", \"inputSchema\": {\"type\": \"object\"}, \"name\": \"contract.echo\"}]}, \"msg\": \"success\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "146"
+        },
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "tools": [
+              {
+                "name": "contract.echo",
+                "description": "repeatable contract fixture",
+                "inputSchema": {
+                  "type": "object"
+                }
+              }
+            ]
+          }
+        },
+        "body_sha256": "b32106f0f36e75e9f995a9421ddd23195025af3e872b5f6bc1cb14a1ecc868bb",
+        "body_excerpt": "{\"code\": 0, \"data\": {\"tools\": [{\"description\": \"repeatable contract fixture\", \"inputSchema\": {\"type\": \"object\"}, \"name\": \"contract.echo\"}]}, \"msg\": \"success\"}"
+      }
+    },
+    {
+      "name": "MQTT external request format and daily auth",
+      "category": "external-mock",
+      "passed": true,
+      "checks": {
+        "both_services_called_mock": true,
+        "request_bodies_equal": true,
+        "daily_tokens_valid": true,
+        "responses_compatible": true
+      },
+      "difference": null,
+      "java": {
+        "request": {
+          "method": "POST",
+          "path": "/api/commands/esp32s3@@@AA_BB_CC_DD_EE_01@@@AA_BB_CC_DD_EE_01",
+          "query": {},
+          "headers": {
+            "authorization": "<redacted>",
+            "content-type": "application/json"
+          },
+          "body": {
+            "payload": {
+              "method": "tools/list",
+              "id": 2,
+              "jsonrpc": "2.0",
+              "params": {
+                "withUserTools": true
+              }
+            },
+            "type": "mcp"
+          }
+        }
+      },
+      "fastapi": {
+        "request": {
+          "method": "POST",
+          "path": "/api/commands/esp32s3@@@AA_BB_CC_DD_EE_01@@@AA_BB_CC_DD_EE_01",
+          "query": {},
+          "headers": {
+            "content-type": "application/json",
+            "authorization": "<redacted>"
+          },
+          "body": {
+            "type": "mcp",
+            "payload": {
+              "jsonrpc": "2.0",
+              "id": 2,
+              "method": "tools/list",
+              "params": {
+                "withUserTools": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "correct-word create response",
+      "category": "crud",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true,
+        "ids_returned": true
+      },
+      "difference": null,
+      "java": {
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "id": "<generated-id>",
+            "fileName": "contract-run-created.txt",
+            "wordCount": 2,
+            "content": [
+              "xiaozhi|小智",
+              "ESP32|esp32"
+            ],
+            "createdAt": "<datetime>",
+            "updatedAt": null
+          }
+        }
+      },
+      "fastapi": {
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": {
+            "id": "<generated-id>",
+            "fileName": "contract-run-created.txt",
+            "wordCount": 2,
+            "content": [
+              "xiaozhi|小智",
+              "ESP32|esp32"
+            ],
+            "createdAt": "<datetime>",
+            "updatedAt": null
+          }
+        }
+      }
+    },
+    {
+      "name": "correct-word create database side effect",
+      "category": "database-side-effect",
+      "passed": true,
+      "checks": {
+        "row_equal": true
+      },
+      "difference": null,
+      "java": {
+        "file_name": "contract-run-created.txt",
+        "word_count": 2,
+        "content": "xiaozhi|小智\nESP32|esp32",
+        "creator": 9007199254740994
+      },
+      "fastapi": {
+        "file_name": "contract-run-created.txt",
+        "word_count": 2,
+        "content": "xiaozhi|小智\nESP32|esp32",
+        "creator": 9007199254740994
+      }
+    },
+    {
+      "name": "correct-word update response",
+      "category": "crud",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": null
+        }
+      },
+      "fastapi": {
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": null
+        }
+      }
+    },
+    {
+      "name": "correct-word update database side effect",
+      "category": "database-side-effect",
+      "passed": true,
+      "checks": {
+        "row_equal": true
+      },
+      "difference": null,
+      "java": {
+        "file_name": "contract-run-updated.txt",
+        "word_count": 1,
+        "content": "A|B",
+        "creator": 9007199254740994,
+        "updater": 9007199254740994
+      },
+      "fastapi": {
+        "file_name": "contract-run-updated.txt",
+        "word_count": 1,
+        "content": "A|B",
+        "creator": 9007199254740994,
+        "updater": 9007199254740994
+      }
+    },
+    {
+      "name": "correct-word updated binary download",
+      "category": "binary-download",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "bytes": true,
+        "content_type": true,
+        "content_disposition": true,
+        "content_length": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"contract-run-updated.txt\"; filename*=UTF-8''contract-run-updated.txt",
+          "content-length": "3"
+        },
+        "body": "A|B",
+        "body_sha256": "cfb6e8834699f9737eb031728d563a451274f04eab5efd8b7d1bdd2a6b82ba00"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"contract-run-updated.txt\"; filename*=UTF-8''contract-run-updated.txt",
+          "content-length": "3"
+        },
+        "body": "A|B",
+        "body_sha256": "cfb6e8834699f9737eb031728d563a451274f04eab5efd8b7d1bdd2a6b82ba00"
+      }
+    },
+    {
+      "name": "correct-word delete cascade side effect",
+      "category": "database-side-effect",
+      "passed": true,
+      "checks": {
+        "both_deleted": true
+      },
+      "difference": null,
+      "java": {
+        "remaining": 0
+      },
+      "fastapi": {
+        "remaining": 0
+      }
+    },
+    {
+      "name": "OTA multipart upload response",
+      "category": "upload",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "body": true,
+        "paths_returned": true
+      },
+      "difference": null,
+      "java": {
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": "uploadfile/45bc46ec1dbbe0608854dda63e72f2d2.bin"
+        }
+      },
+      "fastapi": {
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": "uploadfile/45bc46ec1dbbe0608854dda63e72f2d2.bin"
+        }
+      }
+    },
+    {
+      "name": "OTA multipart extension validation",
+      "category": "upload-validation",
+      "passed": true,
+      "checks": {
+        "http_status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": null
+        },
+        "body": {
+          "code": 500,
+          "msg": "只允许上传.bin和.apk格式的文件",
+          "data": null
+        },
+        "body_sha256": "a7705b4b1e10b70ce0d5a8eda51f02f2a4b9e00be167583b7f65b87a0c2b41af",
+        "body_excerpt": "{\"code\": 500, \"data\": null, \"msg\": \"只允许上传.bin和.apk格式的文件\"}"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "content-disposition": null,
+          "content-length": "74"
+        },
+        "body": {
+          "code": 500,
+          "msg": "只允许上传.bin和.apk格式的文件",
+          "data": null
+        },
+        "body_sha256": "a7705b4b1e10b70ce0d5a8eda51f02f2a4b9e00be167583b7f65b87a0c2b41af",
+        "body_excerpt": "{\"code\": 500, \"data\": null, \"msg\": \"只允许上传.bin和.apk格式的文件\"}"
+      }
+    },
+    {
+      "name": "OTA metadata create response",
+      "category": "crud",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "body": true
+      },
+      "difference": null,
+      "java": {
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": null
+        }
+      },
+      "fastapi": {
+        "body": {
+          "code": 0,
+          "msg": "success",
+          "data": null
+        }
+      }
+    },
+    {
+      "name": "OTA metadata database side effect",
+      "category": "database-side-effect",
+      "passed": true,
+      "checks": {
+        "row_equal": true
+      },
+      "difference": null,
+      "java": {
+        "id": "contract-ota-run",
+        "firmware_name": "Contract Firmware",
+        "type": "contract-run",
+        "version": "1.0.0",
+        "size": 31,
+        "remark": null,
+        "firmware_path": "uploadfile/45bc46ec1dbbe0608854dda63e72f2d2.bin",
+        "sort": 9
+      },
+      "fastapi": {
+        "id": "contract-ota-run",
+        "firmware_name": "Contract Firmware",
+        "type": "contract-run",
+        "version": "1.0.0",
+        "size": 31,
+        "remark": null,
+        "firmware_path": "uploadfile/45bc46ec1dbbe0608854dda63e72f2d2.bin",
+        "sort": 9
+      }
+    },
+    {
+      "name": "OTA binary download attempt 1",
+      "category": "binary-download",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "bytes": true,
+        "content_type": true,
+        "content_disposition": true,
+        "content_length": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"contract-run_1.0.0.bin\"",
+          "content-length": "31"
+        },
+        "body": {
+          "base64": "bWFuYWdlci1hcGktY29udHJhY3QtZmlybXdhcmUA/w=="
+        },
+        "body_sha256": "bceb8e6abf5d1a7555f67b0ce88b95769b0909e8be2daa596d22302e83058cc6"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"contract-run_1.0.0.bin\"",
+          "content-length": "31"
+        },
+        "body": {
+          "base64": "bWFuYWdlci1hcGktY29udHJhY3QtZmlybXdhcmUA/w=="
+        },
+        "body_sha256": "bceb8e6abf5d1a7555f67b0ce88b95769b0909e8be2daa596d22302e83058cc6"
+      }
+    },
+    {
+      "name": "OTA binary download attempt 2",
+      "category": "binary-download",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "bytes": true,
+        "content_type": true,
+        "content_disposition": true,
+        "content_length": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"contract-run_1.0.0.bin\"",
+          "content-length": "31"
+        },
+        "body": {
+          "base64": "bWFuYWdlci1hcGktY29udHJhY3QtZmlybXdhcmUA/w=="
+        },
+        "body_sha256": "bceb8e6abf5d1a7555f67b0ce88b95769b0909e8be2daa596d22302e83058cc6"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"contract-run_1.0.0.bin\"",
+          "content-length": "31"
+        },
+        "body": {
+          "base64": "bWFuYWdlci1hcGktY29udHJhY3QtZmlybXdhcmUA/w=="
+        },
+        "body_sha256": "bceb8e6abf5d1a7555f67b0ce88b95769b0909e8be2daa596d22302e83058cc6"
+      }
+    },
+    {
+      "name": "OTA binary download attempt 3",
+      "category": "binary-download",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "bytes": true,
+        "content_type": true,
+        "content_disposition": true,
+        "content_length": true
+      },
+      "difference": null,
+      "java": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"contract-run_1.0.0.bin\"",
+          "content-length": "31"
+        },
+        "body": {
+          "base64": "bWFuYWdlci1hcGktY29udHJhY3QtZmlybXdhcmUA/w=="
+        },
+        "body_sha256": "bceb8e6abf5d1a7555f67b0ce88b95769b0909e8be2daa596d22302e83058cc6"
+      },
+      "fastapi": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/octet-stream",
+          "content-disposition": "attachment; filename=\"contract-run_1.0.0.bin\"",
+          "content-length": "31"
+        },
+        "body": {
+          "base64": "bWFuYWdlci1hcGktY29udHJhY3QtZmlybXdhcmUA/w=="
+        },
+        "body_sha256": "bceb8e6abf5d1a7555f67b0ce88b95769b0909e8be2daa596d22302e83058cc6"
+      }
+    },
+    {
+      "name": "OTA binary download attempt 4",
+      "category": "binary-download",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "bytes": true,
+        "content_type": true,
+        "content_disposition": true,
+        "content_length": true
+      },
+      "difference": null,
+      "java": {
+        "status": 404,
+        "headers": {
+          "content-type": null,
+          "content-disposition": null,
+          "content-length": "0"
+        },
+        "body": "",
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fastapi": {
+        "status": 404,
+        "headers": {
+          "content-type": null,
+          "content-disposition": null,
+          "content-length": "0"
+        },
+        "body": "",
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ]
+}

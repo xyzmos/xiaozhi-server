@@ -1,0 +1,1164 @@
+{
+  "count": 188,
+  "uniqueRoutes": 140,
+  "consumers": {
+    "manager-web": {
+      "callSites": 134,
+      "uniqueRoutes": 130,
+      "methods": {
+        "DELETE": 12,
+        "GET": 59,
+        "POST": 40,
+        "PUT": 23
+      }
+    },
+    "manager-mobile": {
+      "callSites": 46,
+      "uniqueRoutes": 40,
+      "methods": {
+        "DELETE": 3,
+        "GET": 26,
+        "POST": 12,
+        "PUT": 5
+      }
+    },
+    "xiaozhi-server": {
+      "callSites": 8,
+      "uniqueRoutes": 8,
+      "methods": {
+        "GET": 2,
+        "POST": 6
+      }
+    }
+  },
+  "calls": [
+    {
+      "consumer": "manager-mobile",
+      "method": "PUT",
+      "path": "/agent/{id}",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:108"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/models/provider/plugin/names",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:121"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/mcp/address/{agentId}",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:134"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/mcp/tools/{agentId}",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:145"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/voice-print/list/{agentId}",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:158"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/{id}",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:16"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/{agentId}/chat-history/user",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:171"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/agent/voice-print",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:184"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/{agentId}/tags",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:194"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "PUT",
+      "path": "/agent/{agentId}/tags",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:207"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/models/{modelId}/voices",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:217"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/{agentId}/snapshots",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:230"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/{agentId}/snapshots/{snapshotId}",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:244"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/agent/{agentId}/snapshots/{snapshotId}/restore",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:257"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "DELETE",
+      "path": "/agent/{agentId}/snapshots/{snapshotId}",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:267"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/correct-word/file/select",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:277"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/template",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:29"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/models/names",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:42"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/list",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:59"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/agent",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:72"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "DELETE",
+      "path": "/agent/{id}",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:82"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/models/{ttsModelId}/voices",
+      "source": "main/manager-mobile/src/api/agent/agent.ts:92"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/user/smsVerification",
+      "source": "main/manager-mobile/src/api/auth.ts:109"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/user/register",
+      "source": "main/manager-mobile/src/api/auth.ts:119"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "PUT",
+      "path": "/user/retrieve-password",
+      "source": "main/manager-mobile/src/api/auth.ts:137"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/user/captcha",
+      "source": "main/manager-mobile/src/api/auth.ts:27"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/user/login",
+      "source": "main/manager-mobile/src/api/auth.ts:38"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/user/info",
+      "source": "main/manager-mobile/src/api/auth.ts:75"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/user/pub-config",
+      "source": "main/manager-mobile/src/api/auth.ts:85"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/{agentId}/sessions",
+      "source": "main/manager-mobile/src/api/chat-history/chat-history.ts:14"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/{agentId}/chat-history/{sessionId}",
+      "source": "main/manager-mobile/src/api/chat-history/chat-history.ts:32"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/agent/audio/{audioId}",
+      "source": "main/manager-mobile/src/api/chat-history/chat-history.ts:48"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/device/bind/{agentId}",
+      "source": "main/manager-mobile/src/api/device/device.ts:16"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/device/bind/{agentId}/{code}",
+      "source": "main/manager-mobile/src/api/device/device.ts:33"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/device/manual-add",
+      "source": "main/manager-mobile/src/api/device/device.ts:49"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "PUT",
+      "path": "/device/update/{deviceId}",
+      "source": "main/manager-mobile/src/api/device/device.ts:58"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/device/unbind",
+      "source": "main/manager-mobile/src/api/device/device.ts:68"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/admin/dict/data/type/FIRMWARE_TYPE",
+      "source": "main/manager-mobile/src/api/device/device.ts:8"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/voice-print/list/{agentId}",
+      "source": "main/manager-mobile/src/api/voiceprint/voiceprint.ts:10"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/agent/{agentId}/chat-history/user",
+      "source": "main/manager-mobile/src/api/voiceprint/voiceprint.ts:23"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/agent/voice-print",
+      "source": "main/manager-mobile/src/api/voiceprint/voiceprint.ts:36"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "DELETE",
+      "path": "/agent/voice-print/{id}",
+      "source": "main/manager-mobile/src/api/voiceprint/voiceprint.ts:46"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "PUT",
+      "path": "/agent/voice-print",
+      "source": "main/manager-mobile/src/api/voiceprint/voiceprint.ts:56"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "POST",
+      "path": "/agent/audio/{audioId}",
+      "source": "main/manager-mobile/src/api/voiceprint/voiceprint.ts:66"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/user/pub-config",
+      "source": "main/manager-mobile/src/pages/settings/index.vue:128"
+    },
+    {
+      "consumer": "manager-mobile",
+      "method": "GET",
+      "path": "/api/ping",
+      "source": "main/manager-mobile/src/pages/settings/index.vue:87"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/device/address-book/{macAddress}",
+      "source": "main/manager-web/src/apis/module/addressBook.js:10"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/device/address-book/alias",
+      "source": "main/manager-web/src/apis/module/addressBook.js:28"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/device/address-book/permission",
+      "source": "main/manager-web/src/apis/module/addressBook.js:47"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/admin/params",
+      "source": "main/manager-web/src/apis/module/admin.js:106"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/admin/params/delete",
+      "source": "main/manager-web/src/apis/module/admin.js:127"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/admin/server/server-list",
+      "source": "main/manager-web/src/apis/module/admin.js:144"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/admin/users",
+      "source": "main/manager-web/src/apis/module/admin.js:15"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/admin/server/emit-action",
+      "source": "main/manager-web/src/apis/module/admin.js:160"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/admin/users/{id}",
+      "source": "main/manager-web/src/apis/module/admin.js:31"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/admin/users/{id}",
+      "source": "main/manager-web/src/apis/module/admin.js:47"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/admin/params/page",
+      "source": "main/manager-web/src/apis/module/admin.js:69"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/admin/params",
+      "source": "main/manager-web/src/apis/module/admin.js:85"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/agent/{agentId}",
+      "source": "main/manager-web/src/apis/module/agent.js:118"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/{agentId}/snapshots",
+      "source": "main/manager-web/src/apis/module/agent.js:135"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/{agentId}/snapshots/{snapshotId}",
+      "source": "main/manager-web/src/apis/module/agent.js:164"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/agent/{agentId}/snapshots/{snapshotId}/restore",
+      "source": "main/manager-web/src/apis/module/agent.js:191"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/agent/{agentId}/snapshots/{snapshotId}",
+      "source": "main/manager-web/src/apis/module/agent.js:206"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/template",
+      "source": "main/manager-web/src/apis/module/agent.js:220"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/template/page",
+      "source": "main/manager-web/src/apis/module/agent.js:237"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/{agentId}/sessions",
+      "source": "main/manager-web/src/apis/module/agent.js:254"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/{agentId}/chat-history/{sessionId}",
+      "source": "main/manager-web/src/apis/module/agent.js:270"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/agent/audio/{audioId}",
+      "source": "main/manager-web/src/apis/module/agent.js:285"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/mcp/address/{agentId}",
+      "source": "main/manager-web/src/apis/module/agent.js:300"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/mcp/tools/{agentId}",
+      "source": "main/manager-web/src/apis/module/agent.js:318"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/agent/voice-print",
+      "source": "main/manager-web/src/apis/module/agent.js:333"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/voice-print/list/{id}",
+      "source": "main/manager-web/src/apis/module/agent.js:349"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/agent/voice-print/{id}",
+      "source": "main/manager-web/src/apis/module/agent.js:364"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/agent/voice-print",
+      "source": "main/manager-web/src/apis/module/agent.js:379"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/{id}/chat-history/user",
+      "source": "main/manager-web/src/apis/module/agent.js:395"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/{id}/chat-history/audio",
+      "source": "main/manager-web/src/apis/module/agent.js:410"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/agent/template",
+      "source": "main/manager-web/src/apis/module/agent.js:426"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/list",
+      "source": "main/manager-web/src/apis/module/agent.js:44"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/agent/template",
+      "source": "main/manager-web/src/apis/module/agent.js:443"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/agent/template/{id}",
+      "source": "main/manager-web/src/apis/module/agent.js:460"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/agent/template/batch-remove",
+      "source": "main/manager-web/src/apis/module/agent.js:476"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/template/{templateId}",
+      "source": "main/manager-web/src/apis/module/agent.js:492"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/agent/chat-history/getDownloadUrl/{agentId}/{sessionId}",
+      "source": "main/manager-web/src/apis/module/agent.js:509"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/list",
+      "source": "main/manager-web/src/apis/module/agent.js:525"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/{agentId}/tags",
+      "source": "main/manager-web/src/apis/module/agent.js:541"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/agent/{agentId}/tags",
+      "source": "main/manager-web/src/apis/module/agent.js:567"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/agent",
+      "source": "main/manager-web/src/apis/module/agent.js:59"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/agent/{agentId}",
+      "source": "main/manager-web/src/apis/module/agent.js:75"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/{agentId}",
+      "source": "main/manager-web/src/apis/module/agent.js:91"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/correct-word/file",
+      "source": "main/manager-web/src/apis/module/correctWord.js:100"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/correct-word/file/{id}",
+      "source": "main/manager-web/src/apis/module/correctWord.js:116"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/correct-word/file/{id}",
+      "source": "main/manager-web/src/apis/module/correctWord.js:135"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/correct-word/file/batch-delete",
+      "source": "main/manager-web/src/apis/module/correctWord.js:152"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/correct-word/file/list",
+      "source": "main/manager-web/src/apis/module/correctWord.js:34"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/correct-word/file/select",
+      "source": "main/manager-web/src/apis/module/correctWord.js:52"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/correct-word/file/download/{id}",
+      "source": "main/manager-web/src/apis/module/correctWord.js:85"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/device/unbind",
+      "source": "main/manager-web/src/apis/module/device.js:24"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/device/bind/{agentId}/{deviceCode}",
+      "source": "main/manager-web/src/apis/module/device.js:41"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/device/update/{id}",
+      "source": "main/manager-web/src/apis/module/device.js:56"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/device/manual-add",
+      "source": "main/manager-web/src/apis/module/device.js:74"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/device/bind/{agentId}",
+      "source": "main/manager-web/src/apis/module/device.js:8"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/device/bind/{agentId}",
+      "source": "main/manager-web/src/apis/module/device.js:91"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/admin/dict/data/page",
+      "source": "main/manager-web/src/apis/module/dict.js:116"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/admin/dict/data/{id}",
+      "source": "main/manager-web/src/apis/module/dict.js:134"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/admin/dict/type/page",
+      "source": "main/manager-web/src/apis/module/dict.js:15"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/admin/dict/data/save",
+      "source": "main/manager-web/src/apis/module/dict.js:152"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/admin/dict/data/update",
+      "source": "main/manager-web/src/apis/module/dict.js:171"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/admin/dict/data/delete",
+      "source": "main/manager-web/src/apis/module/dict.js:190"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/admin/dict/data/type/{dictType}",
+      "source": "main/manager-web/src/apis/module/dict.js:210"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/admin/dict/type/{id}",
+      "source": "main/manager-web/src/apis/module/dict.js:33"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/admin/dict/type/save",
+      "source": "main/manager-web/src/apis/module/dict.js:51"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/admin/dict/type/update",
+      "source": "main/manager-web/src/apis/module/dict.js:70"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/admin/dict/type/delete",
+      "source": "main/manager-web/src/apis/module/dict.js:89"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/datasets/{datasetId}",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:132"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/datasets/{datasetId}",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:154"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/datasets/batch",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:174"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/datasets/{datasetId}/documents",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:198"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/datasets/{datasetId}/documents",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:216"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/datasets/{datasetId}/chunks",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:240"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/datasets/{datasetId}/documents/{documentId}",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:260"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/datasets/{datasetId}/documents/{documentId}/chunks",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:289"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/datasets/{datasetId}/retrieval-test",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:307"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/datasets",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:77"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/datasets",
+      "source": "main/manager-web/src/apis/module/knowledgeBase.js:97"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/models/{id}",
+      "source": "main/manager-web/src/apis/module/model.js:100"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/models/names",
+      "source": "main/manager-web/src/apis/module/model.js:118"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/models/llm/names",
+      "source": "main/manager-web/src/apis/module/model.js:153"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/models/{modelId}/voices",
+      "source": "main/manager-web/src/apis/module/model.js:190"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/models/{id}",
+      "source": "main/manager-web/src/apis/module/model.js:223"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/models/enable/{id}/{status}",
+      "source": "main/manager-web/src/apis/module/model.js:240"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/models/{modelType}/{provideCode}/{id}",
+      "source": "main/manager-web/src/apis/module/model.js:262"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/models/default/{id}",
+      "source": "main/manager-web/src/apis/module/model.js:280"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/models/provider",
+      "source": "main/manager-web/src/apis/module/model.js:309"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/models/provider",
+      "source": "main/manager-web/src/apis/module/model.js:338"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/models/list",
+      "source": "main/manager-web/src/apis/module/model.js:35"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/models/provider",
+      "source": "main/manager-web/src/apis/module/model.js:370"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/models/provider/delete",
+      "source": "main/manager-web/src/apis/module/model.js:387"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/models/provider/plugin/names",
+      "source": "main/manager-web/src/apis/module/model.js:405"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/datasets/rag-models",
+      "source": "main/manager-web/src/apis/module/model.js:441"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/models/{modelType}/provideTypes",
+      "source": "main/manager-web/src/apis/module/model.js:51"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/models/{modelType}/{provideCode}",
+      "source": "main/manager-web/src/apis/module/model.js:82"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/otaMag/getDownloadUrl/{id}",
+      "source": "main/manager-web/src/apis/module/ota.js:110"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/otaMag/{id}",
+      "source": "main/manager-web/src/apis/module/ota.js:25"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/otaMag",
+      "source": "main/manager-web/src/apis/module/ota.js:41"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/otaMag/{id}",
+      "source": "main/manager-web/src/apis/module/ota.js:58"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/otaMag/{id}",
+      "source": "main/manager-web/src/apis/module/ota.js:75"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/otaMag",
+      "source": "main/manager-web/src/apis/module/ota.js:8"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/otaMag/upload",
+      "source": "main/manager-web/src/apis/module/ota.js:93"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/ttsVoice",
+      "source": "main/manager-web/src/apis/module/timbre.js:15"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/ttsVoice",
+      "source": "main/manager-web/src/apis/module/timbre.js:31"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/ttsVoice/delete",
+      "source": "main/manager-web/src/apis/module/timbre.js:57"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/ttsVoice/{id}",
+      "source": "main/manager-web/src/apis/module/timbre.js:74"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/user/info",
+      "source": "main/manager-web/src/apis/module/user.js:105"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/user/change-password",
+      "source": "main/manager-web/src/apis/module/user.js:121"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/admin/users/changeStatus/{status}",
+      "source": "main/manager-web/src/apis/module/user.js:142"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/user/pub-config",
+      "source": "main/manager-web/src/apis/module/user.js:159"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/user/retrieve-password",
+      "source": "main/manager-web/src/apis/module/user.js:181"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/user/captcha",
+      "source": "main/manager-web/src/apis/module/user.js:29"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/user/smsVerification",
+      "source": "main/manager-web/src/apis/module/user.js:48"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/user/register",
+      "source": "main/manager-web/src/apis/module/user.js:68"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "PUT",
+      "path": "/user/configDevice/{device_id}",
+      "source": "main/manager-web/src/apis/module/user.js:88"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/user/login",
+      "source": "main/manager-web/src/apis/module/user.js:9"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/voiceClone/upload",
+      "source": "main/manager-web/src/apis/module/voiceClone.js:26"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/voiceClone/updateName",
+      "source": "main/manager-web/src/apis/module/voiceClone.js:44"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/voiceClone/audio/{id}",
+      "source": "main/manager-web/src/apis/module/voiceClone.js:62"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/voiceClone/play/{uuid}",
+      "source": "main/manager-web/src/apis/module/voiceClone.js:78"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/voiceClone",
+      "source": "main/manager-web/src/apis/module/voiceClone.js:8"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/voiceClone/cloneAudio",
+      "source": "main/manager-web/src/apis/module/voiceClone.js:84"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/voiceResource/{id}",
+      "source": "main/manager-web/src/apis/module/voiceResource.js:25"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/voiceResource",
+      "source": "main/manager-web/src/apis/module/voiceResource.js:41"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "DELETE",
+      "path": "/voiceResource/{ids}",
+      "source": "main/manager-web/src/apis/module/voiceResource.js:58"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/voiceResource/user/{userId}",
+      "source": "main/manager-web/src/apis/module/voiceResource.js:74"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/voiceResource",
+      "source": "main/manager-web/src/apis/module/voiceResource.js:8"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/voiceResource/ttsPlatforms",
+      "source": "main/manager-web/src/apis/module/voiceResource.js:90"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/play/{data}",
+      "source": "main/manager-web/src/components/ChatHistoryDialog.vue:361"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/chat-history/download/{uuid}/current",
+      "source": "main/manager-web/src/components/ChatHistoryDialog.vue:391"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/chat-history/download/{uuid}/previous",
+      "source": "main/manager-web/src/components/ChatHistoryDialog.vue:403"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/agent/play/{data}",
+      "source": "main/manager-web/src/components/VoicePrintDialog.vue:123"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "POST",
+      "path": "/voiceClone/audio/{id}",
+      "source": "main/manager-web/src/views/roleConfig.vue:1633"
+    },
+    {
+      "consumer": "manager-web",
+      "method": "GET",
+      "path": "/voiceClone/play/{audioId}",
+      "source": "main/manager-web/src/views/roleConfig.vue:1641"
+    },
+    {
+      "consumer": "xiaozhi-server",
+      "method": "POST",
+      "path": "/config/server-base",
+      "source": "main/xiaozhi-server/config/manage_api_client.py:168"
+    },
+    {
+      "consumer": "xiaozhi-server",
+      "method": "POST",
+      "path": "/config/agent-models",
+      "source": "main/xiaozhi-server/config/manage_api_client.py:178"
+    },
+    {
+      "consumer": "xiaozhi-server",
+      "method": "POST",
+      "path": "/config/correct-words",
+      "source": "main/xiaozhi-server/config/manage_api_client.py:191"
+    },
+    {
+      "consumer": "xiaozhi-server",
+      "method": "POST",
+      "path": "/agent/chat-summary/{session_id}/save",
+      "source": "main/xiaozhi-server/config/manage_api_client.py:204"
+    },
+    {
+      "consumer": "xiaozhi-server",
+      "method": "POST",
+      "path": "/agent/chat-title/{session_id}/generate",
+      "source": "main/xiaozhi-server/config/manage_api_client.py:216"
+    },
+    {
+      "consumer": "xiaozhi-server",
+      "method": "POST",
+      "path": "/agent/chat-history/report",
+      "source": "main/xiaozhi-server/config/manage_api_client.py:232"
+    },
+    {
+      "consumer": "xiaozhi-server",
+      "method": "GET",
+      "path": "/device/address-book/lookup",
+      "source": "main/xiaozhi-server/config/manage_api_client.py:256"
+    },
+    {
+      "consumer": "xiaozhi-server",
+      "method": "GET",
+      "path": "/device/address-book/call",
+      "source": "main/xiaozhi-server/plugins_func/functions/call_device.py:75"
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T07:12:33.158826+00:00",
+  "parameters": {
+    "requests_per_service_per_scenario": 60,
+    "concurrency": 6,
+    "sequential_warmup_requests": 10,
+    "scenario_order": [
+      "representative-read",
+      "representative-crud-update",
+      "runtime-configuration",
+      "ota-check-and-signing"
+    ],
+    "service_order": [
+      "java",
+      "fastapi"
+    ]
+  },
+  "results": [
+    {
+      "service": "java",
+      "scenario": "representative-read",
+      "requests": 60,
+      "concurrency": 6,
+      "warmup_requests": 10,
+      "errors": 0,
+      "elapsed_seconds": 0.099812,
+      "throughput_requests_per_second": 601.128,
+      "latency_ms_min": 3.259,
+      "latency_ms_p50": 7.662,
+      "latency_ms_p95": 16.239,
+      "latency_ms_max": 20.352
+    },
+    {
+      "service": "fastapi",
+      "scenario": "representative-read",
+      "requests": 60,
+      "concurrency": 6,
+      "warmup_requests": 10,
+      "errors": 0,
+      "elapsed_seconds": 0.079836,
+      "throughput_requests_per_second": 751.538,
+      "latency_ms_min": 4.117,
+      "latency_ms_p50": 6.749,
+      "latency_ms_p95": 12.552,
+      "latency_ms_max": 16.057
+    },
+    {
+      "service": "java",
+      "scenario": "representative-crud-update",
+      "requests": 60,
+      "concurrency": 6,
+      "warmup_requests": 10,
+      "errors": 0,
+      "elapsed_seconds": 0.110495,
+      "throughput_requests_per_second": 543.013,
+      "latency_ms_min": 5.684,
+      "latency_ms_p50": 9.331,
+      "latency_ms_p95": 15.302,
+      "latency_ms_max": 19.008
+    },
+    {
+      "service": "fastapi",
+      "scenario": "representative-crud-update",
+      "requests": 60,
+      "concurrency": 6,
+      "warmup_requests": 10,
+      "errors": 0,
+      "elapsed_seconds": 0.12582,
+      "throughput_requests_per_second": 476.87,
+      "latency_ms_min": 6.996,
+      "latency_ms_p50": 11.252,
+      "latency_ms_p95": 20.599,
+      "latency_ms_max": 24.284
+    },
+    {
+      "service": "java",
+      "scenario": "runtime-configuration",
+      "requests": 60,
+      "concurrency": 6,
+      "warmup_requests": 10,
+      "errors": 0,
+      "elapsed_seconds": 0.105474,
+      "throughput_requests_per_second": 568.863,
+      "latency_ms_min": 3.901,
+      "latency_ms_p50": 8.746,
+      "latency_ms_p95": 16.127,
+      "latency_ms_max": 29.528
+    },
+    {
+      "service": "fastapi",
+      "scenario": "runtime-configuration",
+      "requests": 60,
+      "concurrency": 6,
+      "warmup_requests": 10,
+      "errors": 0,
+      "elapsed_seconds": 0.078418,
+      "throughput_requests_per_second": 765.126,
+      "latency_ms_min": 3.868,
+      "latency_ms_p50": 6.488,
+      "latency_ms_p95": 13.722,
+      "latency_ms_max": 18.923
+    },
+    {
+      "service": "java",
+      "scenario": "ota-check-and-signing",
+      "requests": 60,
+      "concurrency": 6,
+      "warmup_requests": 10,
+      "errors": 0,
+      "elapsed_seconds": 0.131968,
+      "throughput_requests_per_second": 454.655,
+      "latency_ms_min": 7.543,
+      "latency_ms_p50": 11.301,
+      "latency_ms_p95": 19.854,
+      "latency_ms_max": 21.729
+    },
+    {
+      "service": "fastapi",
+      "scenario": "ota-check-and-signing",
+      "requests": 60,
+      "concurrency": 6,
+      "warmup_requests": 10,
+      "errors": 0,
+      "elapsed_seconds": 0.169106,
+      "throughput_requests_per_second": 354.807,
+      "latency_ms_min": 7.066,
+      "latency_ms_p50": 16.208,
+      "latency_ms_p95": 20.344,
+      "latency_ms_max": 28.953
+    }
+  ],
+  "comparisons": [
+    {
+      "scenario": "representative-read",
+      "p50_ratio_fastapi_over_java": 0.881,
+      "p95_ratio_fastapi_over_java": 0.773,
+      "throughput_ratio_fastapi_over_java": 1.25
+    },
+    {
+      "scenario": "representative-crud-update",
+      "p50_ratio_fastapi_over_java": 1.206,
+      "p95_ratio_fastapi_over_java": 1.346,
+      "throughput_ratio_fastapi_over_java": 0.878
+    },
+    {
+      "scenario": "runtime-configuration",
+      "p50_ratio_fastapi_over_java": 0.742,
+      "p95_ratio_fastapi_over_java": 0.851,
+      "throughput_ratio_fastapi_over_java": 1.345
+    },
+    {
+      "scenario": "ota-check-and-signing",
+      "p50_ratio_fastapi_over_java": 1.434,
+      "p95_ratio_fastapi_over_java": 1.025,
+      "throughput_ratio_fastapi_over_java": 0.78
+    }
+  ],
+  "summary": {
+    "measurements": 8,
+    "requests_measured": 480,
+    "errors": 0
+  }
+}

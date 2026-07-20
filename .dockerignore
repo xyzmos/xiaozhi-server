@@ -5,3 +5,22 @@ __pycache__
 Dockerfile
 tmp/
 data/
+
+# Repository-local runtimes and test/build products are several gigabytes and
+# are never inputs to either manager-api-fastapi image.
+.runtime/
+.venv-*/
+**/.venv/
+**/.test-runtime/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/node_modules/
+**/dist/
+**/target/
+**/uploadfile/
+
+# Runtime state and local model assets must not enter the Docker build context.
+main/xiaozhi-server/mysql/
+main/xiaozhi-server/models/
+main/xiaozhi-server/data/

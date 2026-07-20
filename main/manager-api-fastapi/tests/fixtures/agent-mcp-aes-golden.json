@@ -1,0 +1,17 @@
+[
+  {
+    "agentId": "0123456789abcdef0123456789abcdef",
+    "key": "0123456789abcdef",
+    "token": "gGoKMxPZmy7exM0UfEVukLNhJhqNrpQqZp3dFvGxSP9A/OF5dw4QOxYI+5vaDP9k"
+  },
+  {
+    "agentId": "agent-测试-0001",
+    "key": "short-key",
+    "token": "J2iqQ9MTPgcWyMBBnukLWoCoepQ3iL3ifRep9U9wHL404qPjkQbaki4gx+GF3Zju"
+  },
+  {
+    "agentId": "ffffffffffffffffffffffffffffffff",
+    "key": "0123456789abcdef0123456789abcdef-extra",
+    "token": "aX8khOtYV5n7m6cJdkhIpC0crHYfz1FWAsD4HmCNBNfTlIy7qU1vVLOZBdNonA6r"
+  }
+]

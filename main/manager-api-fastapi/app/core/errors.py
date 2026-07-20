@@ -1,0 +1,44 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+class ErrorCode:
+    INTERNAL_SERVER_ERROR = 500
+    UNAUTHORIZED = 401
+    FORBIDDEN = 403
+    DB_RECORD_EXISTS = 10002
+    PARAMS_GET_ERROR = 10003
+    ACCOUNT_PASSWORD_ERROR = 10004
+    ACCOUNT_DISABLE = 10005
+    CAPTCHA_ERROR = 10007
+    PASSWORD_ERROR = 10009
+    UPLOAD_FILE_EMPTY = 10019
+    TOKEN_INVALID = 10021
+    ACCOUNT_LOCK = 10022
+    INVALID_SYMBOL = 10029
+    PASSWORD_LENGTH_ERROR = 10030
+    PASSWORD_WEAK_ERROR = 10031
+    DEL_MYSELF_ERROR = 10032
+    DEVICE_CAPTCHA_ERROR = 10033
+    PARAM_VALUE_NULL = 10034
+    PARAM_TYPE_NULL = 10035
+    PARAM_TYPE_INVALID = 10036
+    PARAM_NUMBER_INVALID = 10037
+    PARAM_BOOLEAN_INVALID = 10038
+    PARAM_ARRAY_INVALID = 10039
+    PARAM_JSON_INVALID = 10040
+    RESOURCE_NOT_FOUND = 10051
+    ADD_DATA_FAILED = 10065
+    UPDATE_DATA_FAILED = 10066
+    MODEL_TYPE_PROVIDE_CODE_NOT_NULL = 10131
+
+
+@dataclass(slots=True)
+class AppError(Exception):
+    code: int
+    message: str | None = None
+    params: tuple[object, ...] = ()
+
+    def __str__(self) -> str:
+        return self.message or str(self.code)
