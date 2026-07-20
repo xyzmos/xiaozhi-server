@@ -36,3 +36,8 @@ uv run python scripts/extract_java_routes.py --output compatibility/java-routes.
 
 Migration, container, differential-contract, and cutover instructions are maintained in the
 repository-level migration documents under `docs/manager-api-fastapi-*.md`.
+
+The cross-module plan for integrating manager-web and the xiaozhi-server realtime runtime is
+maintained in `docs/unified-fastapi-platform/README.md`. It defines the staged PR queue, agent
+ownership, automated quality gates, and the boundary where real hardware and external service
+validation become mandatory.
