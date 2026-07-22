@@ -22,6 +22,7 @@ import java.util.function.BiFunction;
 
 import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.executor.BatchResult;
+import org.apache.ibatis.logging.nologging.NoLoggingImpl;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -184,6 +185,10 @@ class BaseServiceImplTest {
     }
 
     private static class TestService extends BaseServiceImpl<TestMapper, TestEntity> {
+        private TestService() {
+            log = new NoLoggingImpl(TestService.class.getName());
+        }
+
         @Override
         protected String getSqlStatement(SqlMethod sqlMethod) {
             return switch (sqlMethod) {
