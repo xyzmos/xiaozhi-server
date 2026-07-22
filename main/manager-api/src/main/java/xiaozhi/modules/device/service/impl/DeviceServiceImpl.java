@@ -202,8 +202,8 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
             firmware.setUrl(Constant.INVALID_FIRMWARE_URL);
             response.setFirmware(firmware);
         } else {
-            // 只有在设备已绑定且autoUpdate不为0的情况下才返回固件升级信息
-            if (deviceById.getAutoUpdate() != 0) {
+            // 只有在设备已绑定且明确开启自动升级时才返回固件升级信息
+            if (Integer.valueOf(1).equals(deviceById.getAutoUpdate())) {
                 String type = deviceReport.getBoard() == null ? null : deviceReport.getBoard().getType();
                 DeviceReportRespDTO.Firmware firmware = buildFirmwareInfo(type,
                         deviceReport.getApplication() == null ? null : deviceReport.getApplication().getVersion());
@@ -299,6 +299,7 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
         UserShowDeviceListVO vo = ConvertUtils.sourceToTarget(device, UserShowDeviceListVO.class);
         vo.setDeviceType(device.getBoard());
         vo.setBoard(device.getBoard());
+        vo.setAutoUpdate(device.getAutoUpdate());
         vo.setCreateDateTimestamp(toTimestamp(device.getCreateDate()));
         vo.setLastConnectedAtTimestamp(toTimestamp(device.getLastConnectedAt()));
         return vo;
