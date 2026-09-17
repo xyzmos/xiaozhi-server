@@ -2479,7 +2479,7 @@ export default {
 
 ::v-deep .code-diff-view .hljs-emphasis,
 ::v-deep .code-diff-view em {
-  font-style: normal;
+  font-style: normal !important;
 }
 
 ::v-deep .code-diff-view .diff-table .blob-code-deletion .x,
