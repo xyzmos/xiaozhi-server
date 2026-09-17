@@ -2329,7 +2329,7 @@ export default {
 
 .snapshot-diff {
   min-height: 220px;
-  max-height: 62vh;
+  max-height: 68vh;
   overflow: auto;
   padding-right: 2px;
   @include scrollbar-style;
