@@ -41,6 +41,8 @@ public class AgentTemplateController {
     
     private final AgentTemplateService agentTemplateService;
     
+    // 单独用 normal 权限（而非类级 superAdmin）是有意保留：
+    // 普通用户也需查询可用模板，与 /page 的管理入口分离，保持原行为契约。
     @GetMapping
     @Operation(summary = "智能体模板列表")
     @RequiresPermissions("sys:role:normal")
