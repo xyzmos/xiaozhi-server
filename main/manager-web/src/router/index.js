@@ -67,6 +67,10 @@ const routes = [
     name: 'UserManagement',
     component: function () {
       return import('../views/UserManagement.vue')
+    },
+    meta: {
+      requiresAuth: true,
+      title: '用户管理'
     }
   },
   {
@@ -147,6 +151,10 @@ const routes = [
     name: 'DictManagement',
     component: function () {
       return import('../views/DictManagement.vue')
+    },
+    meta: {
+      requiresAuth: true,
+      title: '字典管理'
     }
   },
   {
@@ -154,6 +162,10 @@ const routes = [
     name: 'ProviderManagement',
     component: function () {
       return import('../views/ProviderManagement.vue')
+    },
+    meta: {
+      requiresAuth: true,
+      title: '模型供应方管理'
     }
   },
   // 添加默认角色管理路由
@@ -162,6 +174,10 @@ const routes = [
     name: 'AgentTemplateManagement',
     component: function () {
       return import('../views/AgentTemplateManagement.vue')
+    },
+    meta: {
+      requiresAuth: true,
+      title: '智能体模板管理'
     }
   },
   // 添加模板快速配置路由
@@ -170,6 +186,10 @@ const routes = [
     name: 'TemplateQuickConfig',
     component: function () {
       return import('../views/TemplateQuickConfig.vue')
+    },
+    meta: {
+      requiresAuth: true,
+      title: '模板快速配置'
     }
   },
   // 功能配置页面路由
