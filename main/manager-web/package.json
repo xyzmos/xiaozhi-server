@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
+    "postinstall": "node scripts/check-v-code-diff.js",
     "check:i18n": "node scripts/check-i18n.js",
     "test:snapshot": "node --test src/components/agentSnapshotDisplayUtils.test.mjs src/apis/module/agentSnapshotApi.test.mjs",
     "build": "vue-cli-service build",
