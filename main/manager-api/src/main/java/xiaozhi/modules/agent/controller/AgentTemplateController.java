@@ -41,6 +41,15 @@ public class AgentTemplateController {
     
     private final AgentTemplateService agentTemplateService;
     
+    @GetMapping
+    @Operation(summary = "智能体模板列表")
+    @RequiresPermissions("sys:role:normal")
+    public Result<List<AgentTemplateEntity>> getAgentTemplates() {
+        List<AgentTemplateEntity> list = agentTemplateService
+                .list(new QueryWrapper<AgentTemplateEntity>().orderByAsc("sort"));
+        return new Result<List<AgentTemplateEntity>>().ok(list);
+    }
+
     @GetMapping("/page")
     @Operation(summary = "获取模板分页列表")
     @RequiresPermissions("sys:role:superAdmin")
