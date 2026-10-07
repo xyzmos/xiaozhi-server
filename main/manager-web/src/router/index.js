@@ -228,9 +228,17 @@ VueRouter.prototype.push = function push(location) {
   })
 }
 
+// 把入参清洗为站内绝对路径，避免 //evil.com 这类协议相对 URL 跳出域名
+function safeRedirect(target) {
+  if (typeof target !== 'string' || target.length === 0) return '/'
+  if (!target.startsWith('/')) return '/'
+  if (target.startsWith('//') || target.startsWith('/\\')) return '/'
+  return target
+}
+
 // 任何路由段上 meta.requiresAuth === true 都视为需要登录
 // 匿名白名单按 name 匹配，避免被误标时也拦住 anon 路由
-const anonRouteNames = new Set(['login', 'Register', 'RetrievePassword'])
+const anonRouteNames = new Set(['login', 'Register', 'RetrievePassword', 'welcome'])
 
 router.beforeEach((to, from, next) => {
   if (anonRouteNames.has(to.name)) {
@@ -239,7 +247,8 @@ router.beforeEach((to, from, next) => {
   }
   const requiresAuth = to.matched.some(r => r.meta && r.meta.requiresAuth === true)
   if (requiresAuth && !localStorage.getItem('token')) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
+    const target = safeRedirect(to.query.redirect || to.path)
+    next({ name: 'login', query: { redirect: target } })
     return
   }
   next()
