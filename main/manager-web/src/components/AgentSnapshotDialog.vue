@@ -2115,17 +2115,18 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin: 32px auto !important;
+  margin: 10px auto !important;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-height: calc(100vh - 64px);
+  height: calc(100vh - 20px);
+  max-height: calc(100vh - 20px);
 }
 
 ::v-deep .el-dialog__wrapper {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  overflow: auto;
+  overflow: hidden;
 }
 
 ::v-deep .el-dialog__header {
@@ -2282,9 +2283,7 @@ export default {
 }
 
 .snapshot-table-wrapper {
-  max-height: 62vh;
-  overflow: auto;
-  @include scrollbar-style;
+  min-height: 420px;
 }
 
 .version-cell {
@@ -2328,11 +2327,8 @@ export default {
 }
 
 .snapshot-diff {
-  min-height: 220px;
-  max-height: 68vh;
-  overflow: auto;
+  min-height: 420px;
   padding-right: 2px;
-  @include scrollbar-style;
 }
 
 .restore-risk-alert {
