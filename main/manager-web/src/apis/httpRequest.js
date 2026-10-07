@@ -18,20 +18,22 @@ const REFRESH_AHEAD_MS = 60 * 60 * 1000
 let refreshPromise = null
 
 function getTokenExpireAt() {
-    const raw = store.getters.getToken
+    // 与 persistTokenExpireAt 同源读 localStorage（store 走的是 state.token 缓存，
+    // 刚写入 localStorage 后再走 store 拿不到补写的 _localStoredAt）
+    const raw = localStorage.getItem('token')
     if (!raw) return 0
     try {
         const parsed = JSON.parse(raw)
         if (!parsed || !parsed.expire) return 0
         // login.vue 写入 store 时是 setToken(now)，token 对象里没有 createdAt；
-        // 用 store 缓存的 expireDate 标记来近似估算：本地落地时间作为基准
-        return parsed._localStoredAt + parsed.expire * 1000
+        // 用 _localStoredAt 作为本地落地时间基准
+        return (parsed._localStoredAt || 0) + parsed.expire * 1000
     } catch (e) {
         return 0
     }
 }
 
-// 首次见到该 token 时记下落地时间；后续调用方在 shouldRefresh 判定前确保已落地
+// 首次见到该 token 时记下落地时间；同步刷新 localStorage 与 store，保证两端一致
 function persistTokenExpireAt() {
     const raw = localStorage.getItem('token')
     if (!raw) return
@@ -39,7 +41,9 @@ function persistTokenExpireAt() {
         const parsed = JSON.parse(raw)
         if (parsed && parsed.expire && !parsed._localStoredAt) {
             parsed._localStoredAt = Date.now()
-            localStorage.setItem('token', JSON.stringify(parsed))
+            const next = JSON.stringify(parsed)
+            localStorage.setItem('token', next)
+            store.commit('setToken', next)
         }
     } catch (e) { /* ignore */ }
 }
