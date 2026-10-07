@@ -228,20 +228,19 @@ VueRouter.prototype.push = function push(location) {
   })
 }
 
-// 需要登录才能访问的路由
-const protectedRoutes = ['home', 'RoleConfig', 'DeviceManagement', 'UserManagement', 'ModelConfig', 'KnowledgeBaseManagement', 'KnowledgeFileUpload', 'AddressBookManagement']
+// 任何路由段上 meta.requiresAuth === true 都视为需要登录
+// 匿名白名单按 name 匹配，避免被误标时也拦住 anon 路由
+const anonRouteNames = new Set(['login', 'Register', 'RetrievePassword'])
 
-// 路由守卫
 router.beforeEach((to, from, next) => {
-  // 检查是否是需要保护的路由
-  if (protectedRoutes.includes(to.name)) {
-    // 从localStorage获取token
-    const token = localStorage.getItem('token')
-    if (!token) {
-      // 未登录，跳转到登录页
-      next({ name: 'login', query: { redirect: to.fullPath } })
-      return
-    }
+  if (anonRouteNames.has(to.name)) {
+    next()
+    return
+  }
+  const requiresAuth = to.matched.some(r => r.meta && r.meta.requiresAuth === true)
+  if (requiresAuth && !localStorage.getItem('token')) {
+    next({ name: 'login', query: { redirect: to.fullPath } })
+    return
   }
   next()
 })
