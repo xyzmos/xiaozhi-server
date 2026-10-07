@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import cn.hutool.core.date.DateUtil;
 import lombok.AllArgsConstructor;
@@ -83,6 +84,7 @@ public class SysUserTokenServiceImpl extends BaseServiceImpl<SysUserTokenDao, Sy
     }
 
     @Override
+    @Transactional
     public Result<TokenDTO> refreshToken(String oldToken) {
         if (StringUtils.isBlank(oldToken)) {
             throw new RenException(ErrorCode.UNAUTHORIZED);
@@ -95,14 +97,14 @@ public class SysUserTokenServiceImpl extends BaseServiceImpl<SysUserTokenDao, Sy
             throw new RenException(ErrorCode.UNAUTHORIZED);
         }
 
-        // 强制生成新 token：覆盖 token 字段使旧 token 字符串立即查不到，自然失效
+        // CAS 更新：并发场景下只有一个请求能匹配到该 oldToken，另一个返 0 行
         String newToken = TokenGenerator.generateValue();
         Date now = new Date();
         Date expireTime = new Date(now.getTime() + EXPIRE * 1000L);
-        tokenEntity.setToken(newToken);
-        tokenEntity.setUpdateDate(now);
-        tokenEntity.setExpireDate(expireTime);
-        this.updateById(tokenEntity);
+        int affected = baseDao.refreshTokenCAS(tokenEntity.getUserId(), oldToken, newToken, expireTime, now);
+        if (affected == 0) {
+            throw new RenException(ErrorCode.TOKEN_INVALID);
+        }
 
         TokenDTO dto = new TokenDTO();
         dto.setToken(newToken);

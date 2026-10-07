@@ -25,17 +25,27 @@ function getTokenExpireAt() {
         if (!parsed || !parsed.expire) return 0
         // login.vue 写入 store 时是 setToken(now)，token 对象里没有 createdAt；
         // 用 store 缓存的 expireDate 标记来近似估算：本地落地时间作为基准
-        if (!parsed._localStoredAt) {
-            parsed._localStoredAt = Date.now()
-            localStorage.setItem('token', JSON.stringify(parsed))
-        }
         return parsed._localStoredAt + parsed.expire * 1000
     } catch (e) {
         return 0
     }
 }
 
+// 首次见到该 token 时记下落地时间；后续调用方在 shouldRefresh 判定前确保已落地
+function persistTokenExpireAt() {
+    const raw = localStorage.getItem('token')
+    if (!raw) return
+    try {
+        const parsed = JSON.parse(raw)
+        if (parsed && parsed.expire && !parsed._localStoredAt) {
+            parsed._localStoredAt = Date.now()
+            localStorage.setItem('token', JSON.stringify(parsed))
+        }
+    } catch (e) { /* ignore */ }
+}
+
 function shouldRefresh() {
+    persistTokenExpireAt()
     const exp = getTokenExpireAt()
     if (!exp) return false
     return exp - Date.now() < REFRESH_AHEAD_MS
